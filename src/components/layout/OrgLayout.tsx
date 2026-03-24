@@ -1,27 +1,26 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
-  LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText, Shield,
-  Bell,
+  LayoutDashboard, Users, Wifi, BarChart3, MessageSquare, Settings,
+  Bell, ExternalLink,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
 const navItems = [
-  { title: "Dashboard", path: "/super-admin/dashboard", icon: LayoutDashboard },
-  { title: "Agencies", path: "/super-admin/agencies", icon: Building2 },
-  { title: "Organizations", path: "/super-admin/organizations", icon: Building },
-  { title: "Users", path: "/super-admin/users", icon: Users },
-  { title: "Billing & Plans", path: "/super-admin/billing", icon: CreditCard },
-  { title: "Audit Log", path: "/super-admin/audit-log", icon: ScrollText },
-  { title: "Permissions", path: "/super-admin/permissions", icon: Shield },
+  { title: "Dashboard", path: "/org/dashboard", icon: LayoutDashboard },
+  { title: "Social Profiles", path: "/org/profiles", icon: Wifi },
+  { title: "Team", path: "/org/team", icon: Users },
+  { title: "Analytics", path: "/org/analytics", icon: BarChart3 },
+  { title: "Inbox", path: "/org/inbox", icon: MessageSquare },
+  { title: "Settings", path: "/org/settings", icon: Settings },
 ];
 
-interface SuperAdminLayoutProps {
+interface OrgLayoutProps {
   children: ReactNode;
-  title: string;
+  title?: string;
 }
 
-const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
+const OrgLayout = ({ children, title }: OrgLayoutProps) => {
   const location = useLocation();
 
   return (
@@ -39,7 +38,7 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
+                className={`nav-item ${isActive ? "nav-item-active" : ""}`}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 <span>{item.title}</span>
@@ -51,10 +50,10 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
         {/* User */}
         <div className="px-3 py-3 border-t border-sidebar-border/50">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold shrink-0">SA</div>
+            <div className="w-8 h-8 rounded-full bg-organization flex items-center justify-center text-white text-xs font-semibold shrink-0">RC</div>
             <div>
-              <p className="text-sm font-semibold text-white">John Doe</p>
-              <p className="text-[11px] text-sidebar-foreground">Super Admin</p>
+              <p className="text-sm font-semibold text-white">RetailCo</p>
+              <p className="text-[11px] text-sidebar-foreground">Organization</p>
             </div>
           </div>
         </div>
@@ -63,13 +62,19 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <h1 className="text-base font-semibold text-foreground">{title}</h1>
           <div className="flex items-center gap-3">
+            {title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <a href="https://social-ninja.lovable.app?org=1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 h-9 px-3 border border-border rounded-lg text-sm text-foreground hover:bg-muted transition-colors">
+              Open in SocialNinja <ExternalLink className="h-3.5 w-3.5" />
+            </a>
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
               <Bell className="h-4 w-4 text-muted-foreground" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold">SA</div>
+            <div className="w-8 h-8 rounded-full bg-organization flex items-center justify-center text-white text-xs font-semibold">RC</div>
           </div>
         </header>
 
@@ -79,4 +84,4 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
   );
 };
 
-export default SuperAdminLayout;
+export default OrgLayout;

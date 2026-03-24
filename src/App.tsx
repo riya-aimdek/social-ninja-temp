@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-import SuperAdminLogin from "./pages/SuperAdminLogin";
+import LoginPage from "./pages/LoginPage";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminOrganizations from "./pages/SuperAdminOrganizations";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
@@ -19,8 +19,14 @@ import OrganizationDetail from "./pages/OrganizationDetail";
 import TeamMembersPage from "./pages/TeamMembersPage";
 import BillingPage from "./pages/BillingPage";
 import AgencySettings from "./pages/AgencySettings";
-import OrgSwitcher from "./pages/OrgSwitcher";
 import StandaloneOrgRegistration from "./pages/StandaloneOrgRegistration";
+import OrgDashboard from "./pages/OrgDashboard";
+import OrgProfiles from "./pages/OrgProfiles";
+import OrgTeam from "./pages/OrgTeam";
+import OrgAnalytics from "./pages/OrgAnalytics";
+import OrgInbox from "./pages/OrgInbox";
+import OrgSettings from "./pages/OrgSettings";
+import OrgSwitcher from "./pages/OrgSwitcher";
 import OrgSelector from "./pages/OrgSelector";
 import NotFound from "./pages/NotFound";
 
@@ -33,10 +39,14 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/super-admin/login" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
+          {/* Auth */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register/agency" element={<AgencyRegistration />} />
+          <Route path="/register/organization" element={<StandaloneOrgRegistration />} />
 
           {/* Super Admin */}
-          <Route path="/super-admin/login" element={<SuperAdminLogin />} />
           <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
           <Route path="/super-admin/agencies" element={<AgenciesPage />} />
           <Route path="/super-admin/organizations" element={<SuperAdminOrganizations />} />
@@ -45,10 +55,6 @@ const App = () => (
           <Route path="/super-admin/audit-log" element={<AuditLogPage />} />
           <Route path="/super-admin/permissions" element={<PermissionsConfig />} />
 
-          {/* Registration flows */}
-          <Route path="/register/agency" element={<AgencyRegistration />} />
-          <Route path="/register/organization" element={<StandaloneOrgRegistration />} />
-
           {/* Agency */}
           <Route path="/agency/dashboard" element={<AgencyDashboard />} />
           <Route path="/agency/organizations" element={<OrganizationsPage />} />
@@ -56,6 +62,14 @@ const App = () => (
           <Route path="/agency/team" element={<TeamMembersPage />} />
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
+
+          {/* Organization */}
+          <Route path="/org/dashboard" element={<OrgDashboard />} />
+          <Route path="/org/profiles" element={<OrgProfiles />} />
+          <Route path="/org/team" element={<OrgTeam />} />
+          <Route path="/org/analytics" element={<OrgAnalytics />} />
+          <Route path="/org/inbox" element={<OrgInbox />} />
+          <Route path="/org/settings" element={<OrgSettings />} />
 
           {/* Transition screens */}
           <Route path="/switch-org" element={<OrgSwitcher />} />
