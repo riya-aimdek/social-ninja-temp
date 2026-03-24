@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import SuperAdminOrganizations from "./pages/SuperAdminOrganizations";
+import SuperAdminUsers from "./pages/SuperAdminUsers";
+import SuperAdminBilling from "./pages/SuperAdminBilling";
 import AgenciesPage from "./pages/AgenciesPage";
 import AuditLogPage from "./pages/AuditLogPage";
 import PermissionsConfig from "./pages/PermissionsConfig";
