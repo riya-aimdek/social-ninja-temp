@@ -1,8 +1,8 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText, Shield,
-  Bell, Menu, ChevronLeft,
+  Bell,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
@@ -23,48 +23,39 @@ interface SuperAdminLayoutProps {
 
 const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="flex min-h-screen w-full">
       {/* Sidebar */}
-      <aside className={`${collapsed ? 'w-16' : 'w-[180px]'} shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-200`}>
-        <div className={`p-4 border-b border-sidebar-border/50 ${collapsed ? 'flex justify-center' : ''}`}>
-          {collapsed ? (
-            <span className="text-primary font-bold text-lg">N</span>
-          ) : (
-            <SocialNinjaLogo size="sm" darkBg />
-          )}
+      <aside className="w-[200px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
+        <div className="p-4 border-b border-sidebar-border/50">
+          <SocialNinjaLogo size="sm" darkBg />
         </div>
 
-        <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-3'} py-3 space-y-1`}>
+        <nav className="flex-1 px-3 py-3 space-y-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`nav-item ${isActive ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
-                title={collapsed ? item.title : undefined}
+                className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>{item.title}</span>}
+                <span>{item.title}</span>
               </Link>
             );
           })}
         </nav>
 
-
         {/* User */}
-        <div className={`${collapsed ? 'px-2' : 'px-3'} py-3 border-t border-sidebar-border/50`}>
-          <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+        <div className="px-3 py-3 border-t border-sidebar-border/50">
+          <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold shrink-0">SA</div>
-            {!collapsed && (
-              <div>
-                <p className="text-sm font-semibold text-white">John Doe</p>
-                <p className="text-[11px] text-sidebar-foreground">Super Admin</p>
-              </div>
-            )}
+            <div>
+              <p className="text-sm font-semibold text-white">John Doe</p>
+              <p className="text-[11px] text-sidebar-foreground">Super Admin</p>
+            </div>
           </div>
         </div>
       </aside>
@@ -72,16 +63,10 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setCollapsed(!collapsed)} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
-              {collapsed ? <Menu className="h-4 w-4 text-text-secondary" /> : <ChevronLeft className="h-4 w-4 text-text-secondary" />}
-            </button>
-            <h1 className="text-base font-semibold text-foreground">{title}</h1>
-          </div>
-
+          <h1 className="text-base font-semibold text-foreground">{title}</h1>
           <div className="flex items-center gap-3">
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
-              <Bell className="h-4 w-4 text-text-secondary" />
+              <Bell className="h-4 w-4 text-muted-foreground" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
             </button>
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold">SA</div>
