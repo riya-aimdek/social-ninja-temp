@@ -13,7 +13,7 @@ const navItems = [
   { title: "Users", path: "/super-admin/users", icon: Users },
   { title: "Billing & Plans", path: "/super-admin/billing", icon: CreditCard },
   { title: "Audit Log", path: "/super-admin/audit-log", icon: ScrollText },
-  { title: "Permissions", path: "/super-admin/permissions", icon: Shield },
+  
 ];
 
 interface SuperAdminLayoutProps {
