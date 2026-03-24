@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
-  LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText, Shield, Settings,
+  LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText, Shield,
   Bell, Menu, ChevronLeft,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
@@ -54,17 +54,6 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
           })}
         </nav>
 
-        {/* Settings - regular nav item */}
-        <div className={`${collapsed ? 'px-2' : 'px-3'} pb-2 border-t border-sidebar-border/50 pt-2`}>
-          <Link
-            to="/super-admin/settings"
-            className={`nav-item ${location.pathname === '/super-admin/settings' ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
-            title={collapsed ? 'Settings' : undefined}
-          >
-            <Settings className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Settings</span>}
-          </Link>
-        </div>
 
         {/* User */}
         <div className={`${collapsed ? 'px-2' : 'px-3'} py-3 border-t border-sidebar-border/50`}>
