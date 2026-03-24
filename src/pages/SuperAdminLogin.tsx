@@ -17,10 +17,10 @@ const SuperAdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="w-[440px] bg-card border border-border rounded-2xl p-10">
+      <div className="w-[440px] bg-card border border-border rounded-2xl p-10 shadow-sm">
         <div className="flex flex-col items-center mb-8">
           <SocialNinjaLogo size="lg" />
-          <span className="mt-3 text-[11px] text-super-admin border border-super-admin rounded-full px-3 py-1 bg-elevated">
+          <span className="mt-3 text-[11px] text-super-admin border border-super-admin/30 rounded-full px-3 py-1 bg-super-admin/10">
             Super Admin Portal
           </span>
         </div>
