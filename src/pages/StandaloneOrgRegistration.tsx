@@ -47,7 +47,7 @@ const StandaloneOrgRegistration = () => {
             <button onClick={() => setStep(1)} className="w-full text-sm text-text-secondary hover:text-foreground text-center mt-2">Back</button>
           </div>
         )}
-        <p className="text-sm text-text-secondary text-center mt-6">Already have an account? <a href="#" className="text-primary hover:underline">Login</a></p>
+        <p className="text-sm text-muted-foreground text-center mt-6">Already have an account? <Link to="/login" className="text-primary hover:underline">Login</Link></p>
       </div>
     </div>
   );
