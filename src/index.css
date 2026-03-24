@@ -6,67 +6,63 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 240 10% 10%;
+    --background: 220 20% 96%;
+    --foreground: 222 35% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --card-foreground: 222 35% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover-foreground: 222 35% 12%;
 
     --primary: 358 98% 68%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 358 74% 59%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 240 10% 10%;
+    --secondary: 220 14% 95%;
+    --secondary-foreground: 222 35% 12%;
 
-    --muted: 210 15% 95%;
-    --muted-foreground: 215 10% 45%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 46%;
 
-    --accent: 210 20% 96%;
-    --accent-foreground: 240 10% 10%;
+    --accent: 220 14% 95%;
+    --accent-foreground: 222 35% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --border-hover: 220 10% 82%;
+    --border: 220 13% 88%;
+    --border-hover: 220 10% 80%;
     --input: 0 0% 100%;
     --ring: 358 98% 68%;
 
     --radius: 0.5rem;
 
-    /* Role colors */
     --super-admin: 245 52% 67%;
     --agency: 160 68% 37%;
     --organization: 17 66% 52%;
     --user-role: 217 91% 60%;
 
-    /* Status colors */
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
     --error: 0 84% 60%;
     --info: 217 91% 60%;
 
-    /* Surface levels */
     --surface: 0 0% 100%;
     --elevated: 0 0% 100%;
 
-    /* Text levels */
-    --text-primary: 240 10% 10%;
-    --text-secondary: 215 10% 45%;
-    --text-muted: 215 8% 65%;
+    --text-primary: 222 35% 12%;
+    --text-secondary: 220 10% 44%;
+    --text-muted: 220 9% 62%;
 
-    /* Sidebar - white like SocialNinja */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 10% 45%;
+    /* Sidebar matching SocialNinja screenshot */
+    --sidebar-background: 232 20% 11%;
+    --sidebar-foreground: 220 14% 78%;
     --sidebar-primary: 358 98% 68%;
-    --sidebar-primary-foreground: 358 98% 68%;
-    --sidebar-accent: 358 98% 97%;
-    --sidebar-accent-foreground: 358 98% 68%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 232 16% 17%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 232 14% 20%;
     --sidebar-ring: 358 98% 68%;
   }
 }
@@ -93,10 +89,10 @@
     @apply bg-error/10 text-error text-xs font-medium px-2.5 py-0.5 rounded-full;
   }
   .nav-item {
-    @apply h-10 px-4 flex items-center gap-3 text-sm rounded-lg transition-colors cursor-pointer text-sidebar-foreground;
+    @apply h-10 px-4 flex items-center gap-3 text-sm rounded-2xl transition-colors cursor-pointer text-sidebar-foreground;
   }
   .nav-item:hover {
-    @apply text-primary bg-sidebar-accent;
+    @apply text-sidebar-accent-foreground bg-sidebar-accent;
   }
   .nav-item-active {
     @apply text-primary bg-sidebar-accent font-medium;
