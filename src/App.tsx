@@ -39,9 +39,11 @@ const App = () => (
           <Route path="/super-admin/login" element={<SuperAdminLogin />} />
           <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
           <Route path="/super-admin/agencies" element={<AgenciesPage />} />
+          <Route path="/super-admin/organizations" element={<SuperAdminOrganizations />} />
+          <Route path="/super-admin/users" element={<SuperAdminUsers />} />
+          <Route path="/super-admin/billing" element={<SuperAdminBilling />} />
           <Route path="/super-admin/audit-log" element={<AuditLogPage />} />
           <Route path="/super-admin/permissions" element={<PermissionsConfig />} />
-          <Route path="/super-admin/settings" element={<PermissionsConfig />} />
 
           {/* Registration flows */}
           <Route path="/register/agency" element={<AgencyRegistration />} />

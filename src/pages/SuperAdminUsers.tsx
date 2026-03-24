@@ -6,14 +6,14 @@ import { Search, MoreHorizontal, Users } from "lucide-react";
 import { useState } from "react";
 
 const users = [
-  { name: "John Doe", email: "john@digitalspark.com", role: "super_admin" as const, agency: "—", status: "active" as const },
-  { name: "Sarah Chen", email: "sarah@digitalspark.com", role: "agency_admin" as const, agency: "Digital Spark Agency", status: "active" as const },
-  { name: "Mike Rivera", email: "mike@creativeflow.com", role: "agency_admin" as const, agency: "CreativeFlow Media", status: "active" as const },
-  { name: "Priya Sharma", email: "priya@retailco.com", role: "org_admin" as const, agency: "Digital Spark Agency", status: "active" as const },
-  { name: "Alex Kim", email: "alex@fashionhub.com", role: "member" as const, agency: "Digital Spark Agency", status: "active" as const },
-  { name: "Jordan Lee", email: "jordan@localbites.com", role: "org_admin" as const, agency: "—", status: "active" as const },
-  { name: "Taylor Smith", email: "taylor@socialpulse.com", role: "agency_admin" as const, agency: "SocialPulse Inc", status: "suspended" as const },
-  { name: "Emma Wilson", email: "emma@fitnesspro.com", role: "member" as const, agency: "—", status: "pending" as const },
+  { name: "John Doe", email: "john@digitalspark.com", role: "super-admin" as const, agency: "—", status: "active" as const },
+  { name: "Sarah Chen", email: "sarah@digitalspark.com", role: "agency" as const, agency: "Digital Spark Agency", status: "active" as const },
+  { name: "Mike Rivera", email: "mike@creativeflow.com", role: "agency" as const, agency: "CreativeFlow Media", status: "active" as const },
+  { name: "Priya Sharma", email: "priya@retailco.com", role: "organization" as const, agency: "Digital Spark Agency", status: "active" as const },
+  { name: "Alex Kim", email: "alex@fashionhub.com", role: "user" as const, agency: "Digital Spark Agency", status: "active" as const },
+  { name: "Jordan Lee", email: "jordan@localbites.com", role: "organization" as const, agency: "—", status: "active" as const },
+  { name: "Taylor Smith", email: "taylor@socialpulse.com", role: "agency" as const, agency: "SocialPulse Inc", status: "suspended" as const },
+  { name: "Emma Wilson", email: "emma@fitnesspro.com", role: "user" as const, agency: "—", status: "pending" as const },
 ];
 
 const SuperAdminUsers = () => {
