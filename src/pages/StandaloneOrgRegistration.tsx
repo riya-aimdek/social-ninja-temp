@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Eye, EyeOff, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
