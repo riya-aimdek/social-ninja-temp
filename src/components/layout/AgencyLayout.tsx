@@ -1,8 +1,9 @@
-import { ReactNode, useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { ReactNode, useState, useRef, useEffect } from "react";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building, Users, CreditCard, Settings,
-  ChevronDown, ExternalLink, Bell, Search, Check,
+  ChevronDown, ExternalLink, Bell, Check, Monitor, UserPlus,
+  LogOut, Settings as SettingsIcon, Mail,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
@@ -28,11 +29,20 @@ interface AgencyLayoutProps {
 
 const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [selectedOrg, setSelectedOrg] = useState(mockOrgs[0]);
-  const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
-  const [orgSearch, setOrgSearch] = useState("");
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const switcherRef = useRef<HTMLDivElement>(null);
 
-  const filteredOrgs = mockOrgs.filter((o) => o.name.toLowerCase().includes(orgSearch.toLowerCase()));
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setSwitcherOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   return (
     <div className="flex min-h-screen w-full">
@@ -40,6 +50,90 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
       <aside className="w-[200px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
         <div className="p-4 border-b border-sidebar-border/50">
           <SocialNinjaLogo size="sm" darkBg />
+        </div>
+
+        {/* Org Switcher in sidebar */}
+        <div className="px-3 pt-3 relative" ref={switcherRef}>
+          <button
+            onClick={() => setSwitcherOpen(!switcherOpen)}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors"
+          >
+            <div className={`w-7 h-7 rounded-full ${selectedOrg.color} flex items-center justify-center text-[10px] font-bold text-white shrink-0`}>
+              {selectedOrg.initials}
+            </div>
+            <span className="text-[13px] font-semibold text-white truncate flex-1 text-left">{selectedOrg.name}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground shrink-0" />
+          </button>
+
+          {switcherOpen && (
+            <div className="absolute left-3 right-3 top-full mt-1 w-[280px] bg-card border border-border rounded-xl shadow-lg z-50">
+              {/* Current org header */}
+              <div className="p-3 border-b border-border">
+                <p className="text-sm font-semibold text-foreground">{selectedOrg.name}</p>
+                <p className="text-[11px] text-muted-foreground">Admin · Pro Plan</p>
+              </div>
+
+              {/* Quick links */}
+              <div className="py-1 border-b border-border">
+                <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
+                  <Monitor className="h-4 w-4 text-muted-foreground" />
+                  <span>App usage</span>
+                  <span className="ml-auto text-xs text-muted-foreground">22 of 50 profiles</span>
+                </button>
+                <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
+                  <UserPlus className="h-4 w-4 text-muted-foreground" />
+                  <span>Invite team members</span>
+                </button>
+              </div>
+
+              {/* Org list */}
+              <div className="py-1 border-b border-border max-h-48 overflow-auto">
+                {mockOrgs.map(org => (
+                  <button
+                    key={org.id}
+                    onClick={() => { setSelectedOrg(org); setSwitcherOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                  >
+                    {selectedOrg.id === org.id ? (
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                    ) : (
+                      <span className="w-4" />
+                    )}
+                    <span className={`text-foreground ${selectedOrg.id === org.id ? 'font-medium' : ''}`}>{org.name}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Bottom section */}
+              <div className="py-1 border-b border-border">
+                <Link to="/agency/billing" onClick={() => setSwitcherOpen(false)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <span>Billing</span>
+                </Link>
+              </div>
+
+              <div className="p-3 border-b border-border">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">JD</div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">john@agency.com</p>
+                    <p className="text-[11px] text-muted-foreground">Admin</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="py-1">
+                <Link to="/agency/settings" onClick={() => setSwitcherOpen(false)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
+                  <SettingsIcon className="h-4 w-4 text-muted-foreground" />
+                  <span>Manage account</span>
+                </Link>
+                <button onClick={() => { setSwitcherOpen(false); navigate("/login"); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
+                  <LogOut className="h-4 w-4 text-muted-foreground" />
+                  <span>Log out</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 px-3 py-3 space-y-1">
@@ -78,52 +172,6 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Org Switcher */}
-            <div className="relative">
-              <button
-                onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-                className="flex items-center gap-2 h-9 px-3 border border-border rounded-lg hover:border-primary transition-colors bg-card"
-              >
-                <span className="text-sm font-medium text-foreground">{selectedOrg.name}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-
-              {orgDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 w-72 bg-card border border-border rounded-xl p-2 z-50 shadow-lg">
-                  <div className="p-2">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                      <input className="input-dark h-8 pl-8 text-xs" placeholder="Search organizations..." value={orgSearch} onChange={(e) => setOrgSearch(e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="max-h-80 overflow-auto space-y-0.5">
-                    {filteredOrgs.map((org) => (
-                      <button
-                        key={org.id}
-                        onClick={() => { setSelectedOrg(org); setOrgDropdownOpen(false); setOrgSearch(""); }}
-                        className={`w-full flex items-center gap-3 h-10 px-2 rounded-lg transition-colors ${selectedOrg.id === org.id ? "bg-primary/10" : "hover:bg-muted"}`}
-                      >
-                        <div className={`w-7 h-7 rounded-full ${org.color} flex items-center justify-center text-[10px] font-bold text-white`}>{org.initials}</div>
-                        <div className="flex-1 text-left">
-                          <div className="text-[13px] font-medium text-foreground">{org.name}</div>
-                          <div className="flex items-center gap-1.5">
-                            <div className={`w-1.5 h-1.5 rounded-full ${org.active ? "bg-green-500" : "bg-gray-400"}`} />
-                            <span className="text-[11px] text-muted-foreground">{org.industry}</span>
-                          </div>
-                        </div>
-                        {selectedOrg.id === org.id && <Check className="h-4 w-4 text-primary" />}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="border-t border-border mt-2 pt-2">
-                    <Link to="/agency/organizations" onClick={() => setOrgDropdownOpen(false)} className="flex items-center gap-2 px-2 py-1.5 text-sm text-primary hover:bg-muted rounded-lg">
-                      + Add Organization
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
             <a href={`https://social-ninja.lovable.app?org=${selectedOrg.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 h-9 px-3 border border-border rounded-lg text-sm text-foreground hover:bg-muted transition-colors">
               Open in SocialNinja <ExternalLink className="h-3.5 w-3.5" />
             </a>
