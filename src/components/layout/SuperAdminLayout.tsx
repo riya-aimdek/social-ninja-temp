@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
-  LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText, Shield, Settings,
+  LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText, Shield,
   Bell, Menu, ChevronLeft,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
