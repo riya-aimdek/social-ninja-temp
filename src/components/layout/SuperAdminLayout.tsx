@@ -25,10 +25,10 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Sidebar */}
-      <aside className="w-60 shrink-0 border-r border-border bg-background flex flex-col">
-        <div className="p-5 border-b border-border">
-          <SocialNinjaLogo badge="Super Admin" badgeColor="text-super-admin" />
+      {/* Sidebar - dark */}
+      <aside className="w-60 shrink-0 bg-sidebar flex flex-col">
+        <div className="p-5 border-b border-sidebar-border">
+          <SocialNinjaLogo badge="Super Admin" badgeColor="text-super-admin" darkBg />
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {navItems.map((item) => {
@@ -50,12 +50,12 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-14 shrink-0 border-b border-border bg-background flex items-center justify-between px-6">
+        <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
           <h1 className="text-base font-semibold text-foreground">{title}</h1>
           <div className="flex items-center gap-3">
             <span className="text-sm text-text-secondary">Admin User</span>
             <RoleBadge role="super-admin" />
-            <div className="w-8 h-8 rounded-full bg-super-admin/20 flex items-center justify-center text-super-admin text-xs font-semibold">SA</div>
+            <div className="w-8 h-8 rounded-full bg-super-admin/15 flex items-center justify-center text-super-admin text-xs font-semibold">SA</div>
           </div>
         </header>
         <main className="flex-1 p-6 overflow-auto">

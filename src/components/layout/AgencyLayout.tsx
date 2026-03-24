@@ -2,7 +2,6 @@ import { ReactNode, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { LayoutDashboard, Building, Users, CreditCard, Settings, ChevronDown, ExternalLink, Bell, Search, Check } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
-import RoleBadge from "@/components/RoleBadge";
 
 const navItems = [
   { title: "Dashboard", path: "/agency/dashboard", icon: LayoutDashboard },
@@ -34,10 +33,10 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Sidebar */}
-      <aside className="w-60 shrink-0 border-r border-border bg-background flex flex-col">
-        <div className="p-5 border-b border-border">
-          <SocialNinjaLogo badge="Agency" badgeColor="text-agency" />
+      {/* Sidebar - dark */}
+      <aside className="w-60 shrink-0 bg-sidebar flex flex-col">
+        <div className="p-5 border-b border-sidebar-border">
+          <SocialNinjaLogo badge="Agency" badgeColor="text-agency" darkBg />
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {navItems.map((item) => {
@@ -59,22 +58,22 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-14 shrink-0 border-b border-border bg-background flex items-center justify-between px-6">
+        <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
             {/* Org Switcher */}
             <div className="relative">
               <button
                 onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-                className="flex items-center gap-2 h-9 px-3 bg-card border border-border-hover rounded-lg hover:border-primary transition-colors"
+                className="flex items-center gap-2 h-9 px-3 bg-background border border-border rounded-lg hover:border-primary transition-colors"
               >
-                <div className={`w-6 h-6 rounded-full ${selectedOrg.color} flex items-center justify-center text-[10px] font-bold text-foreground`}>
+                <div className={`w-6 h-6 rounded-full ${selectedOrg.color} flex items-center justify-center text-[10px] font-bold text-white`}>
                   {selectedOrg.initials}
                 </div>
                 <span className="text-sm font-semibold text-foreground">{selectedOrg.name}</span>
                 <ChevronDown className="h-3.5 w-3.5 text-text-secondary" />
               </button>
               {orgDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-72 bg-elevated border border-border-hover rounded-xl p-2 z-50 shadow-xl">
+                <div className="absolute top-full left-0 mt-2 w-72 bg-card border border-border rounded-xl p-2 z-50 shadow-lg">
                   <div className="p-2">
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />
@@ -91,9 +90,9 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
                       <button
                         key={org.id}
                         onClick={() => { setSelectedOrg(org); setOrgDropdownOpen(false); setOrgSearch(''); }}
-                        className={`w-full flex items-center gap-3 h-10 px-2 rounded-lg transition-colors ${selectedOrg.id === org.id ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-border'}`}
+                        className={`w-full flex items-center gap-3 h-10 px-2 rounded-lg transition-colors ${selectedOrg.id === org.id ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-muted'}`}
                       >
-                        <div className={`w-7 h-7 rounded-full ${org.color} flex items-center justify-center text-[10px] font-bold text-foreground`}>
+                        <div className={`w-7 h-7 rounded-full ${org.color} flex items-center justify-center text-[10px] font-bold text-white`}>
                           {org.initials}
                         </div>
                         <div className="flex-1 text-left">
@@ -108,7 +107,7 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
                     ))}
                   </div>
                   <div className="border-t border-border mt-2 pt-2">
-                    <Link to="/agency/organizations" onClick={() => setOrgDropdownOpen(false)} className="flex items-center gap-2 px-2 py-1.5 text-sm text-primary hover:bg-elevated rounded-lg">
+                    <Link to="/agency/organizations" onClick={() => setOrgDropdownOpen(false)} className="flex items-center gap-2 px-2 py-1.5 text-sm text-primary hover:bg-muted rounded-lg">
                       + Add Organization
                     </Link>
                   </div>
@@ -123,18 +122,18 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
               href={`https://social-ninja.lovable.app?org=${selectedOrg.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 h-9 px-3 border border-border-hover rounded-lg text-sm text-foreground hover:bg-elevated transition-colors"
+              className="flex items-center gap-2 h-9 px-3 border border-border rounded-lg text-sm text-foreground hover:bg-muted transition-colors"
             >
               Open {selectedOrg.name} in SocialNinja
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
-            <button className="relative p-2 hover:bg-elevated rounded-lg transition-colors">
+            <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
               <Bell className="h-4 w-4 text-text-secondary" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
             </button>
             <div className="flex items-center gap-2">
               <span className="text-sm text-text-secondary">Agency Admin</span>
-              <div className="w-8 h-8 rounded-full bg-agency/20 flex items-center justify-center text-agency text-xs font-semibold">AA</div>
+              <div className="w-8 h-8 rounded-full bg-agency/15 flex items-center justify-center text-agency text-xs font-semibold">AA</div>
             </div>
           </div>
         </header>

@@ -6,34 +6,34 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 100%;
+    --background: 210 20% 98%;
+    --foreground: 240 10% 10%;
 
-    --card: 0 0% 6.7%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
 
-    --popover: 0 0% 10.2%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
 
     --primary: 358 98% 68%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 358 74% 59%;
 
-    --secondary: 0 0% 0%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 240 10% 10%;
 
-    --muted: 0 0% 10.2%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 210 15% 95%;
+    --muted-foreground: 215 10% 45%;
 
-    --accent: 0 0% 10.2%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 20% 96%;
+    --accent-foreground: 240 10% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 13.3%;
-    --border-hover: 0 0% 20%;
-    --input: 0 0% 6.7%;
+    --border: 220 13% 91%;
+    --border-hover: 220 10% 82%;
+    --input: 0 0% 100%;
     --ring: 358 98% 68%;
 
     --radius: 0.5rem;
@@ -51,22 +51,22 @@
     --info: 217 91% 60%;
 
     /* Surface levels */
-    --surface: 0 0% 6.7%;
-    --elevated: 0 0% 10.2%;
+    --surface: 0 0% 100%;
+    --elevated: 0 0% 100%;
 
     /* Text levels */
-    --text-primary: 0 0% 100%;
-    --text-secondary: 0 0% 66.7%;
-    --text-muted: 0 0% 40%;
+    --text-primary: 240 10% 10%;
+    --text-secondary: 215 10% 45%;
+    --text-muted: 215 8% 65%;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 4%;
-    --sidebar-foreground: 0 0% 66.7%;
+    /* Sidebar - dark like SocialNinja */
+    --sidebar-background: 240 15% 13%;
+    --sidebar-foreground: 220 10% 75%;
     --sidebar-primary: 358 98% 68%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 10.2%;
+    --sidebar-accent: 240 12% 18%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 13.3%;
+    --sidebar-border: 240 10% 20%;
     --sidebar-ring: 358 98% 68%;
   }
 }
@@ -84,28 +84,28 @@
 
 @layer components {
   .status-active {
-    @apply bg-success/15 text-success text-xs font-medium px-2.5 py-0.5 rounded-full;
+    @apply bg-success/10 text-success text-xs font-medium px-2.5 py-0.5 rounded-full;
   }
   .status-pending {
-    @apply bg-warning/15 text-warning text-xs font-medium px-2.5 py-0.5 rounded-full;
+    @apply bg-warning/10 text-warning text-xs font-medium px-2.5 py-0.5 rounded-full;
   }
   .status-suspended {
-    @apply bg-error/15 text-error text-xs font-medium px-2.5 py-0.5 rounded-full;
+    @apply bg-error/10 text-error text-xs font-medium px-2.5 py-0.5 rounded-full;
   }
   .nav-item {
-    @apply h-10 px-4 flex items-center gap-3 text-sm text-text-secondary rounded-md transition-colors cursor-pointer;
+    @apply h-10 px-4 flex items-center gap-3 text-sm rounded-md transition-colors cursor-pointer text-sidebar-foreground;
   }
   .nav-item:hover {
-    @apply text-foreground bg-elevated;
+    @apply text-sidebar-accent-foreground bg-sidebar-accent;
   }
   .nav-item-active {
-    @apply text-foreground bg-elevated border-l-2;
+    @apply text-sidebar-accent-foreground bg-sidebar-accent border-l-2;
   }
   .card-surface {
-    @apply bg-card border border-border rounded-xl p-6;
+    @apply bg-card border border-border rounded-xl p-6 shadow-sm;
   }
   .input-dark {
-    @apply bg-input border border-border rounded-lg h-10 px-3 text-foreground placeholder:text-text-muted focus:border-primary focus:outline-none transition-colors w-full text-sm;
+    @apply bg-input border border-border rounded-lg h-10 px-3 text-foreground placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 transition-colors w-full text-sm;
   }
 }
 
