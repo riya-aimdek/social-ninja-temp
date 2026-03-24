@@ -1,16 +1,8 @@
 import { ReactNode, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Building,
-  Users,
-  CreditCard,
-  ChevronDown,
-  ExternalLink,
-  Bell,
-  Search,
-  Check,
-  Settings,
+  LayoutDashboard, Building, Users, CreditCard, Settings,
+  ChevronDown, ExternalLink, Bell, Search, Check, Menu, ChevronLeft,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
@@ -35,6 +27,7 @@ interface AgencyLayoutProps {
 
 const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState(mockOrgs[0]);
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
@@ -43,49 +36,69 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
 
   return (
     <div className="flex min-h-screen w-full">
-      <aside className="w-[300px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
-        <div className="p-5 border-b border-sidebar-border/50">
-          <SocialNinjaLogo badge="Agency" badgeColor="text-agency" darkBg />
+      {/* Sidebar */}
+      <aside className={`${collapsed ? 'w-16' : 'w-[180px]'} shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-200`}>
+        <div className={`p-4 border-b border-sidebar-border/50 ${collapsed ? 'flex justify-center' : ''}`}>
+          {collapsed ? (
+            <span className="text-primary font-bold text-lg">N</span>
+          ) : (
+            <SocialNinjaLogo size="sm" darkBg />
+          )}
         </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-1.5">
+        <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-3'} py-3 space-y-1`}>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link key={item.path} to={item.path} className={`nav-item ${isActive ? "nav-item-active" : ""}`}>
-                <item.icon className="h-4 w-4" />
-                <span>{item.title}</span>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`nav-item ${isActive ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
+                title={collapsed ? item.title : undefined}
+              >
+                <item.icon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>{item.title}</span>}
               </Link>
             );
           })}
         </nav>
 
-        <div className="px-4 pb-3 border-t border-sidebar-border/50 pt-3">
-          <Link to="/agency/settings" className="nav-item w-full justify-between">
-            <span className="flex items-center gap-3">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </span>
-            <ChevronDown className="h-4 w-4 opacity-70" />
+        <div className={`${collapsed ? 'px-2' : 'px-3'} pb-2 border-t border-sidebar-border/50 pt-2`}>
+          <Link
+            to="/agency/settings"
+            className={`nav-item ${location.pathname === '/agency/settings' ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
+            title={collapsed ? 'Settings' : undefined}
+          >
+            <Settings className="h-4 w-4 shrink-0" />
+            {!collapsed && <span>Settings</span>}
           </Link>
         </div>
 
-        <div className="px-4 py-4 border-t border-sidebar-border/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-semibold">AA</div>
-            <div>
-              <p className="text-sm font-semibold text-white">John Doe</p>
-              <p className="text-xs text-sidebar-foreground">Pro Plan</p>
-            </div>
+        <div className={`${collapsed ? 'px-2' : 'px-3'} py-3 border-t border-sidebar-border/50`}>
+          <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold shrink-0">JD</div>
+            {!collapsed && (
+              <div>
+                <p className="text-sm font-semibold text-white">John Doe</p>
+                <p className="text-[11px] text-sidebar-foreground">Pro Plan</p>
+              </div>
+            )}
           </div>
         </div>
       </aside>
 
+      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <div className="flex items-center gap-4">{title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}</div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setCollapsed(!collapsed)} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+              {collapsed ? <Menu className="h-4 w-4 text-text-secondary" /> : <ChevronLeft className="h-4 w-4 text-text-secondary" />}
+            </button>
+            {title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}
+          </div>
 
           <div className="flex items-center gap-3">
+            {/* Org Switcher */}
             <div className="relative">
               <button
                 onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
@@ -100,29 +113,17 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
                   <div className="p-2">
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />
-                      <input
-                        className="input-dark h-8 pl-8 text-xs"
-                        placeholder="Search organizations..."
-                        value={orgSearch}
-                        onChange={(e) => setOrgSearch(e.target.value)}
-                      />
+                      <input className="input-dark h-8 pl-8 text-xs" placeholder="Search organizations..." value={orgSearch} onChange={(e) => setOrgSearch(e.target.value)} />
                     </div>
                   </div>
-
                   <div className="max-h-80 overflow-auto space-y-0.5">
                     {filteredOrgs.map((org) => (
                       <button
                         key={org.id}
-                        onClick={() => {
-                          setSelectedOrg(org);
-                          setOrgDropdownOpen(false);
-                          setOrgSearch("");
-                        }}
+                        onClick={() => { setSelectedOrg(org); setOrgDropdownOpen(false); setOrgSearch(""); }}
                         className={`w-full flex items-center gap-3 h-10 px-2 rounded-lg transition-colors ${selectedOrg.id === org.id ? "bg-primary/10" : "hover:bg-muted"}`}
                       >
-                        <div className={`w-7 h-7 rounded-full ${org.color} flex items-center justify-center text-[10px] font-bold text-white`}>
-                          {org.initials}
-                        </div>
+                        <div className={`w-7 h-7 rounded-full ${org.color} flex items-center justify-center text-[10px] font-bold text-white`}>{org.initials}</div>
                         <div className="flex-1 text-left">
                           <div className="text-[13px] font-medium text-foreground">{org.name}</div>
                           <div className="flex items-center gap-1.5">
@@ -134,7 +135,6 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
                       </button>
                     ))}
                   </div>
-
                   <div className="border-t border-border mt-2 pt-2">
                     <Link to="/agency/organizations" onClick={() => setOrgDropdownOpen(false)} className="flex items-center gap-2 px-2 py-1.5 text-sm text-primary hover:bg-muted rounded-lg">
                       + Add Organization
@@ -144,14 +144,8 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
               )}
             </div>
 
-            <a
-              href={`https://social-ninja.lovable.app?org=${selectedOrg.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 h-9 px-3 border border-border rounded-lg text-sm text-foreground hover:bg-muted transition-colors"
-            >
-              Open in SocialNinja
-              <ExternalLink className="h-3.5 w-3.5" />
+            <a href={`https://social-ninja.lovable.app?org=${selectedOrg.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 h-9 px-3 border border-border rounded-lg text-sm text-foreground hover:bg-muted transition-colors">
+              Open in SocialNinja <ExternalLink className="h-3.5 w-3.5" />
             </a>
 
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
@@ -159,7 +153,7 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
               <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
             </button>
 
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold">AA</div>
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold">JD</div>
           </div>
         </header>
 
