@@ -11,7 +11,7 @@ import SuperAdminUsers from "./pages/SuperAdminUsers";
 import SuperAdminBilling from "./pages/SuperAdminBilling";
 import AgenciesPage from "./pages/AgenciesPage";
 import AuditLogPage from "./pages/AuditLogPage";
-import PermissionsConfig from "./pages/PermissionsConfig";
+
 import AgencyRegistration from "./pages/AgencyRegistration";
 import AgencyDashboard from "./pages/AgencyDashboard";
 import OrganizationsPage from "./pages/OrganizationsPage";
@@ -53,7 +53,7 @@ const App = () => (
           <Route path="/super-admin/users" element={<SuperAdminUsers />} />
           <Route path="/super-admin/billing" element={<SuperAdminBilling />} />
           <Route path="/super-admin/audit-log" element={<AuditLogPage />} />
-          <Route path="/super-admin/permissions" element={<PermissionsConfig />} />
+          
 
           {/* Agency */}
           <Route path="/agency/dashboard" element={<AgencyDashboard />} />

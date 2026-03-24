@@ -1,7 +1,7 @@
 import { useState } from "react";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, AlertTriangle } from "lucide-react";
 
 const settingsTabs = ['General', 'Notifications', 'Security', 'Danger Zone'];
 
@@ -30,6 +30,9 @@ const AgencySettings = () => {
   const [orgToggles, setOrgToggles] = useState<Record<string, { email: boolean; inApp: boolean }>>(
     Object.fromEntries(orgNotifications.map(n => [n, { email: false, inApp: true }]))
   );
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
   const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
     <button onClick={onChange} className={`w-9 h-5 rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-border'} relative`}>
@@ -41,7 +44,7 @@ const AgencySettings = () => {
     <AgencyLayout title="Settings">
       <div className="flex gap-0 border-b border-border mb-6">
         {settingsTabs.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2.5 text-sm transition-colors ${activeTab === tab ? 'text-foreground border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2.5 text-sm transition-colors ${activeTab === tab ? 'text-foreground border-b-2 border-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
             {tab}
           </button>
         ))}
@@ -50,27 +53,20 @@ const AgencySettings = () => {
       {activeTab === 'General' && (
         <div className="space-y-6 max-w-2xl">
           <div className="card-surface space-y-4">
-            <h3 className="text-base font-semibold text-foreground">Agency Details</h3>
+            <h3 className="text-base font-semibold text-foreground">Agency Profile</h3>
             <div className="flex items-start gap-6">
               <div className="w-20 h-20 border-2 border-dashed border-border rounded-xl flex items-center justify-center hover:border-primary cursor-pointer transition-colors">
                 <Upload className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="flex-1 space-y-4">
                 <div><label className="text-sm text-muted-foreground mb-1.5 block">Agency Name</label><input className="input-dark" defaultValue="Digital Spark Agency" /></div>
-                <div><label className="text-sm text-muted-foreground mb-1.5 block">Business Type</label>
+                <div><label className="text-sm text-muted-foreground mb-1.5 block">Industry</label>
                   <select className="input-dark"><option>Marketing Agency</option><option>Creative Agency</option><option>Digital Agency</option><option>PR Agency</option></select>
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-sm text-muted-foreground mb-1.5 block">Contact Email</label><input className="input-dark" defaultValue="hello@digitalspark.io" /></div>
-              <div><label className="text-sm text-muted-foreground mb-1.5 block">Phone Number</label><input className="input-dark" defaultValue="+1 (555) 000-1234" /></div>
-            </div>
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">Website</label><input className="input-dark" defaultValue="https://digitalspark.io" /></div>
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">Address</label><textarea className="input-dark h-16 py-2 resize-none" defaultValue="123 Marketing Ave, Suite 400, New York, NY 10001" /></div>
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">Timezone</label>
-              <select className="input-dark"><option>UTC-05:00 Eastern Time</option><option>UTC-06:00 Central Time</option><option>UTC-08:00 Pacific Time</option></select>
-            </div>
+            <div><label className="text-sm text-muted-foreground mb-1.5 block">Website URL</label><input className="input-dark" defaultValue="https://digitalspark.io" /></div>
+            <div><label className="text-sm text-muted-foreground mb-1.5 block">Notes</label><textarea className="input-dark h-20 py-2 resize-none" defaultValue="Leading digital marketing agency specializing in social media management." /></div>
             <div className="flex justify-end"><Button>Save Changes</Button></div>
           </div>
         </div>
@@ -80,51 +76,71 @@ const AgencySettings = () => {
         <div className="space-y-6 max-w-3xl">
           <div className="card-surface">
             <h3 className="text-base font-semibold text-foreground mb-4">Agency Notifications</h3>
-            <table className="w-full">
-              <thead><tr className="border-b border-border">
-                <th className="text-left text-xs text-muted-foreground font-medium pb-3 w-1/2">Notification</th>
-                <th className="text-center text-xs text-muted-foreground font-medium pb-3">Email</th>
-                <th className="text-center text-xs text-muted-foreground font-medium pb-3">In-App</th>
-              </tr></thead>
-              <tbody>
-                {agencyNotifications.map(n => (
-                  <tr key={n} className="border-b border-border last:border-0">
-                    <td className="py-3 text-sm text-foreground">{n}</td>
-                    <td className="py-3 text-center">
-                      <div className="flex justify-center"><Toggle checked={agencyToggles[n].email} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div>
-                    </td>
-                    <td className="py-3 text-center">
-                      <div className="flex justify-center"><Toggle checked={agencyToggles[n].inApp} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Desktop */}
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead><tr className="border-b border-border">
+                  <th className="text-left text-xs text-muted-foreground font-medium pb-3 w-1/2">Notification</th>
+                  <th className="text-center text-xs text-muted-foreground font-medium pb-3">Email</th>
+                  <th className="text-center text-xs text-muted-foreground font-medium pb-3">In-App</th>
+                </tr></thead>
+                <tbody>
+                  {agencyNotifications.map(n => (
+                    <tr key={n} className="border-b border-border last:border-0">
+                      <td className="py-3 text-sm text-foreground">{n}</td>
+                      <td className="py-3 text-center"><div className="flex justify-center"><Toggle checked={agencyToggles[n].email} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div></td>
+                      <td className="py-3 text-center"><div className="flex justify-center"><Toggle checked={agencyToggles[n].inApp} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile */}
+            <div className="md:hidden space-y-3">
+              {agencyNotifications.map(n => (
+                <div key={n} className="border border-border rounded-lg p-3">
+                  <p className="text-sm text-foreground mb-2">{n}</p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Email</span><Toggle checked={agencyToggles[n].email} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div>
+                    <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">In-App</span><Toggle checked={agencyToggles[n].inApp} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="card-surface">
             <h3 className="text-base font-semibold text-foreground mb-2">Org-Level Alerts</h3>
             <p className="text-sm text-muted-foreground mb-4">Receive alerts for activity within your organizations.</p>
-            <table className="w-full">
-              <thead><tr className="border-b border-border">
-                <th className="text-left text-xs text-muted-foreground font-medium pb-3 w-1/2">Notification</th>
-                <th className="text-center text-xs text-muted-foreground font-medium pb-3">Email</th>
-                <th className="text-center text-xs text-muted-foreground font-medium pb-3">In-App</th>
-              </tr></thead>
-              <tbody>
-                {orgNotifications.map(n => (
-                  <tr key={n} className="border-b border-border last:border-0">
-                    <td className="py-3 text-sm text-foreground">{n}</td>
-                    <td className="py-3 text-center">
-                      <div className="flex justify-center"><Toggle checked={orgToggles[n].email} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div>
-                    </td>
-                    <td className="py-3 text-center">
-                      <div className="flex justify-center"><Toggle checked={orgToggles[n].inApp} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead><tr className="border-b border-border">
+                  <th className="text-left text-xs text-muted-foreground font-medium pb-3 w-1/2">Notification</th>
+                  <th className="text-center text-xs text-muted-foreground font-medium pb-3">Email</th>
+                  <th className="text-center text-xs text-muted-foreground font-medium pb-3">In-App</th>
+                </tr></thead>
+                <tbody>
+                  {orgNotifications.map(n => (
+                    <tr key={n} className="border-b border-border last:border-0">
+                      <td className="py-3 text-sm text-foreground">{n}</td>
+                      <td className="py-3 text-center"><div className="flex justify-center"><Toggle checked={orgToggles[n].email} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div></td>
+                      <td className="py-3 text-center"><div className="flex justify-center"><Toggle checked={orgToggles[n].inApp} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="md:hidden space-y-3">
+              {orgNotifications.map(n => (
+                <div key={n} className="border border-border rounded-lg p-3">
+                  <p className="text-sm text-foreground mb-2">{n}</p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Email</span><Toggle checked={orgToggles[n].email} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div>
+                    <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">In-App</span><Toggle checked={orgToggles[n].inApp} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex justify-end"><Button>Save Preferences</Button></div>
@@ -173,50 +189,67 @@ const AgencySettings = () => {
                     <p className="text-xs text-muted-foreground">{s.location} · {s.time}</p>
                   </div>
                   {s.current ? (
-                    <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Current</span>
+                    <span className="text-xs text-success bg-success/10 px-2 py-0.5 rounded-full">Current</span>
                   ) : (
-                    <button className="text-xs text-red-500 hover:underline">Revoke</button>
+                    <button className="text-xs text-error hover:underline">Revoke</button>
                   )}
                 </div>
               ))}
-            </div>
-          </div>
-
-          <div className="card-surface space-y-4">
-            <h3 className="text-base font-semibold text-foreground">API Access</h3>
-            <p className="text-sm text-muted-foreground">Manage API keys for programmatic access to your agency data.</p>
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div>
-                <p className="text-sm font-mono text-foreground">sk_live_••••••••••••4f2a</p>
-                <p className="text-xs text-muted-foreground">Created Mar 1, 2026 · Last used 2 hrs ago</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">Regenerate</Button>
-                <Button variant="outline" size="sm" className="border-red-300 text-red-500 hover:bg-red-50">Revoke</Button>
-              </div>
             </div>
           </div>
         </div>
       )}
 
       {activeTab === 'Danger Zone' && (
-        <div className="card-surface border-red-200 max-w-2xl">
+        <div className="card-surface border-error/30 max-w-2xl">
           <h3 className="text-base font-semibold text-foreground mb-3">Danger Zone</h3>
           <p className="text-sm text-muted-foreground mb-4">Irreversible actions. Proceed with caution.</p>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 border border-amber-200 rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-warning/30 rounded-lg gap-3">
               <div>
-                <p className="text-sm font-medium text-foreground">Deactivate Agency</p>
-                <p className="text-xs text-muted-foreground">Temporarily disable all agency operations. Data preserved.</p>
+                <p className="text-sm font-medium text-foreground">Suspend Agency</p>
+                <p className="text-xs text-muted-foreground">Temporarily disable this agency and all its organizations.</p>
               </div>
-              <Button variant="outline" className="border-amber-500 text-amber-600 hover:bg-amber-50" size="sm">Deactivate</Button>
+              <Button variant="outline" className="border-warning text-warning hover:bg-warning/10 shrink-0" size="sm" onClick={() => setShowDeactivateConfirm(true)}>Suspend</Button>
             </div>
-            <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-error/30 rounded-lg gap-3">
               <div>
                 <p className="text-sm font-medium text-foreground">Delete Agency</p>
-                <p className="text-xs text-muted-foreground">Permanently delete agency and all associated data.</p>
+                <p className="text-xs text-muted-foreground">Permanently delete this agency, all organizations, and all data. This cannot be undone.</p>
               </div>
-              <Button variant="outline" className="border-red-500 text-red-600 hover:bg-red-50" size="sm">Delete</Button>
+              <Button variant="outline" className="border-error text-error hover:bg-error/10 shrink-0" size="sm" onClick={() => setShowDeleteConfirm(true)}>Delete</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modals */}
+      {(showDeactivateConfirm || showDeleteConfirm) && (
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => { setShowDeactivateConfirm(false); setShowDeleteConfirm(false); setConfirmText(""); }}>
+          <div className="w-[440px] bg-card border border-border rounded-2xl p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`p-2 rounded-full ${showDeleteConfirm ? 'bg-error/10' : 'bg-warning/10'}`}>
+                <AlertTriangle className={`h-5 w-5 ${showDeleteConfirm ? 'text-error' : 'text-warning'}`} />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">{showDeleteConfirm ? 'Delete Agency' : 'Suspend Agency'}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              {showDeleteConfirm
+                ? 'This will permanently delete your agency, all organizations, and all data. This action cannot be undone.'
+                : 'This will temporarily disable your agency and all its organizations. You can reactivate later.'}
+            </p>
+            <div className="mb-4">
+              <label className="text-sm text-muted-foreground mb-1.5 block">Type <strong>Digital Spark Agency</strong> to confirm</label>
+              <input className="input-dark" value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="Type agency name..." />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => { setShowDeactivateConfirm(false); setShowDeleteConfirm(false); setConfirmText(""); }}>Cancel</Button>
+              <Button
+                className={showDeleteConfirm ? 'bg-error hover:bg-error/90' : 'bg-warning hover:bg-warning/90'}
+                disabled={confirmText !== "Digital Spark Agency"}
+              >
+                {showDeleteConfirm ? 'Delete Permanently' : 'Suspend Agency'}
+              </Button>
             </div>
           </div>
         </div>

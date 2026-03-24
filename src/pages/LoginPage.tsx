@@ -100,7 +100,7 @@ const LoginPage = () => {
             Don't have an account?{" "}
             <Link to="/register/agency" className="text-primary hover:underline">Register as Agency</Link>
             {" "}or{" "}
-            <Link to="/register/organization" className="text-primary hover:underline">Register as Organization</Link>
+            <a href="https://social-ninja.lovable.app/" className="text-primary hover:underline">Register as Organization</a>
           </p>
           <a href="https://social-ninja.lovable.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors block">
             Back to main app

@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
-  LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText, Shield,
+  LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText,
   Bell,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
@@ -13,7 +13,7 @@ const navItems = [
   { title: "Users", path: "/super-admin/users", icon: Users },
   { title: "Billing & Plans", path: "/super-admin/billing", icon: CreditCard },
   { title: "Audit Log", path: "/super-admin/audit-log", icon: ScrollText },
-  { title: "Permissions", path: "/super-admin/permissions", icon: Shield },
+  
 ];
 
 interface SuperAdminLayoutProps {
