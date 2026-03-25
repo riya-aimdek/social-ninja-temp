@@ -54,7 +54,7 @@ const App = () => (
           <Route path="/super-admin/users" element={<SuperAdminUsers />} />
           <Route path="/super-admin/billing" element={<SuperAdminBilling />} />
           <Route path="/super-admin/audit-log" element={<AuditLogPage />} />
-          
+          <Route path="/super-admin/settings" element={<SuperAdminSettings />} />
 
           {/* Agency */}
           <Route path="/agency/dashboard" element={<AgencyDashboard />} />
