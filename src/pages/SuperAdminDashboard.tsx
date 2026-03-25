@@ -276,11 +276,9 @@ const SuperAdminDashboard = () => {
                   <td className="py-3"><StatusBadge status={o.status} /></td>
                   <td className="py-3 text-right">
                     <a href="#" className="text-xs text-primary hover:underline mr-3">View</a>
-                    {o.status === 'active' ? (
+                    {o.status === 'active' && (
                       <button className="text-xs text-muted-foreground hover:text-warning">Suspend</button>
-                    ) : o.status === 'suspended' ? (
-                      <button className="text-xs text-muted-foreground hover:text-success">Reactivate</button>
-                    ) : null}
+                    )}
                   </td>
                 </tr>
               ))}
