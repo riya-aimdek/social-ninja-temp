@@ -11,6 +11,7 @@ import SuperAdminUsers from "./pages/SuperAdminUsers";
 import SuperAdminBilling from "./pages/SuperAdminBilling";
 import AgenciesPage from "./pages/AgenciesPage";
 import AuditLogPage from "./pages/AuditLogPage";
+import SuperAdminSettings from "./pages/SuperAdminSettings";
 
 import AgencyRegistration from "./pages/AgencyRegistration";
 import AgencyDashboard from "./pages/AgencyDashboard";
