@@ -1,13 +1,14 @@
 import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
 import StatusBadge from "@/components/StatusBadge";
-import { Building2, Building, Users, CreditCard, MoreHorizontal, TrendingUp, ArrowUpRight, ArrowDownRight, Activity, Globe, ShieldCheck } from "lucide-react";
+import { Building2, Building, Users, CreditCard, TrendingUp, ArrowUpRight, ArrowDownRight, Activity, Globe, ShieldCheck } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { Progress } from "@/components/ui/progress";
 
 const stats = [
-  { label: "Total Agencies", value: "24", change: "+3", trend: "up", icon: Building2, color: "text-agency", bg: "bg-agency/10" },
-  { label: "Total Organizations", value: "156", change: "+12", trend: "up", icon: Building, color: "text-organization", bg: "bg-organization/10" },
-  { label: "Total Users", value: "1,847", change: "+89", trend: "up", icon: Users, color: "text-user-role", bg: "bg-user-role/10" },
-  { label: "Active Subscriptions", value: "142", change: "-2", trend: "down", icon: CreditCard, color: "text-success", bg: "bg-success/10" },
+  { label: "Total Agencies", value: "24", change: "+3 this month", trend: "up", icon: Building2, color: "text-agency", bg: "bg-agency/10" },
+  { label: "Total Organizations", value: "156", change: "+12% vs last month", trend: "up", icon: Building, color: "text-organization", bg: "bg-organization/10" },
+  { label: "Total Users", value: "1,847", change: "+89 this month", trend: "up", icon: Users, color: "text-user-role", bg: "bg-user-role/10" },
+  { label: "Active Subscriptions", value: "142", change: "-2 this month", trend: "down", icon: CreditCard, color: "text-success", bg: "bg-success/10" },
 ];
 
 const revenueData = [
@@ -16,20 +17,20 @@ const revenueData = [
 ];
 
 const agencies = [
-  { name: "Digital Spark Agency", orgs: 12, users: 87, plan: "Enterprise", status: "active" as const, revenue: "$299/mo" },
-  { name: "CreativeFlow Media", orgs: 8, users: 45, plan: "Growth", status: "active" as const, revenue: "$99/mo" },
-  { name: "SocialPulse Inc", orgs: 3, users: 22, plan: "Starter", status: "suspended" as const, revenue: "$29/mo" },
-  { name: "BrandWave Digital", orgs: 15, users: 120, plan: "Enterprise", status: "active" as const, revenue: "$299/mo" },
-  { name: "PixelForge Studio", orgs: 5, users: 31, plan: "Growth", status: "active" as const, revenue: "$99/mo" },
+  { name: "Digital Spark Agency", orgs: 12, users: 87, plan: "Enterprise", status: "active" as const, revenue: "$299/mo", profilesUsed: 42, profilesMax: 50 },
+  { name: "CreativeFlow Media", orgs: 8, users: 45, plan: "Growth", status: "active" as const, revenue: "$99/mo", profilesUsed: 28, profilesMax: 50 },
+  { name: "SocialPulse Inc", orgs: 3, users: 22, plan: "Starter", status: "suspended" as const, revenue: "$29/mo", profilesUsed: 8, profilesMax: 10 },
+  { name: "BrandWave Digital", orgs: 15, users: 120, plan: "Enterprise", status: "active" as const, revenue: "$299/mo", profilesUsed: 47, profilesMax: 50 },
+  { name: "PixelForge Studio", orgs: 5, users: 31, plan: "Growth", status: "active" as const, revenue: "$99/mo", profilesUsed: 12, profilesMax: 50 },
 ];
 
 const activities = [
-  { time: "2 min ago", text: "Agency XYZ created org RetailCo", avatar: "AX", type: "create" },
-  { time: "15 min ago", text: "User Priya invited to SaaS Inc", avatar: "PI", type: "invite" },
-  { time: "1 hr ago", text: "DigitalSpark upgraded to Enterprise", avatar: "DS", type: "upgrade" },
-  { time: "3 hrs ago", text: "BrandWave added 3 social profiles", avatar: "BW", type: "update" },
-  { time: "5 hrs ago", text: "CreativeFlow suspended user John", avatar: "CF", type: "alert" },
-  { time: "8 hrs ago", text: "New standalone org ArtHaven registered", avatar: "AH", type: "create" },
+  { time: "2 min ago", text: "Agency XYZ created org RetailCo", avatar: "AX", type: "create", group: "Today" },
+  { time: "15 min ago", text: "User Priya invited to SaaS Inc", avatar: "PI", type: "invite", group: "Today" },
+  { time: "1 hr ago", text: "DigitalSpark upgraded to Enterprise", avatar: "DS", type: "upgrade", group: "Today" },
+  { time: "3 hrs ago", text: "BrandWave added 3 social profiles", avatar: "BW", type: "update", group: "Today" },
+  { time: "Yesterday 4:30 PM", text: "CreativeFlow suspended user John", avatar: "CF", type: "alert", group: "Yesterday" },
+  { time: "Yesterday 10:00 AM", text: "New standalone org ArtHaven registered", avatar: "AH", type: "create", group: "Yesterday" },
 ];
 
 const systemHealth = [
@@ -39,12 +40,27 @@ const systemHealth = [
 ];
 
 const standaloneOrgs = [
-  { name: "LocalBites", users: 8, plan: "Starter", status: "active" as const, profiles: 4 },
-  { name: "FitnessPro", users: 14, plan: "Growth", status: "active" as const, profiles: 12 },
-  { name: "ArtHaven", users: 3, plan: "Starter", status: "pending" as const, profiles: 1 },
+  { name: "LocalBites", users: 8, plan: "Starter", status: "active" as const, profilesUsed: 4, profilesMax: 10 },
+  { name: "FitnessPro", users: 14, plan: "Growth", status: "active" as const, profilesUsed: 12, profilesMax: 50 },
+  { name: "ArtHaven", users: 3, plan: "Starter", status: "pending" as const, profilesUsed: 1, profilesMax: 10 },
 ];
 
+const usageBarColor = (used: number, max: number) => {
+  const pct = (used / max) * 100;
+  if (pct > 85) return "bg-error";
+  if (pct > 60) return "bg-warning";
+  return "bg-success";
+};
+
 const SuperAdminDashboard = () => {
+  // Group activities
+  const groupedActivities: { group: string; items: typeof activities }[] = [];
+  activities.forEach(a => {
+    const existing = groupedActivities.find(g => g.group === a.group);
+    if (existing) existing.items.push(a);
+    else groupedActivities.push({ group: a.group, items: [a] });
+  });
+
   return (
     <SuperAdminLayout title="Platform Overview">
       {/* Stat Cards */}
@@ -55,13 +71,13 @@ const SuperAdminDashboard = () => {
               <div className={`p-2.5 rounded-xl ${stat.bg}`}>
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
-              <div className={`flex items-center gap-1 text-xs font-medium ${stat.trend === "up" ? "text-success" : "text-error"}`}>
-                {stat.trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {stat.change}
-              </div>
             </div>
             <p className="text-2xl font-bold text-foreground">{stat.value}</p>
             <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+            <p className={`text-[12px] mt-1.5 font-medium ${stat.trend === "up" ? "text-success" : "text-error"}`}>
+              {stat.trend === "up" ? <ArrowUpRight className="h-3 w-3 inline mr-0.5" /> : <ArrowDownRight className="h-3 w-3 inline mr-0.5" />}
+              {stat.change}
+            </p>
           </div>
         ))}
       </div>
@@ -124,62 +140,91 @@ const SuperAdminDashboard = () => {
             <h2 className="text-base font-semibold text-foreground">Top Agencies</h2>
             <a href="/super-admin/agencies" className="text-xs text-primary hover:underline">View all →</a>
           </div>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left text-xs text-muted-foreground font-medium pb-3">Agency</th>
-                <th className="text-left text-xs text-muted-foreground font-medium pb-3">Orgs</th>
-                <th className="text-left text-xs text-muted-foreground font-medium pb-3">Users</th>
-                <th className="text-left text-xs text-muted-foreground font-medium pb-3">Revenue</th>
-                <th className="text-left text-xs text-muted-foreground font-medium pb-3">Status</th>
-                <th className="text-right text-xs text-muted-foreground font-medium pb-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {agencies.map((a) => (
-                <tr key={a.name} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
-                  <td className="py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-agency/10 flex items-center justify-center text-[10px] font-bold text-agency">
-                        {a.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{a.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{a.plan}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 text-sm text-muted-foreground">{a.orgs}</td>
-                  <td className="py-3 text-sm text-muted-foreground">{a.users}</td>
-                  <td className="py-3 text-sm font-medium text-foreground">{a.revenue}</td>
-                  <td className="py-3"><StatusBadge status={a.status} /></td>
-                  <td className="py-3 text-right">
-                    <button className="text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
-                  </td>
+          {agencies.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Building2 className="h-10 w-10 text-muted-foreground/40 mb-3" />
+              <p className="text-sm font-medium text-foreground">No agencies yet</p>
+              <button className="mt-3 text-sm text-primary hover:underline">Invite your first agency</button>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Agency</th>
+                  <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Users</th>
+                  <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Revenue</th>
+                  <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Profiles</th>
+                  <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Status</th>
+                  <th className="text-right text-[11px] uppercase text-muted-foreground font-medium pb-3">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {agencies.map((a) => (
+                  <tr key={a.name} className={`border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors ${a.status === 'suspended' ? 'border-l-[3px] border-l-error' : ''}`}>
+                    <td className="py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-agency/10 flex items-center justify-center text-[10px] font-bold text-agency">
+                          {a.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{a.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{a.plan} · {a.orgs} orgs</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 text-sm text-muted-foreground">{a.users}</td>
+                    <td className="py-3 text-sm font-medium text-foreground">{a.revenue}</td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full ${usageBarColor(a.profilesUsed, a.profilesMax)}`} style={{ width: `${(a.profilesUsed / a.profilesMax) * 100}%` }} />
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">{a.profilesUsed}/{a.profilesMax}</span>
+                      </div>
+                    </td>
+                    <td className="py-3"><StatusBadge status={a.status} /></td>
+                    <td className="py-3 text-right">
+                      <a href="#" className="text-xs text-primary hover:underline mr-3">View</a>
+                      {a.status === 'active' ? (
+                        <button className="text-xs text-muted-foreground hover:text-warning">Suspend</button>
+                      ) : (
+                        <button className="text-xs text-muted-foreground hover:text-success">Reactivate</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <div className="col-span-2 card-surface">
           <h2 className="text-base font-semibold text-foreground mb-4">Recent Activity</h2>
-          <div className="space-y-0">
-            {activities.map((a, i) => (
-              <div key={i} className="flex items-start gap-3 py-3 border-b border-border last:border-0">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 ${
-                  a.type === 'create' ? 'bg-success/10 text-success' :
-                  a.type === 'upgrade' ? 'bg-primary/10 text-primary' :
-                  a.type === 'alert' ? 'bg-error/10 text-error' :
-                  'bg-muted text-muted-foreground'
-                }`}>{a.avatar}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground leading-snug">{a.text}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{a.time}</p>
+          {groupedActivities.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No recent activity</p>
+          ) : (
+            <div className="space-y-0">
+              {groupedActivities.map((group) => (
+                <div key={group.group}>
+                  <p className="text-[11px] uppercase font-semibold text-muted-foreground tracking-wider pt-3 pb-1.5">{group.group}</p>
+                  {group.items.map((a, i) => (
+                    <div key={i} className="flex items-start gap-3 py-2.5 border-b border-border/50 last:border-0">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 ${
+                        a.type === 'create' ? 'bg-success/10 text-success' :
+                        a.type === 'upgrade' ? 'bg-primary/10 text-primary' :
+                        a.type === 'alert' ? 'bg-error/10 text-error' :
+                        'bg-muted text-muted-foreground'
+                      }`}>{a.avatar}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground leading-snug">{a.text}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{a.time}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -189,25 +234,59 @@ const SuperAdminDashboard = () => {
           <h2 className="text-base font-semibold text-foreground">Standalone Organizations</h2>
           <span className="text-xs text-muted-foreground">{standaloneOrgs.length} organizations</span>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          {standaloneOrgs.map((o) => (
-            <div key={o.name} className="border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-sm transition-all">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-lg bg-organization/10 flex items-center justify-center text-sm font-bold text-organization">
-                  {o.name.slice(0, 2)}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{o.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{o.plan} Plan</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{o.users} users · {o.profiles} profiles</span>
-                <StatusBadge status={o.status} />
-              </div>
-            </div>
-          ))}
-        </div>
+        {standaloneOrgs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <Building className="h-8 w-8 text-muted-foreground/40 mb-2" />
+            <p className="text-sm font-medium text-foreground">No standalone organizations</p>
+            <p className="text-xs text-muted-foreground mt-1">Organizations registered without an agency will appear here.</p>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Organization</th>
+                <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Users</th>
+                <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Plan</th>
+                <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Profiles</th>
+                <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Status</th>
+                <th className="text-right text-[11px] uppercase text-muted-foreground font-medium pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standaloneOrgs.map((o) => (
+                <tr key={o.name} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-organization/10 flex items-center justify-center text-[10px] font-bold text-organization">
+                        {o.name.slice(0, 2)}
+                      </div>
+                      <span className="text-sm font-medium text-foreground">{o.name}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 text-sm text-muted-foreground">{o.users}</td>
+                  <td className="py-3 text-sm text-muted-foreground">{o.plan}</td>
+                  <td className="py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className={`h-full rounded-full ${usageBarColor(o.profilesUsed, o.profilesMax)}`} style={{ width: `${(o.profilesUsed / o.profilesMax) * 100}%` }} />
+                      </div>
+                      <span className="text-[11px] text-muted-foreground">{o.profilesUsed}/{o.profilesMax}</span>
+                    </div>
+                  </td>
+                  <td className="py-3"><StatusBadge status={o.status} /></td>
+                  <td className="py-3 text-right">
+                    <a href="#" className="text-xs text-primary hover:underline mr-3">View</a>
+                    {o.status === 'active' ? (
+                      <button className="text-xs text-muted-foreground hover:text-warning">Suspend</button>
+                    ) : o.status === 'suspended' ? (
+                      <button className="text-xs text-muted-foreground hover:text-success">Reactivate</button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </SuperAdminLayout>
   );

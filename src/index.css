@@ -88,6 +88,9 @@
   .status-suspended {
     @apply bg-error/10 text-error text-xs font-medium px-2.5 py-0.5 rounded-full;
   }
+  .status-invited {
+    @apply bg-info/10 text-info text-xs font-medium px-2.5 py-0.5 rounded-full;
+  }
   .nav-item {
     @apply h-10 px-4 flex items-center gap-3 text-sm rounded-2xl transition-colors cursor-pointer text-sidebar-foreground;
   }
