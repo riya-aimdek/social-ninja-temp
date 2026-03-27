@@ -38,7 +38,7 @@ const SuperAdminUsers = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                {["User", "Email", "Role", "Agency", "Organization", "Status", "Last Active"].map(h => (
+                {["User", "Email", "Role", "Agency", "Client", "Status", "Last Active"].map(h => (
                   <th key={h} className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">{h}</th>
                 ))}
               </tr>

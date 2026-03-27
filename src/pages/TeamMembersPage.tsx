@@ -68,7 +68,7 @@ const TeamMembersPage = () => {
       <div className="card-surface">
         <table className="w-full">
           <thead><tr className="border-b border-border">
-            {['Member', 'Role', 'Assigned Organizations', 'Status', 'Last Active', 'Actions'].map(h => (
+            {['Member', 'Role', 'Assigned Clients', 'Status', 'Last Active', 'Actions'].map(h => (
               <th key={h} className="text-left text-xs text-text-muted font-medium pb-3">{h}</th>
             ))}
           </tr></thead>
@@ -110,7 +110,7 @@ const TeamMembersPage = () => {
                           </ul>
                         </div>
                         <div>
-                          <h4 className="text-xs font-semibold text-text-secondary mb-2">Organization Assignments</h4>
+                          <h4 className="text-xs font-semibold text-text-secondary mb-2">Client Assignments</h4>
                           {m.orgDetails.map(od => (
                             <div key={od.name} className="flex items-center justify-between py-1.5">
                               <span className="text-[13px] text-foreground">{od.name}</span>
