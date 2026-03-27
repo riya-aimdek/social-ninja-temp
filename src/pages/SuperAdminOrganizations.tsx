@@ -21,16 +21,16 @@ const SuperAdminOrganizations = () => {
   const filtered = orgs.filter(o => o.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <SuperAdminLayout title="Organizations">
+    <SuperAdminLayout title="Clients">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search organizations..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+            <Input placeholder="Search clients..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Building className="h-4 w-4" />
-            <span>{orgs.length} total organizations</span>
+            <span>{orgs.length} total clients</span>
           </div>
         </div>
 
@@ -38,7 +38,7 @@ const SuperAdminOrganizations = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                {["Organization", "Type", "Agency", "Users", "Plan", "Status", ""].map(h => (
+                {["Client", "Type", "Agency", "Users", "Plan", "Status", ""].map(h => (
                   <th key={h} className="text-left text-xs text-muted-foreground font-medium pb-3">{h}</th>
                 ))}
               </tr>

@@ -6,7 +6,7 @@ import { Upload, AlertTriangle } from "lucide-react";
 const settingsTabs = ['General', 'Notifications', 'Security', 'Danger Zone'];
 
 const agencyNotifications = [
-  "New organization created",
+  "New client created",
   "Team member invited",
   "Team member removed",
   "Subscription limit approaching (80%)",
@@ -110,8 +110,8 @@ const AgencySettings = () => {
           </div>
 
           <div className="card-surface">
-            <h3 className="text-base font-semibold text-foreground mb-2">Org-Level Alerts</h3>
-            <p className="text-sm text-muted-foreground mb-4">Receive alerts for activity within your organizations.</p>
+             <h3 className="text-base font-semibold text-foreground mb-2">Client-Level Alerts</h3>
+             <p className="text-sm text-muted-foreground mb-4">Receive alerts for activity within your clients.</p>
             <div className="hidden md:block">
               <table className="w-full">
                 <thead><tr className="border-b border-border">

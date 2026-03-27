@@ -101,7 +101,7 @@ const AgencyDashboard = () => {
       </div>
 
       {/* Org Cards */}
-      <h2 className="text-base font-semibold text-foreground mb-4">Organizations</h2>
+      <h2 className="text-base font-semibold text-foreground mb-4">Clients</h2>
       <div className="grid grid-cols-3 gap-4 mb-6">
         {orgCards.map((org, idx) => (
           <div key={org.id} className={`card-surface border-t-2 ${orgColors[idx % orgColors.length]} hover:shadow-md transition-shadow`}>
@@ -142,7 +142,7 @@ const AgencyDashboard = () => {
             <tr className="border-b border-border">
               <th className="text-left text-xs text-muted-foreground font-medium pb-3">Member</th>
               <th className="text-left text-xs text-muted-foreground font-medium pb-3">Role</th>
-              <th className="text-left text-xs text-muted-foreground font-medium pb-3">Assigned Orgs</th>
+              <th className="text-left text-xs text-muted-foreground font-medium pb-3">Assigned Clients</th>
               <th className="text-left text-xs text-muted-foreground font-medium pb-3">Status</th>
             </tr>
           </thead>

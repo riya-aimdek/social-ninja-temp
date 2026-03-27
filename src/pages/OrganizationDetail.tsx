@@ -43,7 +43,7 @@ const OrganizationDetail = () => {
     <AgencyLayout title="">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-text-secondary mb-4">
-        <Link to="/agency/organizations" className="hover:text-foreground">Organizations</Link>
+        <Link to="/agency/clients" className="hover:text-foreground">Clients</Link>
         <ChevronRight className="h-3.5 w-3.5" />
         <span className="text-foreground">RetailCo</span>
       </div>
