@@ -19,12 +19,12 @@ const OrganizationsPage = () => {
   const filtered = orgs.filter(o => !search || o.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <AgencyLayout title="Organizations">
+    <AgencyLayout title="Clients">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input className="input-dark pl-9 w-64" placeholder="Search organizations..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="input-dark pl-9 w-64" placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="input-dark w-32"><option>All Status</option><option>Active</option><option>Suspended</option></select>
           <select className="input-dark w-36"><option>Sort by: Recent</option><option>Sort by: Name</option><option>Sort by: Members</option></select>
@@ -32,7 +32,7 @@ const OrganizationsPage = () => {
         <div className="flex items-center gap-2">
           <button onClick={() => setView('grid')} className={`p-2 rounded-lg ${view === 'grid' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}><LayoutGrid className="h-4 w-4" /></button>
           <button onClick={() => setView('list')} className={`p-2 rounded-lg ${view === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}><List className="h-4 w-4" /></button>
-          <Button onClick={() => setShowCreate(true)} className="ml-2"><Plus className="h-4 w-4" /> Add Organization</Button>
+          <Button onClick={() => setShowCreate(true)} className="ml-2"><Plus className="h-4 w-4" /> Add Client</Button>
         </div>
       </div>
 
@@ -103,7 +103,7 @@ const OrganizationsPage = () => {
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
           <div className="w-[560px] bg-card border border-border rounded-2xl p-8" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-foreground">Add Organization</h2>
+              <h2 className="text-lg font-semibold text-foreground">Add Client</h2>
               <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-4">
@@ -113,8 +113,8 @@ const OrganizationsPage = () => {
                 </div>
                 <div className="flex-1 space-y-4">
                   <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">Organization Name</label>
-                    <input className="input-dark" placeholder="Enter name" />
+                    <label className="text-sm text-muted-foreground mb-1.5 block">Client Name</label>
+                     <input className="input-dark" placeholder="Enter name" />
                   </div>
                   <div>
                     <label className="text-sm text-muted-foreground mb-1.5 block">Industry</label>
@@ -133,7 +133,7 @@ const OrganizationsPage = () => {
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
               <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button>Create Organization</Button>
+              <Button>Create Client</Button>
             </div>
           </div>
         </div>

@@ -87,10 +87,10 @@ const LoginPage = () => {
               Agency
             </button>
             <button
-              onClick={() => navigate("/org/dashboard")}
-              className="flex-1 text-xs py-2 rounded-lg border border-border hover:border-organization text-organization bg-organization/5 hover:bg-organization/10 transition-colors"
+              onClick={() => navigate("/client/dashboard")}
+              className="flex-1 text-xs py-2 rounded-lg border border-border hover:border-client text-client bg-client/5 hover:bg-client/10 transition-colors"
             >
-              Organization
+              Client
             </button>
           </div>
         </div>
@@ -98,9 +98,7 @@ const LoginPage = () => {
         <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Link to="/register/agency" className="text-primary hover:underline">Register as Agency</Link>
-            {" "}or{" "}
-            <a href="https://social-ninja.lovable.app/" className="text-primary hover:underline">Register as Organization</a>
+            <Link to="/register" className="text-primary hover:underline">Create an account</Link>
           </p>
           <a href="https://social-ninja.lovable.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors block">
             Back to main app
