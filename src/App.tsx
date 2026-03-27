@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminOrganizations from "./pages/SuperAdminOrganizations";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
@@ -44,13 +46,15 @@ const App = () => (
 
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/agency" element={<AgencyRegistration />} />
-          <Route path="/register/organization" element={<StandaloneOrgRegistration />} />
+          <Route path="/register/client" element={<StandaloneOrgRegistration />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
 
           {/* Super Admin */}
           <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
           <Route path="/super-admin/agencies" element={<AgenciesPage />} />
-          <Route path="/super-admin/organizations" element={<SuperAdminOrganizations />} />
+          <Route path="/super-admin/clients" element={<SuperAdminOrganizations />} />
           <Route path="/super-admin/users" element={<SuperAdminUsers />} />
           <Route path="/super-admin/billing" element={<SuperAdminBilling />} />
           <Route path="/super-admin/audit-log" element={<AuditLogPage />} />
@@ -58,19 +62,27 @@ const App = () => (
 
           {/* Agency */}
           <Route path="/agency/dashboard" element={<AgencyDashboard />} />
-          <Route path="/agency/organizations" element={<OrganizationsPage />} />
-          <Route path="/agency/organizations/:id" element={<OrganizationDetail />} />
+          <Route path="/agency/clients" element={<OrganizationsPage />} />
+          <Route path="/agency/clients/:id" element={<OrganizationDetail />} />
           <Route path="/agency/team" element={<TeamMembersPage />} />
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
 
-          {/* Organization */}
-          <Route path="/org/dashboard" element={<OrgDashboard />} />
-          <Route path="/org/profiles" element={<OrgProfiles />} />
-          <Route path="/org/team" element={<OrgTeam />} />
-          <Route path="/org/analytics" element={<OrgAnalytics />} />
-          <Route path="/org/inbox" element={<OrgInbox />} />
-          <Route path="/org/settings" element={<OrgSettings />} />
+          {/* Client (formerly Organization) */}
+          <Route path="/client/dashboard" element={<OrgDashboard />} />
+          <Route path="/client/profiles" element={<OrgProfiles />} />
+          <Route path="/client/team" element={<OrgTeam />} />
+          <Route path="/client/analytics" element={<OrgAnalytics />} />
+          <Route path="/client/inbox" element={<OrgInbox />} />
+          <Route path="/client/settings" element={<OrgSettings />} />
+
+          {/* Legacy org routes → redirect */}
+          <Route path="/org/dashboard" element={<Navigate to="/client/dashboard" replace />} />
+          <Route path="/org/profiles" element={<Navigate to="/client/profiles" replace />} />
+          <Route path="/org/team" element={<Navigate to="/client/team" replace />} />
+          <Route path="/org/analytics" element={<Navigate to="/client/analytics" replace />} />
+          <Route path="/org/inbox" element={<Navigate to="/client/inbox" replace />} />
+          <Route path="/org/settings" element={<Navigate to="/client/settings" replace />} />
 
           {/* Transition screens */}
           <Route path="/switch-org" element={<OrgSwitcher />} />
