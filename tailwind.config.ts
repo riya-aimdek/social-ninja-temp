@@ -60,11 +60,19 @@ export default {
         "super-admin": "hsl(var(--super-admin))",
         agency: "hsl(var(--agency))",
         organization: "hsl(var(--organization))",
+        client: "hsl(var(--client))",
         "user-role": "hsl(var(--user-role))",
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         error: "hsl(var(--error))",
         info: "hsl(var(--info))",
+        // Platform colors
+        facebook: "hsl(var(--facebook))",
+        instagram: "hsl(var(--instagram))",
+        linkedin: "hsl(var(--linkedin))",
+        twitter: "hsl(var(--twitter))",
+        pinterest: "hsl(var(--pinterest))",
+        youtube: "hsl(var(--youtube))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -81,6 +89,10 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        coral: "var(--shadow-coral)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -90,10 +102,15 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.4s ease-out",
       },
     },
   },
