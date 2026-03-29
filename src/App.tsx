@@ -23,12 +23,19 @@ import TeamMembersPage from "./pages/TeamMembersPage";
 import BillingPage from "./pages/BillingPage";
 import AgencySettings from "./pages/AgencySettings";
 import StandaloneOrgRegistration from "./pages/StandaloneOrgRegistration";
-import OrgDashboard from "./pages/OrgDashboard";
-import OrgProfiles from "./pages/OrgProfiles";
-import OrgTeam from "./pages/OrgTeam";
-import OrgAnalytics from "./pages/OrgAnalytics";
-import OrgInbox from "./pages/OrgInbox";
-import OrgSettings from "./pages/OrgSettings";
+
+import ClientLayout from "./components/layout/ClientLayout";
+import DashboardPage from "./pages/client/DashboardPage";
+import ConnectPage from "./pages/client/ConnectPage";
+import CreatePage from "./pages/client/CreatePage";
+import PublishPage from "./pages/client/PublishPage";
+import EngagePage from "./pages/client/EngagePage";
+import AnalyzePage from "./pages/client/AnalyzePage";
+import PromotePage from "./pages/client/PromotePage";
+import ListenPage from "./pages/client/ListenPage";
+import LocationsPage from "./pages/client/LocationsPage";
+import ClientSettingsPage from "./pages/client/SettingsPage";
+
 import OrgSwitcher from "./pages/OrgSwitcher";
 import OrgSelector from "./pages/OrgSelector";
 import NotFound from "./pages/NotFound";
@@ -68,20 +75,32 @@ const App = () => (
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
 
-          {/* Client (formerly Organization) */}
-          <Route path="/client/dashboard" element={<OrgDashboard />} />
-          <Route path="/client/profiles" element={<OrgProfiles />} />
-          <Route path="/client/team" element={<OrgTeam />} />
-          <Route path="/client/analytics" element={<OrgAnalytics />} />
-          <Route path="/client/inbox" element={<OrgInbox />} />
-          <Route path="/client/settings" element={<OrgSettings />} />
+          {/* Client — SocialNinja integrated view */}
+          <Route element={<ClientLayout />}>
+            <Route path="/client/dashboard" element={<DashboardPage />} />
+            <Route path="/client/connect" element={<ConnectPage />} />
+            <Route path="/client/create" element={<CreatePage />} />
+            <Route path="/client/publish" element={<PublishPage />} />
+            <Route path="/client/engage" element={<EngagePage />} />
+            <Route path="/client/analyze" element={<AnalyzePage />} />
+            <Route path="/client/promote" element={<PromotePage />} />
+            <Route path="/client/listen" element={<ListenPage />} />
+            <Route path="/client/locations" element={<LocationsPage />} />
+            <Route path="/client/settings" element={<ClientSettingsPage />} />
+            <Route path="/client/settings/profile" element={<ClientSettingsPage defaultTab="profile" />} />
+            <Route path="/client/settings/billing" element={<ClientSettingsPage defaultTab="billing" />} />
+            <Route path="/client/settings/team" element={<ClientSettingsPage defaultTab="team" />} />
+            <Route path="/client/settings/notifications" element={<ClientSettingsPage defaultTab="notifications" />} />
+            <Route path="/client/settings/hashtags" element={<ClientSettingsPage defaultTab="hashtags" />} />
+            <Route path="/client/settings/security" element={<ClientSettingsPage defaultTab="security" />} />
+          </Route>
 
           {/* Legacy org routes → redirect */}
           <Route path="/org/dashboard" element={<Navigate to="/client/dashboard" replace />} />
-          <Route path="/org/profiles" element={<Navigate to="/client/profiles" replace />} />
-          <Route path="/org/team" element={<Navigate to="/client/team" replace />} />
-          <Route path="/org/analytics" element={<Navigate to="/client/analytics" replace />} />
-          <Route path="/org/inbox" element={<Navigate to="/client/inbox" replace />} />
+          <Route path="/org/profiles" element={<Navigate to="/client/connect" replace />} />
+          <Route path="/org/team" element={<Navigate to="/client/settings/team" replace />} />
+          <Route path="/org/analytics" element={<Navigate to="/client/analyze" replace />} />
+          <Route path="/org/inbox" element={<Navigate to="/client/engage" replace />} />
           <Route path="/org/settings" element={<Navigate to="/client/settings" replace />} />
 
           {/* Transition screens */}
