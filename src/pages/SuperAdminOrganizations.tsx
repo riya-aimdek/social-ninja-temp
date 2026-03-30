@@ -5,20 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Search, MoreHorizontal, Building } from "lucide-react";
 import { useState } from "react";
 
-const orgs = [
-  { name: "RetailCo", agency: "Digital Spark Agency", users: 12, plan: "Growth", status: "active" as const, type: "Agency" },
-  { name: "FashionHub", agency: "Digital Spark Agency", users: 8, plan: "Starter", status: "active" as const, type: "Agency" },
-  { name: "TechStart", agency: "CreativeFlow Media", users: 15, plan: "Enterprise", status: "active" as const, type: "Agency" },
-  { name: "LocalBites", agency: "—", users: 8, plan: "Starter", status: "active" as const, type: "Standalone" },
-  { name: "FitnessPro", agency: "—", users: 14, plan: "Growth", status: "active" as const, type: "Standalone" },
-  { name: "ArtHaven", agency: "—", users: 3, plan: "Starter", status: "pending" as const, type: "Standalone" },
-  { name: "GreenLeaf", agency: "BrandWave Digital", users: 6, plan: "Growth", status: "suspended" as const, type: "Agency" },
-  { name: "SaaSInc", agency: "PixelForge Studio", users: 22, plan: "Enterprise", status: "active" as const, type: "Agency" },
+const clients = [
+  { name: "Acme Corp", agency: "Digital Spark Agency", projects: 3, accounts: 8, users: 12, plan: "Growth", status: "active" as const, type: "Agency" },
+  { name: "FashionHub", agency: "Digital Spark Agency", projects: 2, accounts: 6, users: 8, plan: "Starter", status: "active" as const, type: "Agency" },
+  { name: "TechStart", agency: "CreativeFlow Media", projects: 2, accounts: 12, users: 15, plan: "Enterprise", status: "active" as const, type: "Agency" },
+  { name: "LocalBites", agency: "—", projects: 1, accounts: 4, users: 8, plan: "Starter", status: "active" as const, type: "Standalone" },
+  { name: "FitnessPro", agency: "—", projects: 3, accounts: 10, users: 14, plan: "Growth", status: "active" as const, type: "Standalone" },
+  { name: "ArtHaven", agency: "—", projects: 1, accounts: 2, users: 3, plan: "Starter", status: "pending" as const, type: "Standalone" },
+  { name: "GreenLeaf", agency: "BrandWave Digital", projects: 1, accounts: 4, users: 6, plan: "Growth", status: "suspended" as const, type: "Agency" },
+  { name: "SaaSInc", agency: "PixelForge Studio", projects: 4, accounts: 18, users: 22, plan: "Enterprise", status: "active" as const, type: "Agency" },
 ];
 
 const SuperAdminOrganizations = () => {
   const [search, setSearch] = useState("");
-  const filtered = orgs.filter(o => o.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = clients.filter(o => o.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <SuperAdminLayout title="Clients">
@@ -30,7 +30,7 @@ const SuperAdminOrganizations = () => {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Building className="h-4 w-4" />
-            <span>{orgs.length} total clients</span>
+            <span>{clients.length} total clients</span>
           </div>
         </div>
 
@@ -38,7 +38,7 @@ const SuperAdminOrganizations = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                {["Client", "Type", "Agency", "Users", "Plan", "Status", ""].map(h => (
+                {["Client", "Type", "Agency", "Projects", "Accounts", "Users", "Plan", "Status", ""].map(h => (
                   <th key={h} className="text-left text-xs text-muted-foreground font-medium pb-3">{h}</th>
                 ))}
               </tr>
@@ -48,11 +48,13 @@ const SuperAdminOrganizations = () => {
                 <tr key={o.name} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
                   <td className="py-3 text-sm text-foreground font-medium">{o.name}</td>
                   <td className="py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${o.type === "Standalone" ? "bg-orange-100 text-orange-700" : "bg-teal-100 text-teal-700"}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${o.type === "Standalone" ? "bg-warning/15 text-warning" : "bg-info/15 text-info"}`}>
                       {o.type}
                     </span>
                   </td>
                   <td className="py-3 text-sm text-muted-foreground">{o.agency}</td>
+                  <td className="py-3 text-sm text-muted-foreground">{o.projects}</td>
+                  <td className="py-3 text-sm text-muted-foreground">{o.accounts}</td>
                   <td className="py-3 text-sm text-muted-foreground">{o.users}</td>
                   <td className="py-3 text-sm text-muted-foreground">{o.plan}</td>
                   <td className="py-3"><StatusBadge status={o.status} /></td>

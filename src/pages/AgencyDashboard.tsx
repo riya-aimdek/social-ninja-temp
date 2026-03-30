@@ -1,43 +1,44 @@
+import { Link } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
-import { ExternalLink, Wifi, Users, Clock, TrendingUp, ArrowUpRight } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { ExternalLink, Wifi, Users, Clock, TrendingUp, FolderKanban } from "lucide-react";
 
 const usageBars = [
-  { label: "Social Profiles", used: 22, total: 50, icon: Wifi },
+  { label: "Social Accounts", used: 22, total: 50, icon: Wifi },
   { label: "Team Members", used: 6, total: 10, icon: Users },
-  { label: "Competitor Slots", used: 8, total: 20, icon: TrendingUp },
+  { label: "Projects", used: 7, total: 20, icon: FolderKanban },
 ];
 
-const getBarColor = (pct: number) => pct > 85 ? "bg-error" : pct > 60 ? "bg-warning" : "bg-success";
-const getBarTextColor = (pct: number) => pct > 85 ? "text-error" : pct > 60 ? "text-warning" : "text-success";
+const getBarColor = (pct: number) => pct > 85 ? "bg-destructive" : pct > 60 ? "bg-warning" : "bg-success";
+const getBarTextColor = (pct: number) => pct > 85 ? "text-destructive" : pct > 60 ? "text-warning" : "text-success";
 
-const orgMetrics = [
-  { label: "Social Profiles", value: "8", note: "across 3 orgs", icon: Wifi, color: "bg-primary/10 text-primary" },
-  { label: "Team Members", value: "4", note: "2 pending invites", icon: Users, color: "bg-info/10 text-info" },
-  { label: "Pending Approvals", value: "3", note: "3 awaiting review", icon: Clock, color: "bg-warning/10 text-warning" },
+const summaryMetrics = [
+  { label: "Total Clients", value: "4", note: "1 suspended", icon: Users, color: "bg-primary/10 text-primary" },
+  { label: "Total Projects", value: "7", note: "across 4 clients", icon: FolderKanban, color: "bg-info/10 text-info" },
+  { label: "Pending Approvals", value: "8", note: "across 3 projects", icon: Clock, color: "bg-warning/10 text-warning" },
+];
+
+const clientCards = [
+  { id: '1', name: 'Acme Corp', initials: 'AC', color: 'bg-primary/80', industry: 'Retail', projects: 3, accounts: 8, members: 4, lastActive: '30 min ago', sparkline: [30, 45, 38, 52, 48, 60] },
+  { id: '2', name: 'Beta Foods', initials: 'BF', color: 'bg-info', industry: 'Food & Beverage', projects: 1, accounts: 5, members: 3, lastActive: '1 day ago', sparkline: [40, 35, 45, 38, 42, 40] },
+  { id: '3', name: 'TechStart', initials: 'TS', color: 'bg-warning', industry: 'Technology', projects: 2, accounts: 12, members: 6, lastActive: '2 hrs ago', sparkline: [20, 28, 35, 42, 55, 70] },
 ];
 
 const orgColors = ["border-t-primary", "border-t-info", "border-t-warning", "border-t-success"];
 
-const orgCards = [
-  { id: '1', name: 'RetailCo', initials: 'RC', color: 'bg-organization', industry: 'Retail', profiles: 8, members: 4, lastActive: '2 hrs ago', sparkline: [30, 45, 38, 52, 48, 60] },
-  { id: '2', name: 'TechStart', initials: 'TS', color: 'bg-info', industry: 'Technology', profiles: 12, members: 6, lastActive: '30 min ago', sparkline: [20, 28, 35, 42, 55, 70] },
-  { id: '3', name: 'FoodieHub', initials: 'FH', color: 'bg-warning', industry: 'Food & Beverage', profiles: 5, members: 3, lastActive: '1 day ago', sparkline: [40, 35, 45, 38, 42, 40] },
-];
-
 const roleColors: Record<string, string> = {
-  "Content Creator": "bg-info/10 text-info",
+  "Agency Admin": "bg-agency/10 text-agency",
+  "Account Manager": "bg-info/10 text-info",
+  "Client Admin": "bg-client/10 text-client",
+  "Content Creator": "bg-user-role/10 text-user-role",
   "Approver": "bg-warning/10 text-warning",
-  "Engagement Specialist": "bg-agency/10 text-agency",
-  "Analyst": "bg-super-admin/10 text-super-admin",
-  "Guest": "bg-muted text-muted-foreground",
+  "Social Media Manager": "bg-primary/10 text-primary",
 };
 
 const teamMembers = [
-  { name: "Sarah Chen", avatar: "SC", role: "Content Creator", orgs: ["RetailCo", "TechStart"], lastActive: "Online", online: true },
-  { name: "James Wilson", avatar: "JW", role: "Approver", orgs: ["RetailCo"], lastActive: "2 hrs ago", online: false },
-  { name: "Priya Sharma", avatar: "PS", role: "Analyst", orgs: ["TechStart", "FoodieHub"], lastActive: "1 hr ago", online: false },
-  { name: "Mike Torres", avatar: "MT", role: "Engagement Specialist", orgs: ["FoodieHub"], lastActive: "3 hrs ago", online: true },
+  { name: "Sarah Chen", avatar: "SC", role: "Agency Admin", clients: ["Acme Corp", "TechStart", "Beta Foods"], lastActive: "Online", online: true },
+  { name: "James Wilson", avatar: "JW", role: "Account Manager", clients: ["Acme Corp", "Beta Foods"], lastActive: "2 hrs ago", online: false },
+  { name: "Priya Sharma", avatar: "PS", role: "Client Admin", clients: ["Acme Corp"], lastActive: "1 hr ago", online: false },
+  { name: "Mike Torres", avatar: "MT", role: "Social Media Manager", clients: ["Beta Foods"], lastActive: "3 hrs ago", online: true },
 ];
 
 const Sparkline = ({ data }: { data: number[] }) => {
@@ -82,9 +83,9 @@ const AgencyDashboard = () => {
         </div>
       </div>
 
-      {/* Org Metrics */}
+      {/* Summary Metrics */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        {orgMetrics.map(m => (
+        {summaryMetrics.map(m => (
           <div key={m.label} className="card-surface hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3 mb-2">
               <div className={`p-2.5 rounded-xl ${m.color}`}>
@@ -100,37 +101,30 @@ const AgencyDashboard = () => {
         ))}
       </div>
 
-      {/* Org Cards */}
+      {/* Client Cards */}
       <h2 className="text-base font-semibold text-foreground mb-4">Clients</h2>
       <div className="grid grid-cols-3 gap-4 mb-6">
-        {orgCards.map((org, idx) => (
-          <div key={org.id} className={`card-surface border-t-2 ${orgColors[idx % orgColors.length]} hover:shadow-md transition-shadow`}>
+        {clientCards.map((c, idx) => (
+          <Link key={c.id} to={`/agency/clients/${c.id}`} className={`card-surface border-t-2 ${orgColors[idx % orgColors.length]} hover:shadow-md transition-shadow block`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${org.color} flex items-center justify-center text-xs font-bold text-white`}>{org.initials}</div>
+                <div className={`w-10 h-10 rounded-full ${c.color} flex items-center justify-center text-xs font-bold text-white`}>{c.initials}</div>
                 <div>
-                  <p className="text-[15px] font-semibold text-foreground">{org.name}</p>
-                  <span className="text-[11px] text-muted-foreground">{org.industry}</span>
+                  <p className="text-[15px] font-semibold text-foreground">{c.name}</p>
+                  <span className="text-[11px] text-muted-foreground">{c.industry}</span>
                 </div>
               </div>
-              <Sparkline data={org.sparkline} />
+              <Sparkline data={c.sparkline} />
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-              <span>{org.profiles} profiles</span>
+              <span>{c.projects} projects</span>
               <span>·</span>
-              <span>{org.members} members</span>
+              <span>{c.accounts} accounts</span>
               <span>·</span>
-              <span>{org.lastActive}</span>
+              <span>{c.members} members</span>
             </div>
-            <a
-              href={`https://social-ninja.lovable.app?org=${org.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-1.5 text-sm font-medium text-primary border border-primary/30 rounded-lg py-2 hover:bg-primary/5 transition-colors"
-            >
-              <ExternalLink className="h-3.5 w-3.5" /> Open in SocialNinja
-            </a>
-          </div>
+            <div className="text-xs text-muted-foreground">{c.lastActive}</div>
+          </Link>
         ))}
       </div>
 
@@ -163,7 +157,7 @@ const AgencyDashboard = () => {
                 </td>
                 <td className="py-3">
                   <div className="flex gap-1">
-                    {m.orgs.map(o => <span key={o} className="text-[11px] bg-muted text-muted-foreground rounded px-2 py-0.5">{o}</span>)}
+                    {m.clients.map(o => <span key={o} className="text-[11px] bg-muted text-muted-foreground rounded px-2 py-0.5">{o}</span>)}
                   </div>
                 </td>
                 <td className="py-3 text-sm text-muted-foreground">{m.lastActive}</td>

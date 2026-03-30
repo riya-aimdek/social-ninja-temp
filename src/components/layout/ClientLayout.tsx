@@ -3,7 +3,7 @@ import { Outlet, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Link2, Sparkles, CalendarDays, MessageSquare,
   BarChart3, Megaphone, Ear, MapPin, Settings, Search, Bell, ChevronDown, Menu,
-  User, CreditCard, Users, BellRing, Hash, Shield
+  User, CreditCard, Users, BellRing, Hash, Shield, FolderKanban
 } from "lucide-react";
 import logoSvg from "@/assets/logo.svg";
 
@@ -28,10 +28,18 @@ const settingsSubItems = [
   { label: "Security", icon: Shield, path: "/client/settings/security" },
 ];
 
+const mockProjects = [
+  { id: "p1", name: "Acme Sneakers" },
+  { id: "p2", name: "Acme Apparel" },
+  { id: "p3", name: "Acme Lifestyle Blog" },
+];
+
 export default function ClientLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(mockProjects[0]);
+  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const isSettingsActive = location.pathname.startsWith("/client/settings");
 
   return (
@@ -135,10 +143,36 @@ export default function ClientLayout() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-sm hover:bg-accent transition-colors">
-              <span className="text-foreground font-medium">Global Marketing</span>
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
+            {/* Project Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-sm hover:bg-accent transition-colors"
+              >
+                <FolderKanban className="w-3.5 h-3.5 text-primary" />
+                <span className="text-foreground font-medium">{selectedProject.name}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              {projectDropdownOpen && (
+                <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-lg z-50">
+                  <div className="p-2 border-b border-border">
+                    <p className="text-[11px] text-muted-foreground font-medium px-2 py-1">Acme Corp — Projects</p>
+                  </div>
+                  <div className="py-1">
+                    {mockProjects.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedProject(p); setProjectDropdownOpen(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors ${selectedProject.id === p.id ? 'text-primary font-medium' : 'text-foreground'}`}
+                      >
+                        <FolderKanban className="w-3.5 h-3.5" />
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button className="relative p-2 rounded-lg hover:bg-accent transition-colors">
               <Bell className="w-[18px] h-[18px] text-muted-foreground" />
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
