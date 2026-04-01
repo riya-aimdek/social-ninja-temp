@@ -18,16 +18,16 @@ const LoginPage = () => {
     } else if (email.includes("agency")) {
       navigate("/agency/dashboard");
     } else {
-      navigate("/org/dashboard");
+      navigate("/client/dashboard");
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="w-[440px] bg-card border border-border rounded-2xl p-10 shadow-sm">
+    <div className="min-h-screen gradient-mesh bg-background flex items-center justify-center p-4">
+      <div className="w-[440px] bg-card border border-border rounded-2xl p-10 shadow-card animate-fade-in">
         <div className="flex flex-col items-center mb-8">
           <SocialNinjaLogo size="lg" />
-          <p className="text-sm text-muted-foreground mt-3">Agency Portal</p>
+          <p className="text-sm text-muted-foreground mt-3">Social Media Management Platform</p>
         </div>
 
         <h1 className="text-2xl font-semibold text-foreground mb-2">Welcome back</h1>
