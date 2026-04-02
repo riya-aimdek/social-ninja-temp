@@ -54,6 +54,7 @@ const App = () => (
 
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/agency" element={<AgencyRegistration />} />
           <Route path="/register/client" element={<StandaloneOrgRegistration />} />
