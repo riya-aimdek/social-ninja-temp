@@ -3,7 +3,7 @@ import { Outlet, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Link2, Sparkles, CalendarDays, MessageSquare,
   BarChart3, Megaphone, Ear, MapPin, Settings, Search, Bell, ChevronDown, Menu,
-  User, CreditCard, Users, BellRing, Hash, Shield, FolderKanban
+  User, CreditCard, Users, BellRing, Hash, Shield, FolderKanban, MessageCircle, Tag
 } from "lucide-react";
 import logoSvg from "@/assets/logo.svg";
 
@@ -25,6 +25,8 @@ const settingsSubItems = [
   { label: "Team", icon: Users, path: "/client/settings/team" },
   { label: "Notifications", icon: BellRing, path: "/client/settings/notifications" },
   { label: "Hashtags", icon: Hash, path: "/client/settings/hashtags" },
+  { label: "Saved Replies", icon: MessageCircle, path: "/client/settings/saved-replies" },
+  { label: "Tags", icon: Tag, path: "/client/settings/tags" },
   { label: "Security", icon: Shield, path: "/client/settings/security" },
 ];
 

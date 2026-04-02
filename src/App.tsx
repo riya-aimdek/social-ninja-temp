@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminOrganizations from "./pages/SuperAdminOrganizations";
@@ -53,6 +54,7 @@ const App = () => (
 
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/agency" element={<AgencyRegistration />} />
           <Route path="/register/client" element={<StandaloneOrgRegistration />} />
@@ -92,6 +94,8 @@ const App = () => (
             <Route path="/client/settings/team" element={<ClientSettingsPage defaultTab="team" />} />
             <Route path="/client/settings/notifications" element={<ClientSettingsPage defaultTab="notifications" />} />
             <Route path="/client/settings/hashtags" element={<ClientSettingsPage defaultTab="hashtags" />} />
+            <Route path="/client/settings/saved-replies" element={<ClientSettingsPage defaultTab="saved-replies" />} />
+            <Route path="/client/settings/tags" element={<ClientSettingsPage defaultTab="tags" />} />
             <Route path="/client/settings/security" element={<ClientSettingsPage defaultTab="security" />} />
           </Route>
 
