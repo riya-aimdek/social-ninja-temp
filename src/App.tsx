@@ -94,6 +94,8 @@ const App = () => (
             <Route path="/client/settings/team" element={<ClientSettingsPage defaultTab="team" />} />
             <Route path="/client/settings/notifications" element={<ClientSettingsPage defaultTab="notifications" />} />
             <Route path="/client/settings/hashtags" element={<ClientSettingsPage defaultTab="hashtags" />} />
+            <Route path="/client/settings/saved-replies" element={<ClientSettingsPage defaultTab="saved-replies" />} />
+            <Route path="/client/settings/tags" element={<ClientSettingsPage defaultTab="tags" />} />
             <Route path="/client/settings/security" element={<ClientSettingsPage defaultTab="security" />} />
           </Route>
 

@@ -3,7 +3,7 @@ import { Outlet, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Link2, Sparkles, CalendarDays, MessageSquare,
   BarChart3, Megaphone, Ear, MapPin, Settings, Search, Bell, ChevronDown, Menu,
-  User, CreditCard, Users, BellRing, Hash, Shield, FolderKanban
+  User, CreditCard, Users, BellRing, Hash, Shield, FolderKanban, MessageCircle, Tag
 } from "lucide-react";
 import logoSvg from "@/assets/logo.svg";
 
