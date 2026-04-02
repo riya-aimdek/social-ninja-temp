@@ -25,6 +25,8 @@ const settingsSubItems = [
   { label: "Team", icon: Users, path: "/client/settings/team" },
   { label: "Notifications", icon: BellRing, path: "/client/settings/notifications" },
   { label: "Hashtags", icon: Hash, path: "/client/settings/hashtags" },
+  { label: "Saved Replies", icon: MessageCircle, path: "/client/settings/saved-replies" },
+  { label: "Tags", icon: Tag, path: "/client/settings/tags" },
   { label: "Security", icon: Shield, path: "/client/settings/security" },
 ];
 
