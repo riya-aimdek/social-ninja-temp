@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminOrganizations from "./pages/SuperAdminOrganizations";

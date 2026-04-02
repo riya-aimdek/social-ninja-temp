@@ -63,7 +63,7 @@ const LoginPage = () => {
               </button>
             </div>
             <div className="flex justify-end mt-1.5">
-              <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
+              <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
             </div>
           </div>
           <Button type="submit" className="w-full mt-2">
