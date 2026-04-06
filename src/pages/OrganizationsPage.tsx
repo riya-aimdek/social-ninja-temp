@@ -3,138 +3,180 @@ import { Link } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Search, LayoutGrid, List, ExternalLink, MoreHorizontal, X, Plus, Upload, FolderKanban, ChevronRight } from "lucide-react";
+import { Search, X, Plus, Building2, CheckCircle, XCircle, Users, FolderOpen, Pencil, Power, Trash2 } from "lucide-react";
 
-const clients = [
-  { id: '1', name: 'Acme Corp', initials: 'AC', color: 'bg-primary/80', industry: 'Retail', projects: 3, accounts: 8, members: 4, approvals: 2, status: 'active' as const, lastActive: '2 hrs ago' },
-  { id: '2', name: 'Beta Foods', initials: 'BF', color: 'bg-info', industry: 'Food & Beverage', projects: 1, accounts: 5, members: 3, approvals: 5, status: 'active' as const, lastActive: '1 day ago' },
-  { id: '3', name: 'TechStart', initials: 'TS', color: 'bg-warning', industry: 'Technology', projects: 2, accounts: 12, members: 6, approvals: 0, status: 'active' as const, lastActive: '30 min ago' },
-  { id: '4', name: 'HealthPlus', initials: 'HP', color: 'bg-success', industry: 'Healthcare', projects: 1, accounts: 3, members: 2, approvals: 1, status: 'suspended' as const, lastActive: '5 days ago' },
+const initialClients = [
+  { id: '1', name: 'xyzee', initials: 'X', color: 'bg-primary', owner: '-', members: 0, status: 'active' as const, created: 'Apr 6, 2026' },
 ];
 
 const OrganizationsPage = () => {
-  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+  const [clients] = useState(initialClients);
 
-  const filtered = clients.filter(o => !search || o.name.toLowerCase().includes(search.toLowerCase()));
+  const totalClients = clients.length;
+  const activeClients = clients.filter(c => c.status === 'active').length;
+  const inactiveClients = clients.filter(c => c.status === 'suspended').length;
+  const totalMembers = clients.reduce((sum, c) => sum + c.members, 0);
+
+  const filtered = clients.filter(c => {
+    if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (activeTab === 'active' && c.status !== 'active') return false;
+    if (activeTab === 'inactive' && c.status !== 'suspended') return false;
+    return true;
+  });
+
+  const tabs = [
+    { id: 'all', label: 'All', count: totalClients },
+    { id: 'active', label: 'Active', count: activeClients },
+    { id: 'inactive', label: 'Inactive', count: undefined },
+  ];
 
   return (
     <AgencyLayout title="Clients">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input className="input-dark pl-9 w-64" placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Stat Cards */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground">Total Clients</p>
+            <p className="text-2xl font-bold text-foreground mt-1">{totalClients}</p>
           </div>
-          <select className="input-dark w-32"><option>All Status</option><option>Active</option><option>Suspended</option></select>
-          <select className="input-dark w-36"><option>Sort by: Recent</option><option>Sort by: Name</option><option>Sort by: Projects</option></select>
+          <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+            <Building2 className="h-5 w-5 text-purple-600" />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setView('grid')} className={`p-2 rounded-lg ${view === 'grid' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}><LayoutGrid className="h-4 w-4" /></button>
-          <button onClick={() => setView('list')} className={`p-2 rounded-lg ${view === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}><List className="h-4 w-4" /></button>
-          <Button onClick={() => setShowCreate(true)} className="ml-2"><Plus className="h-4 w-4" /> Add Client</Button>
+        <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground">Active</p>
+            <p className="text-2xl font-bold text-foreground mt-1">{activeClients}</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground">Inactive</p>
+            <p className="text-2xl font-bold text-foreground mt-1">{inactiveClients}</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+            <XCircle className="h-5 w-5 text-red-500" />
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground">Total Members</p>
+            <p className="text-2xl font-bold text-foreground mt-1">{totalMembers}</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+            <Users className="h-5 w-5 text-blue-600" />
+          </div>
         </div>
       </div>
 
-      {view === 'grid' ? (
-        <div className="grid grid-cols-3 gap-4">
-          {filtered.map(c => (
-            <Link key={c.id} to={`/agency/clients/${c.id}`} className="card-surface hover:border-primary/30 hover:shadow-md transition-all block">
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 rounded-full ${c.color} flex items-center justify-center text-xs font-bold text-white`}>{c.initials}</div>
-                <div>
-                  <p className="text-base font-semibold text-foreground">{c.name}</p>
-                  <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{c.industry}</span>
-                </div>
-              </div>
-              <div className="flex gap-4 text-xs text-muted-foreground mb-3">
-                <span className="flex items-center gap-1"><FolderKanban className="h-3 w-3" /> {c.projects} projects</span>
-                <span>{c.accounts} accounts</span>
-                <span>{c.members} members</span>
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <StatusBadge status={c.status} />
-                <span className="text-xs text-muted-foreground">{c.lastActive}</span>
-              </div>
-              <div className="flex items-center gap-2 pt-3 border-t border-border">
-                <span className="flex items-center gap-1.5 text-xs text-primary">
-                  View Client <ChevronRight className="h-3 w-3" />
-                </span>
-                <button onClick={e => { e.preventDefault(); e.stopPropagation(); }} className="ml-auto text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
-              </div>
-            </Link>
+      {/* Search + Add Client */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input className="h-10 pl-9 pr-4 w-[280px] border border-border rounded-lg bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <Button onClick={() => setShowCreate(true)}>
+          <Plus className="h-4 w-4" /> Add Client
+        </Button>
+      </div>
+
+      {/* Table Card */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {/* Tabs */}
+        <div className="flex items-center gap-1 px-4 border-b border-border">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === tab.id
+                  ? 'text-primary border-primary'
+                  : 'text-muted-foreground border-transparent hover:text-foreground'
+              }`}
+            >
+              {tab.label}{tab.count !== undefined ? ` (${tab.count})` : ''}
+            </button>
           ))}
         </div>
-      ) : (
-        <div className="card-surface">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                {['Client', 'Industry', 'Projects', 'Accounts', 'Members', 'Status', 'Last Active', 'Actions'].map(h => (
-                  <th key={h} className="text-left text-xs text-muted-foreground font-medium pb-3">{h}</th>
-                ))}
+
+        {/* Table */}
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              {['CLIENT', 'OWNER', 'MEMBERS', 'STATUS', 'CREATED', 'ACTIONS'].map(h => (
+                <th key={h} className="text-left text-[11px] uppercase text-muted-foreground font-medium px-4 py-3">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-sm text-muted-foreground">No records found</td>
               </tr>
-            </thead>
-            <tbody>
-              {filtered.map(c => (
-                <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
-                  <td className="py-3 text-sm font-medium text-foreground">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-full ${c.color} flex items-center justify-center text-[10px] font-bold text-white`}>{c.initials}</div>
-                      {c.name}
+            ) : (
+              filtered.map(c => (
+                <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-lg ${c.color} flex items-center justify-center text-xs font-bold text-white`}>{c.initials}</div>
+                      <span className="text-sm font-medium text-foreground">{c.name}</span>
                     </div>
                   </td>
-                  <td className="py-3 text-sm text-muted-foreground">{c.industry}</td>
-                  <td className="py-3 text-sm text-muted-foreground">{c.projects}</td>
-                  <td className="py-3 text-sm text-muted-foreground">{c.accounts}</td>
-                  <td className="py-3 text-sm text-muted-foreground">{c.members}</td>
-                  <td className="py-3"><StatusBadge status={c.status} /></td>
-                  <td className="py-3 text-sm text-muted-foreground">{c.lastActive}</td>
-                  <td className="py-3"><Link to={`/agency/clients/${c.id}`} className="text-xs text-primary hover:underline">View</Link></td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{c.owner}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" /> {c.members}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{c.created}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><FolderOpen className="h-4 w-4" /></button>
+                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
+                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Power className="h-4 w-4" /></button>
+                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+        {filtered.length > 0 && (
+          <div className="px-4 py-3 border-t border-border text-xs text-muted-foreground">
+            Showing 1-{filtered.length} of {filtered.length} results
+          </div>
+        )}
+      </div>
 
-      {/* Create Client Modal */}
+      {/* Add Client Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
-          <div className="w-[560px] bg-card border border-border rounded-2xl p-8" onClick={e => e.stopPropagation()}>
+          <div className="w-[480px] bg-card border border-border rounded-2xl p-8" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-foreground">Add Client</h2>
+              <h2 className="text-lg font-bold text-foreground">Add Client</h2>
               <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <div className="w-20 h-20 border-2 border-dashed border-border rounded-xl flex items-center justify-center shrink-0 hover:border-primary cursor-pointer">
-                  <Upload className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">Client Name</label>
-                    <input className="input-dark" placeholder="e.g., Acme Corp" />
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">Industry</label>
-                    <select className="input-dark"><option>Select industry</option><option>Retail</option><option>Technology</option><option>Healthcare</option><option>Food & Beverage</option></select>
-                  </div>
-                </div>
+            <div className="space-y-5">
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">Client Name <span className="text-primary">*</span></label>
+                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Client organization name" />
               </div>
               <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Website URL</label>
-                <input className="input-dark" placeholder="https://" />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Notes</label>
-                <textarea className="input-dark h-20 py-2 resize-none" placeholder="Additional notes..." />
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">Description</label>
+                <textarea className="w-full px-4 py-3 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary h-24 resize-none" placeholder="Brief description of this client..." />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
-              <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button>Create Client</Button>
+              <Button variant="outline" onClick={() => setShowCreate(false)} className="px-8">CANCEL</Button>
+              <Button className="px-8">CREATE CLIENT</Button>
             </div>
           </div>
         </div>
