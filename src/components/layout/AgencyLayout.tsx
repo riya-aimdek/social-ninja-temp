@@ -1,25 +1,19 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Building, Users, CreditCard, Settings,
-  ChevronDown, ExternalLink, Bell, Check, Monitor, UserPlus,
-  LogOut, Settings as SettingsIcon, Mail,
+  LayoutDashboard, Globe, Users, ChevronDown, ChevronUp,
+  Bell, Check, LogOut, Search,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
 const navItems = [
   { title: "Dashboard", path: "/agency/dashboard", icon: LayoutDashboard },
-  { title: "Clients", path: "/agency/clients", icon: Building },
-  { title: "Team Members", path: "/agency/team", icon: Users },
-  { title: "Billing", path: "/agency/billing", icon: CreditCard },
-  { title: "Settings", path: "/agency/settings", icon: Settings },
+  { title: "Clients", path: "/agency/clients", icon: Globe },
+  { title: "Users", path: "/agency/team", icon: Users },
 ];
 
-const mockClients = [
-  { id: "1", name: "RetailCo", initials: "RC", color: "bg-client", industry: "Retail", active: true },
-  { id: "2", name: "TechStart", initials: "TS", color: "bg-info", industry: "Technology", active: true },
-  { id: "3", name: "FoodieHub", initials: "FH", color: "bg-warning", industry: "Food & Beverage", active: true },
-  { id: "4", name: "HealthPlus", initials: "HP", color: "bg-success", industry: "Healthcare", active: false },
+const mockAgencies = [
+  { id: "1", name: "Agency", icon: "🏢" },
 ];
 
 interface AgencyLayoutProps {
@@ -30,7 +24,7 @@ interface AgencyLayoutProps {
 const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [selectedClient, setSelectedClient] = useState(mockClients[0]);
+  const [selectedAgency, setSelectedAgency] = useState(mockAgencies[0]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
 
@@ -44,84 +38,42 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Derive breadcrumb from path
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+  const breadcrumbLabel = title || (pathSegments[1] ? pathSegments[1].charAt(0).toUpperCase() + pathSegments[1].slice(1) : "Dashboard");
+
   return (
     <div className="flex min-h-screen w-full">
+      {/* Sidebar */}
       <aside className="w-[200px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
         <div className="p-4 border-b border-sidebar-border/50">
           <SocialNinjaLogo size="sm" darkBg />
         </div>
 
-        {/* Client Switcher */}
+        {/* Agency Switcher */}
         <div className="px-3 pt-3 relative" ref={switcherRef}>
           <button
             onClick={() => setSwitcherOpen(!switcherOpen)}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors"
           >
-            <div className={`w-7 h-7 rounded-full ${selectedClient.color} flex items-center justify-center text-[10px] font-bold text-white shrink-0`}>
-              {selectedClient.initials}
-            </div>
-            <span className="text-[13px] font-semibold text-white truncate flex-1 text-left">{selectedClient.name}</span>
-            <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground shrink-0" />
+            <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center text-sm shrink-0">🏢</div>
+            <span className="text-[13px] font-semibold text-white truncate flex-1 text-left">{selectedAgency.name}</span>
+            {switcherOpen ? <ChevronUp className="h-3.5 w-3.5 text-sidebar-foreground shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground shrink-0" />}
           </button>
 
           {switcherOpen && (
-            <div className="absolute left-3 right-3 top-full mt-1 w-[280px] bg-card border border-border rounded-xl shadow-lg z-50">
-              <div className="p-3 border-b border-border">
-                <p className="text-sm font-semibold text-foreground">{selectedClient.name}</p>
-                <p className="text-[11px] text-muted-foreground">Admin · Pro Plan</p>
-              </div>
-              <div className="py-1 border-b border-border">
-                <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
-                  <Monitor className="h-4 w-4 text-muted-foreground" />
-                  <span>App usage</span>
-                  <span className="ml-auto text-xs text-muted-foreground">22 of 50 profiles</span>
+            <div className="absolute left-3 right-3 top-full mt-1 w-[220px] bg-sidebar-accent border border-sidebar-border rounded-xl shadow-lg z-50 py-1">
+              {mockAgencies.map(agency => (
+                <button
+                  key={agency.id}
+                  onClick={() => { setSelectedAgency(agency); setSwitcherOpen(false); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-sidebar-border/50 transition-colors"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center text-xs">🏢</div>
+                  <span className="text-white text-[13px]">{agency.name}</span>
+                  {selectedAgency.id === agency.id && <Check className="h-4 w-4 text-primary ml-auto" />}
                 </button>
-                <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
-                  <UserPlus className="h-4 w-4 text-muted-foreground" />
-                  <span>Invite team members</span>
-                </button>
-              </div>
-              <div className="py-1 border-b border-border max-h-48 overflow-auto">
-                {mockClients.map(client => (
-                  <button
-                    key={client.id}
-                    onClick={() => { setSelectedClient(client); setSwitcherOpen(false); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                  >
-                    {selectedClient.id === client.id ? (
-                      <Check className="h-4 w-4 text-primary shrink-0" />
-                    ) : (
-                      <span className="w-4" />
-                    )}
-                    <span className={`text-foreground ${selectedClient.id === client.id ? 'font-medium' : ''}`}>{client.name}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="py-1 border-b border-border">
-                <Link to="/agency/billing" onClick={() => setSwitcherOpen(false)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <span>Billing</span>
-                </Link>
-              </div>
-              <div className="p-3 border-b border-border">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-xs font-semibold text-white">JD</div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">john@agency.com</p>
-                    <p className="text-[11px] text-muted-foreground">Admin</p>
-                  </div>
-                </div>
-              </div>
-              <div className="py-1">
-                <Link to="/agency/settings" onClick={() => setSwitcherOpen(false)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
-                  <SettingsIcon className="h-4 w-4 text-muted-foreground" />
-                  <span>Manage account</span>
-                </Link>
-                <button onClick={() => { setSwitcherOpen(false); navigate("/login"); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
-                  <LogOut className="h-4 w-4 text-muted-foreground" />
-                  <span>Log out</span>
-                </button>
-              </div>
+              ))}
             </div>
           )}
         </div>
@@ -138,34 +90,49 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
           })}
         </nav>
 
+        {/* User profile at bottom */}
         <div className="px-3 py-3 border-t border-sidebar-border/50">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">JD</div>
+            <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">R</div>
             <div>
-              <p className="text-sm font-semibold text-white">John Doe</p>
-              <p className="text-[11px] text-sidebar-foreground">Pro Plan</p>
+              <p className="text-sm font-semibold text-white">Riya Shah</p>
+              <p className="text-[11px] text-sidebar-foreground">Xyz</p>
             </div>
           </div>
         </div>
       </aside>
 
+      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            {title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Agency</span>
+            <span className="text-sm text-muted-foreground">{'>'}</span>
+            <span className="text-sm text-foreground font-medium">{breadcrumbLabel}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <a href={`https://social-ninja.lovable.app?org=${selectedClient.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 h-9 px-3 border border-border rounded-lg text-sm text-foreground hover:bg-muted transition-colors">
-              Open in SocialNinja <ExternalLink className="h-3.5 w-3.5" />
-            </a>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input className="h-9 pl-9 pr-4 w-[240px] border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search anything..." />
+            </div>
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
               <Bell className="h-4 w-4 text-muted-foreground" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
             </button>
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <p className="text-sm font-medium text-foreground">Riya Shah</p>
+                <p className="text-[11px] text-muted-foreground">xyz</p>
+              </div>
+              <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold">R</div>
+              <button onClick={() => navigate("/login")} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+                <LogOut className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
           </div>
         </header>
-        <main className="flex-1 p-6 overflow-auto">
-          {location.pathname === "/agency/dashboard" && <div className="text-xs text-muted-foreground mb-4">Viewing: {selectedClient.name}</div>}
+        <main className="flex-1 p-6 overflow-auto bg-muted/30">
+          {title && <h1 className="text-xl font-semibold text-foreground mb-6">{breadcrumbLabel}</h1>}
           {children}
         </main>
       </div>
