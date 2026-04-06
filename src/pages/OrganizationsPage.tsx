@@ -7,6 +7,7 @@ import { Search, X, Plus, Building2, CheckCircle, XCircle, Users, FolderOpen, Pe
 
 const initialClients = [
   { id: '1', name: 'xyzee', initials: 'X', color: 'bg-primary', owner: '-', members: 0, status: 'active' as const, created: 'Apr 6, 2026' },
+  { id: '2', name: 'Inactive Co', initials: 'IC', color: 'bg-muted-foreground', owner: '-', members: 0, status: 'suspended' as const, created: 'Mar 1, 2026' },
 ];
 
 const OrganizationsPage = () => {
