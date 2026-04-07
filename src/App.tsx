@@ -26,6 +26,9 @@ import AgencySettings from "./pages/AgencySettings";
 import StandaloneOrgRegistration from "./pages/StandaloneOrgRegistration";
 
 import ClientLayout from "./components/layout/ClientLayout";
+import ClientDashboardPage from "./pages/client/ClientDashboardPage";
+import ClientProjectsPage from "./pages/client/ClientProjectsPage";
+import ClientTeamPage from "./pages/client/ClientTeamPage";
 import DashboardPage from "./pages/client/DashboardPage";
 import ConnectPage from "./pages/client/ConnectPage";
 import CreatePage from "./pages/client/CreatePage";
@@ -77,9 +80,16 @@ const App = () => (
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
 
-          {/* Client — SocialNinja integrated view */}
+          {/* Client — two-level navigation */}
           <Route element={<ClientLayout />}>
-            <Route path="/client/dashboard" element={<DashboardPage />} />
+            {/* Client-level pages (no project selected) */}
+            <Route path="/client/dashboard" element={<ClientDashboardPage />} />
+            <Route path="/client/projects" element={<ClientProjectsPage />} />
+            <Route path="/client/team" element={<ClientTeamPage />} />
+
+            {/* Project-level pages (project selected from dropdown) */}
+            <Route path="/client/project/dashboard" element={<DashboardPage />} />
+            <Route path="/client/project/team" element={<ClientTeamPage />} />
             <Route path="/client/connect" element={<ConnectPage />} />
             <Route path="/client/create" element={<CreatePage />} />
             <Route path="/client/publish" element={<PublishPage />} />
@@ -97,6 +107,7 @@ const App = () => (
             <Route path="/client/settings/saved-replies" element={<ClientSettingsPage defaultTab="saved-replies" />} />
             <Route path="/client/settings/tags" element={<ClientSettingsPage defaultTab="tags" />} />
             <Route path="/client/settings/security" element={<ClientSettingsPage defaultTab="security" />} />
+            <Route path="/client/customization" element={<div className="text-muted-foreground">Customization settings coming soon.</div>} />
           </Route>
 
           {/* Legacy org routes → redirect */}
