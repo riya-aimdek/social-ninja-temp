@@ -127,7 +127,7 @@ const RegisterPage = () => {
                   <p className="text-xs text-muted-foreground mt-1">I manage social media for multiple businesses</p>
                   <div className="mt-3 space-y-1">
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Multi-client dashboard</p>
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Client isolation</p>
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Business isolation</p>
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Approval workflows</p>
                   </div>
                 </button>

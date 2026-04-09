@@ -66,7 +66,7 @@ const OrganizationDetail = () => {
     <AgencyLayout title="">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-        <Link to="/agency/clients" className="hover:text-foreground">Clients</Link>
+        <Link to="/agency/clients" className="hover:text-foreground">Businesses</Link>
         <ChevronRight className="h-3.5 w-3.5" />
         <span className="text-foreground">Acme Corp</span>
       </div>

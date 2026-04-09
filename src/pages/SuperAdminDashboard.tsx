@@ -238,7 +238,7 @@ const SuperAdminDashboard = () => {
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <Building className="h-8 w-8 text-muted-foreground/40 mb-2" />
             <p className="text-sm font-medium text-foreground">No standalone businesses</p>
-            <p className="text-xs text-muted-foreground mt-1">Clients registered without an agency will appear here.</p>
+            <p className="text-xs text-muted-foreground mt-1">Businesses registered without an agency will appear here.</p>
           </div>
         ) : (
           <table className="w-full">

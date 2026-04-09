@@ -168,7 +168,7 @@ const OrganizationsPage = () => {
             <div className="space-y-5">
               <div>
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">Business Name <span className="text-primary">*</span></label>
-                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Client organization name" />
+                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Business organization name" />
               </div>
               <div>
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">Description</label>
