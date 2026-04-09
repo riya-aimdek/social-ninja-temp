@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
+import { markOnboardingStep } from "@/components/OnboardingWidget";
 
 const socialPlatforms = [
   { name: "Facebook", icon: Facebook, color: "text-facebook" },
@@ -382,10 +383,20 @@ const OnboardingPage = () => {
 
             {currentStep < totalSteps - 1 ? (
               <div className="flex gap-3">
-                {currentStep > 0 && (
-                  <Button variant="ghost" onClick={() => setCurrentStep(currentStep + 1)}>Skip for now</Button>
-                )}
-                <Button onClick={() => setCurrentStep(currentStep + 1)}>
+                <Button variant="ghost" onClick={() => setCurrentStep(currentStep + 1)}>Skip</Button>
+                <Button onClick={() => {
+                  // Mark business onboarding steps as completed
+                  if (!isAgency) {
+                    const stepMap = ["brand", "project", "connect"];
+                    if (stepMap[currentStep]) {
+                      // Only mark if user actually filled something
+                      if (currentStep === 0 && clientName.trim()) markOnboardingStep("brand");
+                      if (currentStep === 1 && projectName.trim()) markOnboardingStep("project");
+                      if (currentStep === 2 && connectedPlatforms.length > 0) markOnboardingStep("connect");
+                    }
+                  }
+                  setCurrentStep(currentStep + 1);
+                }}>
                   Continue <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
