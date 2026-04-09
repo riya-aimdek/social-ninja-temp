@@ -110,8 +110,8 @@ const AgencySettings = () => {
           </div>
 
           <div className="card-surface">
-             <h3 className="text-base font-semibold text-foreground mb-2">Client-Level Alerts</h3>
-             <p className="text-sm text-muted-foreground mb-4">Receive alerts for activity within your clients.</p>
+             <h3 className="text-base font-semibold text-foreground mb-2">Business-Level Alerts</h3>
+             <p className="text-sm text-muted-foreground mb-4">Receive alerts for activity within your businesses.</p>
             <div className="hidden md:block">
               <table className="w-full">
                 <thead><tr className="border-b border-border">

@@ -35,12 +35,12 @@ const OrganizationsPage = () => {
   ];
 
   return (
-    <AgencyLayout title="Clients">
+    <AgencyLayout title="Businesses">
       {/* Stat Cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">Total Clients</p>
+            <p className="text-xs text-muted-foreground">Total Businesses</p>
             <p className="text-2xl font-bold text-foreground mt-1">{totalClients}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -76,14 +76,14 @@ const OrganizationsPage = () => {
         </div>
       </div>
 
-      {/* Search + Add Client */}
+      {/* Search + Add Business */}
       <div className="flex items-center justify-between mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input className="h-10 pl-9 pr-4 w-[280px] border border-border rounded-lg bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="h-10 pl-9 pr-4 w-[280px] border border-border rounded-lg bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search businesses..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Button onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4" /> Add Client
+          <Plus className="h-4 w-4" /> Add Business
         </Button>
       </div>
 
@@ -110,7 +110,7 @@ const OrganizationsPage = () => {
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {['CLIENT', 'OWNER', 'MEMBERS', 'STATUS', 'CREATED', 'ACTIONS'].map(h => (
+              {['BUSINESS', 'OWNER', 'MEMBERS', 'STATUS', 'CREATED', 'ACTIONS'].map(h => (
                 <th key={h} className="text-left text-[11px] uppercase text-muted-foreground font-medium px-4 py-3">{h}</th>
               ))}
             </tr>
@@ -157,17 +157,17 @@ const OrganizationsPage = () => {
         )}
       </div>
 
-      {/* Add Client Modal */}
+      {/* Add Business Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
           <div className="w-[480px] bg-card border border-border rounded-2xl p-8" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-foreground">Add Client</h2>
+              <h2 className="text-lg font-bold text-foreground">Add Business</h2>
               <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-5">
               <div>
-                <label className="text-sm font-semibold text-foreground mb-1.5 block">Client Name <span className="text-primary">*</span></label>
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">Business Name <span className="text-primary">*</span></label>
                 <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Client organization name" />
               </div>
               <div>
@@ -177,7 +177,7 @@ const OrganizationsPage = () => {
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setShowCreate(false)} className="px-8">CANCEL</Button>
-              <Button className="px-8">CREATE CLIENT</Button>
+              <Button className="px-8">CREATE BUSINESS</Button>
             </div>
           </div>
         </div>

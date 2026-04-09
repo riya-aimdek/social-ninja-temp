@@ -4,12 +4,12 @@ import { Eye, EyeOff, Building2, Check, ArrowRight, ArrowLeft, Globe, Phone, Mai
 import { Button } from "@/components/ui/button";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
-type AccountType = "agency" | "client" | null;
+type AccountType = "agency" | "business" | null;
 
 const agencyPlans = [
-  { id: "starter", name: "Starter", price: "$49", period: "/mo", clients: "Up to 5 clients", profiles: "15 social profiles", users: "3 team members", highlight: false },
-  { id: "professional", name: "Professional", price: "$99", period: "/mo", clients: "Up to 15 clients", profiles: "50 social profiles", users: "10 team members", highlight: true },
-  { id: "agency-plus", name: "Agency+", price: "$199", period: "/mo", clients: "Unlimited clients", profiles: "Unlimited profiles", users: "Unlimited team members", highlight: false },
+  { id: "starter", name: "Starter", price: "$49", period: "/mo", clients: "Up to 5 businesses", profiles: "15 social profiles", users: "3 team members", highlight: false },
+  { id: "professional", name: "Professional", price: "$99", period: "/mo", clients: "Up to 15 businesses", profiles: "50 social profiles", users: "10 team members", highlight: true },
+  { id: "agency-plus", name: "Agency+", price: "$199", period: "/mo", clients: "Unlimited businesses", profiles: "Unlimited profiles", users: "Unlimited team members", highlight: false },
 ];
 
 const clientPlans = [
@@ -124,16 +124,16 @@ const RegisterPage = () => {
                     <Building2 className={`h-6 w-6 ${accountType === "agency" ? "text-white" : "text-muted-foreground"}`} />
                   </div>
                   <p className="text-sm font-semibold text-foreground">Agency</p>
-                  <p className="text-xs text-muted-foreground mt-1">I manage social media for multiple clients</p>
+                  <p className="text-xs text-muted-foreground mt-1">I manage social media for multiple businesses</p>
                   <div className="mt-3 space-y-1">
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Multi-client dashboard</p>
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Client isolation</p>
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Approval workflows</p>
                   </div>
                 </button>
-                <button onClick={() => { setAccountType("client"); setSelectedPlan(""); }} className={`p-5 rounded-xl border-2 text-left transition-all ${accountType === "client" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}>
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${accountType === "client" ? "gradient-coral" : "bg-muted"}`}>
-                    <Globe className={`h-6 w-6 ${accountType === "client" ? "text-white" : "text-muted-foreground"}`} />
+                <button onClick={() => { setAccountType("business"); setSelectedPlan(""); }} className={`p-5 rounded-xl border-2 text-left transition-all ${accountType === "business" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${accountType === "business" ? "gradient-coral" : "bg-muted"}`}>
+                    <Globe className={`h-6 w-6 ${accountType === "business" ? "text-white" : "text-muted-foreground"}`} />
                   </div>
                   <p className="text-sm font-semibold text-foreground">Organisation</p>
                   <p className="text-xs text-muted-foreground mt-1">I manage my own brand's social media</p>
@@ -269,7 +269,7 @@ const RegisterPage = () => {
                     <label className="text-sm font-medium text-foreground mb-1.5 block">How many clients do you manage?</label>
                     <select className="input-dark" value={formData.clientCount} onChange={(e) => updateField("clientCount", e.target.value)}>
                       <option value="">Select range</option>
-                      <option>1–5 clients</option><option>6–15 clients</option><option>16–50 clients</option><option>50+ clients</option>
+                      <option>1–5 businesses</option><option>6–15 businesses</option><option>16–50 businesses</option><option>50+ businesses</option>
                     </select>
                   </div>
                 )}

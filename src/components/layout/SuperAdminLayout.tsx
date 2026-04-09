@@ -9,7 +9,7 @@ import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 const navItems = [
   { title: "Dashboard", path: "/super-admin/dashboard", icon: LayoutDashboard },
   { title: "Agencies", path: "/super-admin/agencies", icon: Building2 },
-  { title: "Clients", path: "/super-admin/clients", icon: Building },
+  { title: "Businesses", path: "/super-admin/clients", icon: Building },
   { title: "Users", path: "/super-admin/users", icon: Users },
   { title: "Billing & Plans", path: "/super-admin/billing", icon: CreditCard },
   { title: "Audit Log", path: "/super-admin/audit-log", icon: ScrollText },

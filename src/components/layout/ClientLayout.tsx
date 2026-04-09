@@ -183,7 +183,7 @@ export default function ClientLayout() {
               {selectedClient.initial}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-sidebar-accent-foreground truncate">Client</p>
+              <p className="text-xs font-medium text-sidebar-accent-foreground truncate">Business</p>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function ClientLayout() {
         {/* Header */}
         <header className="h-14 border-b border-border bg-card flex items-center justify-between px-6 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Client</span>
+            <span className="text-sm text-muted-foreground">Business</span>
             <span className="text-sm text-muted-foreground">{">"}</span>
             {selectedProject && (
               <>
@@ -219,7 +219,7 @@ export default function ClientLayout() {
             </button>
             <div className="flex items-center gap-2">
               <span className="text-sm text-foreground font-medium">{selectedClient.name}</span>
-              <span className="text-xs text-muted-foreground">Client</span>
+              <span className="text-xs text-muted-foreground">Business</span>
               <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-bold cursor-pointer">
                 {selectedClient.initial}
               </div>

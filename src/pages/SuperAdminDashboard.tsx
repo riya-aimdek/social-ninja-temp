@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 
 const stats = [
   { label: "Total Agencies", value: "24", change: "+3 this month", trend: "up", icon: Building2, color: "text-agency", bg: "bg-agency/10" },
-  { label: "Total Clients", value: "156", change: "+12% vs last month", trend: "up", icon: Building, color: "text-client", bg: "bg-client/10" },
+  { label: "Total Businesses", value: "156", change: "+12% vs last month", trend: "up", icon: Building, color: "text-client", bg: "bg-client/10" },
   { label: "Total Users", value: "1,847", change: "+89 this month", trend: "up", icon: Users, color: "text-user-role", bg: "bg-user-role/10" },
   { label: "Active Subscriptions", value: "142", change: "-2 this month", trend: "down", icon: CreditCard, color: "text-success", bg: "bg-success/10" },
 ];
@@ -228,23 +228,23 @@ const SuperAdminDashboard = () => {
         </div>
       </div>
 
-      {/* Standalone Clients */}
+      {/* Standalone Businesses */}
       <div className="card-surface">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-foreground">Standalone Clients</h2>
+          <h2 className="text-base font-semibold text-foreground">Standalone Businesses</h2>
           <span className="text-xs text-muted-foreground">{standaloneOrgs.length} clients</span>
         </div>
         {standaloneOrgs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <Building className="h-8 w-8 text-muted-foreground/40 mb-2" />
-            <p className="text-sm font-medium text-foreground">No standalone clients</p>
+            <p className="text-sm font-medium text-foreground">No standalone businesses</p>
             <p className="text-xs text-muted-foreground mt-1">Clients registered without an agency will appear here.</p>
           </div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Client</th>
+                <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Business</th>
                 <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Users</th>
                 <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Plan</th>
                 <th className="text-left text-[11px] uppercase text-muted-foreground font-medium pb-3">Profiles</th>
