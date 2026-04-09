@@ -90,7 +90,7 @@ const LoginPage = () => {
               onClick={() => navigate("/client/dashboard")}
               className="flex-1 text-xs py-2 rounded-lg border border-border hover:border-client text-client bg-client/5 hover:bg-client/10 transition-colors"
             >
-              Client
+              Business
             </button>
           </div>
         </div>
