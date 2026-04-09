@@ -45,7 +45,7 @@ const OrgLayout = ({ children, title }: OrgLayoutProps) => {
             <div className="w-8 h-8 rounded-full bg-client flex items-center justify-center text-white text-xs font-semibold shrink-0">RC</div>
             <div>
               <p className="text-sm font-semibold text-white">RetailCo</p>
-              <p className="text-[11px] text-sidebar-foreground">Client</p>
+              <p className="text-[11px] text-sidebar-foreground">Business</p>
             </div>
           </div>
         </div>

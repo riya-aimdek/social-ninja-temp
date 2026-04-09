@@ -17,15 +17,15 @@ const roleCards = [
     category: 'AGENCY',
     roles: [
       { id: 'agency-admin', name: 'Agency Admin', desc: 'Full control over agency. Can create new clients, delete projects, and see everything across the entire tool.' },
-      { id: 'agency-account-manager', name: 'Agency Account Manager', desc: 'Handles day-to-day for all clients. Can manage multiple clients but cannot access billing or delete clients.' },
+      { id: 'agency-account-manager', name: 'Agency Account Manager', desc: 'Handles day-to-day for all clients. Can manage multiple businesses but cannot access billing or delete clients.' },
     ],
   },
   {
-    category: 'CLIENT',
+    category: 'BUSINESS',
     roles: [
-      { id: 'client-admin', name: 'Client Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, and invites client team members." },
+      { id: 'business-admin', name: 'Business Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, and invites client team members." },
       { id: 'content-creator', name: 'Content Creator', desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-      { id: 'approver', name: 'Approver', desc: 'Usually a contact at the client company. Can log in to see only their specific project to review and approve posts.' },
+      { id: 'approver', name: 'Approver', desc: 'Usually a contact at the business company. Can log in to see only their specific project to review and approve posts.' },
       { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for their specific project.' },
     ],
   },
@@ -83,10 +83,10 @@ const TeamMembersPage = () => {
                   <td className="px-4 py-3"><StatusBadge status={u.status} /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Manage Clients">
+                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Manage Businesses">
                         <UsersIcon className="h-4 w-4" />
                       </button>
-                      <button className="text-xs text-primary hover:underline font-medium">Manage Clients</button>
+                      <button className="text-xs text-primary hover:underline font-medium">Manage Businesses</button>
                       <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
                       <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                     </div>

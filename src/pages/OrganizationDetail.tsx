@@ -45,7 +45,7 @@ const projects = [
 ];
 
 const teamMembers = [
-  { name: "Sarah Chen", avatar: "SC", role: "client-admin" as const, status: "active" as const, projects: ["Acme Sneakers", "Acme Apparel"] },
+  { name: "Sarah Chen", avatar: "SC", role: "business-admin" as const, status: "active" as const, projects: ["Acme Sneakers", "Acme Apparel"] },
   { name: "James Wilson", avatar: "JW", role: "approver" as const, status: "active" as const, projects: ["Acme Sneakers"] },
   { name: "Priya Sharma", avatar: "PS", role: "social-media-manager" as const, status: "active" as const, projects: ["Acme Apparel", "Acme Lifestyle Blog"] },
   { name: "Guest User", avatar: "GU", role: "content-creator" as const, status: "pending" as const, projects: ["Acme Sneakers"] },
@@ -66,7 +66,7 @@ const OrganizationDetail = () => {
     <AgencyLayout title="">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-        <Link to="/agency/clients" className="hover:text-foreground">Clients</Link>
+        <Link to="/agency/clients" className="hover:text-foreground">Businesses</Link>
         <ChevronRight className="h-3.5 w-3.5" />
         <span className="text-foreground">Acme Corp</span>
       </div>
@@ -238,7 +238,7 @@ const OrganizationDetail = () => {
       {activeTab === 'Settings' && (
         <div className="space-y-6">
           <div className="card-surface space-y-4">
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">Client Name</label><input className="input-dark" defaultValue="Acme Corp" /></div>
+            <div><label className="text-sm text-muted-foreground mb-1.5 block">Business Name</label><input className="input-dark" defaultValue="Acme Corp" /></div>
             <div><label className="text-sm text-muted-foreground mb-1.5 block">Industry</label><input className="input-dark" defaultValue="Retail" /></div>
             <div><label className="text-sm text-muted-foreground mb-1.5 block">Website</label><input className="input-dark" defaultValue="https://acmecorp.com" /></div>
             <div><label className="text-sm text-muted-foreground mb-1.5 block">Notes</label><textarea className="input-dark h-20 py-2 resize-none" /></div>
@@ -247,8 +247,8 @@ const OrganizationDetail = () => {
           <div className="card-surface border-destructive/30">
             <h3 className="text-sm font-semibold text-foreground mb-3">Danger Zone</h3>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-warning text-warning hover:bg-warning/10">Suspend Client</Button>
-              <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">Delete Client</Button>
+              <Button variant="outline" className="border-warning text-warning hover:bg-warning/10">Suspend Business</Button>
+              <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">Delete Business</Button>
             </div>
           </div>
         </div>

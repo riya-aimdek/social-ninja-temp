@@ -80,9 +80,9 @@ const App = () => (
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
 
-          {/* Client — two-level navigation */}
+          {/* Business — two-level navigation */}
           <Route element={<ClientLayout />}>
-            {/* Client-level pages (no project selected) */}
+            {/* Business-level pages (no project selected) */}
             <Route path="/client/dashboard" element={<ClientDashboardPage />} />
             <Route path="/client/projects" element={<ClientProjectsPage />} />
             <Route path="/client/team" element={<ClientTeamPage />} />

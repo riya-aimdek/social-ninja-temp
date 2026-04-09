@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
+import { markOnboardingStep } from "@/components/OnboardingWidget";
 
 const socialPlatforms = [
   { name: "Facebook", icon: Facebook, color: "text-facebook" },
@@ -17,7 +18,7 @@ const socialPlatforms = [
 
 const agencySteps = [
   { label: "Agency", icon: Building2 },
-  { label: "First Client", icon: Users },
+  { label: "First Business", icon: Users },
   { label: "Connect", icon: Link2 },
   { label: "Team", icon: User },
   { label: "Done", icon: CheckCircle2 },
@@ -33,7 +34,7 @@ const clientSteps = [
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const accountType = searchParams.get("type") || "client";
+  const accountType = searchParams.get("type") || "business";
   const isAgency = accountType === "agency";
   const steps = isAgency ? agencySteps : clientSteps;
 
@@ -129,12 +130,12 @@ const OnboardingPage = () => {
               {currentStep === 1 && (
                 <div className="space-y-5 max-w-md mx-auto">
                   <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground">Create your first client</h2>
+                    <h2 className="text-xl font-bold text-foreground">Create your first business</h2>
                     <p className="text-sm text-muted-foreground mt-1">Each client gets a fully isolated environment</p>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-foreground mb-1 block">Client Name</label>
+                      <label className="text-sm font-medium text-foreground mb-1 block">Business Name</label>
                       <input className="input-dark" placeholder="e.g. Acme Corp" />
                     </div>
                     <div>
@@ -159,8 +160,8 @@ const OnboardingPage = () => {
                           {approvalEnabled && <CheckCircle2 className="h-3 w-3 text-white" />}
                         </button>
                         <div>
-                          <p className="text-sm font-medium text-foreground">Enable client approval workflow</p>
-                          <p className="text-xs text-muted-foreground">Clients can review and approve content before publishing</p>
+                          <p className="text-sm font-medium text-foreground">Enable business approval workflow</p>
+                          <p className="text-xs text-muted-foreground">Businesses can review and approve content before publishing</p>
                         </div>
                       </label>
                     </div>
@@ -171,8 +172,8 @@ const OnboardingPage = () => {
               {currentStep === 2 && (
                 <div className="space-y-5 max-w-md mx-auto">
                   <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground">Connect client's social accounts</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Link the social profiles for this client</p>
+                    <h2 className="text-xl font-bold text-foreground">Connect business's social accounts</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Link the social profiles for this business</p>
                   </div>
                   <div className="space-y-3">
                     {socialPlatforms.map((platform) => {
@@ -204,7 +205,7 @@ const OnboardingPage = () => {
                 <div className="space-y-5 max-w-md mx-auto">
                   <div className="text-center">
                     <h2 className="text-xl font-bold text-foreground">Invite team members</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Assign roles scoped to this client only</p>
+                    <p className="text-sm text-muted-foreground mt-1">Assign roles scoped to this business only</p>
                   </div>
                   <div className="flex gap-2">
                     <input className="input-dark flex-1" placeholder="colleague@agency.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addInvite()} />
@@ -235,13 +236,13 @@ const OnboardingPage = () => {
                     <CheckCircle2 className="h-8 w-8 text-white" />
                   </div>
                   <h2 className="text-xl font-bold text-foreground">Your agency is ready! 🎉</h2>
-                  <p className="text-sm text-muted-foreground">Start managing clients, scheduling content, and growing brands.</p>
+                  <p className="text-sm text-muted-foreground">Start managing businesses, scheduling content, and growing brands.</p>
                 </div>
               )}
             </>
           )}
 
-          {/* ===== CLIENT ONBOARDING (4 steps: Brand → Project → Connect → Done) ===== */}
+          {/* ===== BUSINESS ONBOARDING (4 steps: Brand → Project → Connect → Done) ===== */}
           {!isAgency && (
             <>
               {/* Step 0: Brand Setup */}
@@ -253,7 +254,7 @@ const OnboardingPage = () => {
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-foreground mb-1 block">Client Name *</label>
+                      <label className="text-sm font-medium text-foreground mb-1 block">Business Name *</label>
                       <input className="input-dark" placeholder="Your brand name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
                     </div>
                     <div>
@@ -382,10 +383,20 @@ const OnboardingPage = () => {
 
             {currentStep < totalSteps - 1 ? (
               <div className="flex gap-3">
-                {currentStep > 0 && (
-                  <Button variant="ghost" onClick={() => setCurrentStep(currentStep + 1)}>Skip for now</Button>
-                )}
-                <Button onClick={() => setCurrentStep(currentStep + 1)}>
+                <Button variant="ghost" onClick={() => setCurrentStep(currentStep + 1)}>Skip</Button>
+                <Button onClick={() => {
+                  // Mark business onboarding steps as completed
+                  if (!isAgency) {
+                    const stepMap = ["brand", "project", "connect"];
+                    if (stepMap[currentStep]) {
+                      // Only mark if user actually filled something
+                      if (currentStep === 0 && clientName.trim()) markOnboardingStep("brand");
+                      if (currentStep === 1 && projectName.trim()) markOnboardingStep("project");
+                      if (currentStep === 2 && connectedPlatforms.length > 0) markOnboardingStep("connect");
+                    }
+                  }
+                  setCurrentStep(currentStep + 1);
+                }}>
                   Continue <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>

@@ -39,13 +39,13 @@ const OrgSettings = () => {
       {activeTab === "General" && (
         <div className="space-y-6 max-w-2xl">
           <div className="card-surface space-y-4">
-            <h3 className="text-base font-semibold text-foreground">Client Details</h3>
+            <h3 className="text-base font-semibold text-foreground">Business Details</h3>
             <div className="flex items-start gap-6">
               <div className="w-20 h-20 border-2 border-dashed border-border rounded-xl flex items-center justify-center hover:border-primary cursor-pointer transition-colors">
                 <Upload className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="flex-1 space-y-4">
-                <div><label className="text-sm text-muted-foreground mb-1.5 block">Client Name</label><input className="input-dark" defaultValue="RetailCo" /></div>
+                <div><label className="text-sm text-muted-foreground mb-1.5 block">Business Name</label><input className="input-dark" defaultValue="RetailCo" /></div>
                 <div><label className="text-sm text-muted-foreground mb-1.5 block">Industry</label>
                   <select className="input-dark"><option>Retail</option><option>Technology</option><option>Healthcare</option><option>Food & Beverage</option></select>
                 </div>
