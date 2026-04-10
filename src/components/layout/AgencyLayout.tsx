@@ -8,7 +8,7 @@ import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
 const navItems = [
   { title: "Dashboard", path: "/agency/dashboard", icon: LayoutDashboard },
-  { title: "Businesses", path: "/agency/clients", icon: Globe },
+  { title: "Clients", path: "/agency/clients", icon: Globe },
   { title: "Users", path: "/agency/team", icon: Users },
 ];
 
