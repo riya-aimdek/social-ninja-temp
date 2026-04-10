@@ -3,7 +3,7 @@ import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Building2, Users, Globe, Clock } from "lucide-react";
 
 const statCards = [
-  { label: "TOTAL BUSINESSES", value: "0", icon: Building2, iconBg: "bg-purple-100", iconColor: "text-purple-600" },
+  { label: "TOTAL CLIENTS", value: "0", icon: Building2, iconBg: "bg-purple-100", iconColor: "text-purple-600" },
   { label: "TOTAL USERS", value: "0", icon: Users, iconBg: "bg-blue-100", iconColor: "text-blue-600" },
   { label: "CAMPAIGNS", value: "0", icon: Globe, iconBg: "bg-red-100", iconColor: "text-red-500" },
   { label: "PENDING", value: "0", icon: Clock, iconBg: "bg-green-100", iconColor: "text-green-600" },
@@ -12,7 +12,6 @@ const statCards = [
 const AgencyDashboard = () => {
   return (
     <AgencyLayout title="Dashboard">
-      {/* Stat Cards */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         {statCards.map(card => (
           <div key={card.label} className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
@@ -27,12 +26,10 @@ const AgencyDashboard = () => {
         ))}
       </div>
 
-      {/* Recent Businesses & Recent Users side by side */}
       <div className="grid grid-cols-2 gap-6">
-        {/* Recent Businesses */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold text-foreground tracking-wide">RECENT BUSINESSES</h2>
+            <h2 className="text-sm font-bold text-foreground tracking-wide">RECENT CLIENTS</h2>
             <Link to="/agency/clients" className="text-sm text-primary font-medium hover:underline flex items-center gap-1">
               VIEW ALL →
             </Link>
@@ -41,7 +38,7 @@ const AgencyDashboard = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  {['BUSINESS', 'OWNER', 'STATUS', 'CREATED'].map(h => (
+                  {['CLIENT', 'OWNER', 'STATUS', 'CREATED'].map(h => (
                     <th key={h} className="text-left text-[11px] uppercase text-muted-foreground font-medium px-4 py-3">{h}</th>
                   ))}
                 </tr>
@@ -55,7 +52,6 @@ const AgencyDashboard = () => {
           </div>
         </div>
 
-        {/* Recent Users */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-foreground tracking-wide">RECENT USERS</h2>

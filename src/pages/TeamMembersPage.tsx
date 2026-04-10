@@ -1,14 +1,29 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Search, X, Plus, Pencil, Trash2, RefreshCw, Mail, Users as UsersIcon } from "lucide-react";
+import { Search, X, Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+
+const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
+
+const permissionColors: Record<string, string> = {
+  Engage: 'bg-green-50 text-green-700 border-green-200',
+  Listen: 'bg-green-50 text-green-700 border-green-200',
+  Boost: 'bg-red-50 text-red-600 border-red-200',
+  Analyze: 'bg-green-50 text-green-700 border-green-200',
+};
 
 const initialUsers = [
   {
-    id: '1', name: 'Rii', email: 'riya.shah@aimdek.com',
-    role: 'Content Creator', permission: 'No access',
-    status: 'active' as const, inviteStatus: 'pending' as const,
+    id: '1', name: 'user-3', email: 'user3@yopmail.com',
+    role: '', permissions: [] as string[],
+    status: 'active' as const,
+  },
+  {
+    id: '2', name: 'user-1', email: 'user1@yopmail.com',
+    role: 'Agency Admin', permissions: ['Engage', 'Listen', 'Boost', 'Analyze'],
+    status: 'active' as const,
   },
 ];
 
@@ -17,15 +32,15 @@ const roleCards = [
     category: 'AGENCY',
     roles: [
       { id: 'agency-admin', name: 'Agency Admin', desc: 'Full control over agency. Can create new clients, delete projects, and see everything across the entire tool.' },
-      { id: 'agency-account-manager', name: 'Agency Account Manager', desc: 'Handles day-to-day for all clients. Can manage multiple businesses but cannot access billing or delete clients.' },
+      { id: 'agency-account-manager', name: 'Agency Account Manager', desc: 'Handles day-to-day for all clients. Can manage multiple clients but cannot access billing or delete clients.' },
     ],
   },
   {
-    category: 'BUSINESS',
+    category: 'CLIENT',
     roles: [
-      { id: 'business-admin', name: 'Business Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, and invites client team members." },
+      { id: 'business-admin', name: 'Client Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, and invites client team members." },
       { id: 'content-creator', name: 'Content Creator', desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-      { id: 'approver', name: 'Approver', desc: 'Usually a contact at the business company. Can log in to see only their specific project to review and approve posts.' },
+      { id: 'approver', name: 'Approver', desc: 'Usually a contact at the client company. Can log in to see only their specific project to review and approve posts.' },
       { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for their specific project.' },
     ],
   },
@@ -77,16 +92,31 @@ const TeamMembersPage = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-foreground border border-border rounded px-2 py-0.5">{u.role}</span>
+                    {u.role ? (
+                      <span className="text-sm text-foreground border border-border rounded px-2 py-0.5">{u.role}</span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{u.permission}</td>
+                  <td className="px-4 py-3">
+                    {u.permissions.length > 0 ? (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {u.permissions.map(p => (
+                          <span key={p} className={`text-xs font-medium px-2 py-0.5 rounded border ${permissionColors[p] || 'bg-muted text-muted-foreground border-border'}`}>
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">No access</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3"><StatusBadge status={u.status} /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Manage Businesses">
-                        <UsersIcon className="h-4 w-4" />
-                      </button>
-                      <button className="text-xs text-primary hover:underline font-medium">Manage Businesses</button>
+                      <Link to={`/agency/team/${u.id}/manage`} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+                        <RefreshCw className="h-3.5 w-3.5" /> Manage Clients
+                      </Link>
                       <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
                       <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                     </div>
@@ -113,7 +143,6 @@ const TeamMembersPage = () => {
             </div>
             <hr className="border-border mb-6" />
 
-            {/* Name & Email */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">Full Name <span className="text-primary">*</span></label>
@@ -125,7 +154,6 @@ const TeamMembersPage = () => {
               </div>
             </div>
 
-            {/* Assign Role */}
             <div>
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
               {roleCards.map(cat => (
