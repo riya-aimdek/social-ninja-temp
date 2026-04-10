@@ -21,6 +21,8 @@ import AgencyDashboard from "./pages/AgencyDashboard";
 import OrganizationsPage from "./pages/OrganizationsPage";
 import OrganizationDetail from "./pages/OrganizationDetail";
 import TeamMembersPage from "./pages/TeamMembersPage";
+import AgencyClientTeamPage from "./pages/AgencyClientTeamPage";
+import AgencyUserManagePage from "./pages/AgencyUserManagePage";
 import BillingPage from "./pages/BillingPage";
 import AgencySettings from "./pages/AgencySettings";
 import StandaloneOrgRegistration from "./pages/StandaloneOrgRegistration";
@@ -76,7 +78,9 @@ const App = () => (
           <Route path="/agency/dashboard" element={<AgencyDashboard />} />
           <Route path="/agency/clients" element={<OrganizationsPage />} />
           <Route path="/agency/clients/:id" element={<OrganizationDetail />} />
+          <Route path="/agency/clients/:id/team" element={<AgencyClientTeamPage />} />
           <Route path="/agency/team" element={<TeamMembersPage />} />
+          <Route path="/agency/team/:userId/manage" element={<AgencyUserManagePage />} />
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
 
