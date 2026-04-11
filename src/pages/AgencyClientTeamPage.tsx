@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Search, X, Plus, Pencil, Trash2, Check } from "lucide-react";
+import { Search, X, Plus, Pencil, Trash2, Check, ChevronDown } from "lucide-react";
 
 const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
 
@@ -11,33 +11,37 @@ const defaultPermissions: Record<string, string[]> = {
   'business-admin': ['Engage', 'Listen', 'Boost', 'Analyze'],
   'content-creator': ['Engage'],
   'approver': ['Analyze'],
-  'social-media-manager': ['Engage', 'Listen', 'Analyze'],
+  'social-media-manager': ['Engage', 'Listen', 'Boost', 'Analyze'],
   'viewer': ['Analyze'],
 };
 
 const permissionColors: Record<string, string> = {
   Engage: 'bg-green-50 text-green-700 border-green-200',
   Listen: 'bg-green-50 text-green-700 border-green-200',
-  Boost: 'bg-muted text-muted-foreground border-border',
+  Boost: 'bg-red-50 text-red-600 border-red-200',
   Analyze: 'bg-green-50 text-green-700 border-green-200',
 };
 
 const roleCards = [
-  { id: 'business-admin', name: 'Client Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, invites team members." },
+  { id: 'business-admin', name: 'Client Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, invites client team members, and manages project teams." },
   { id: 'content-creator', name: 'Content Creator', desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-  { id: 'approver', name: 'Approver', desc: 'Usually a contact at the client company. Can log in to review and approve posts.' },
+  { id: 'approver', name: 'Approver', desc: 'Usually a contact at the client company. Can log in to see only their specific project to review and approve posts.' },
   { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for that specific project.' },
   { id: 'viewer', name: 'Viewer', desc: 'Read-only access to view content and reports. Cannot create, edit, or publish anything.' },
 ];
 
+const mockAgencyUsers = [
+  { id: '1', name: 'user-1', email: 'user1@yopmail.com' },
+  { id: '2', name: 'user-3', email: 'user3@yopmail.com' },
+  { id: '3', name: 'useer', email: 'useer@yopmail.com' },
+];
+
 const initialMembers = [
-  { id: '1', name: 'user-3', email: 'user3@yopmail.com', role: 'Approver', permissions: ['Listen', 'Analyze'], status: 'active' as const },
-  { id: '2', name: 'user-1', email: 'user1@yopmail.com', role: 'Viewer', permissions: ['Analyze'], status: 'active' as const },
+  { id: '1', name: 'useer', email: 'useer@yopmail.com', role: 'Social Media Manager', roleId: 'social-media-manager', permissions: ['Engage', 'Listen', 'Boost', 'Analyze'], status: 'active' as const },
 ];
 
 const AgencyClientTeamPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [showAddUser, setShowAddUser] = useState(false);
   const [editUser, setEditUser] = useState<typeof initialMembers[0] | null>(null);
@@ -45,14 +49,22 @@ const AgencyClientTeamPage = () => {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [members] = useState(initialMembers);
 
+  // Select user dropdown state
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<typeof mockAgencyUsers[0] | null>(null);
+  const [userSearch, setUserSearch] = useState('');
+
   const clientName = `client-${id}`;
 
   const filtered = members.filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()));
 
+  const filteredAgencyUsers = mockAgencyUsers.filter(u =>
+    !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
   const handleEditOpen = (user: typeof initialMembers[0]) => {
     setEditUser(user);
-    const roleId = roleCards.find(r => r.name === user.role)?.id || '';
-    setSelectedRole(roleId);
+    setSelectedRole(user.roleId);
     setSelectedPermissions([...user.permissions]);
   };
 
@@ -70,6 +82,72 @@ const AgencyClientTeamPage = () => {
   const isDefault = (perm: string) => (defaultPermissions[selectedRole] || []).includes(perm);
   const isExtra = (perm: string) => selectedPermissions.includes(perm) && !isDefault(perm);
 
+  const openAddUser = () => {
+    setShowAddUser(true);
+    setSelectedRole('');
+    setSelectedPermissions([]);
+    setSelectedUser(null);
+    setUserSearch('');
+  };
+
+  const RoleCardsGrid = () => (
+    <div className="grid grid-cols-2 gap-3">
+      {roleCards.map(r => (
+        <button
+          key={r.id}
+          onClick={() => handleRoleSelect(r.id)}
+          className={`p-4 rounded-xl border text-left transition-all ${
+            selectedRole === r.id
+              ? 'border-primary bg-primary/5 ring-1 ring-primary'
+              : 'border-border hover:border-muted-foreground'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
+            {selectedRole === r.id ? (
+              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="h-3 w-3 text-white" /></div>
+            ) : (
+              <div className="w-5 h-5 rounded-full border-2 border-border" />
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
+        </button>
+      ))}
+    </div>
+  );
+
+  const PermissionsGrid = () => (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <label className="text-sm font-semibold text-foreground">Permissions</label>
+        <span className="text-xs text-muted-foreground">Click to grant extra or revoke defaults</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {permissionList.map(perm => {
+          const active = selectedPermissions.includes(perm);
+          const def = isDefault(perm);
+          const extra = isExtra(perm);
+          return (
+            <button
+              key={perm}
+              onClick={() => togglePermission(perm)}
+              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                active ? 'border-green-300 bg-green-50' : 'border-border hover:border-muted-foreground'
+              }`}
+            >
+              <div className={`w-5 h-5 rounded flex items-center justify-center ${active ? 'bg-green-600' : 'border-2 border-border'}`}>
+                {active && <Check className="h-3 w-3 text-white" />}
+              </div>
+              <span className={`text-sm font-medium ${active ? 'text-green-700' : 'text-foreground'}`}>{perm}</span>
+              {def && active && <span className="text-xs text-muted-foreground ml-auto">default</span>}
+              {extra && <span className="text-xs text-green-600 ml-auto">+extra</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <AgencyLayout title="Team">
       {/* Header */}
@@ -84,7 +162,7 @@ const AgencyClientTeamPage = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input className="h-10 pl-9 pr-4 w-[220px] border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <Button onClick={() => { setShowAddUser(true); setSelectedRole(''); setSelectedPermissions([]); }}>
+            <Button onClick={openAddUser}>
               <Plus className="h-4 w-4" /> Add Users
             </Button>
           </div>
@@ -155,72 +233,12 @@ const AgencyClientTeamPage = () => {
               <button onClick={() => setEditUser(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
 
-            {/* Role Cards */}
             <div className="mb-6">
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
-              <div className="grid grid-cols-2 gap-3">
-                {roleCards.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => handleRoleSelect(r.id)}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      selectedRole === r.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:border-muted-foreground'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
-                      {selectedRole === r.id && (
-                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="h-3 w-3 text-white" />
-                        </div>
-                      )}
-                      {selectedRole !== r.id && <div className="w-5 h-5 rounded-full border-2 border-border" />}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
-                  </button>
-                ))}
-              </div>
+              <RoleCardsGrid />
             </div>
 
-            {/* Permissions */}
-            {selectedRole && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-semibold text-foreground">Permissions</label>
-                  <span className="text-xs text-muted-foreground">Click to grant extra or revoke defaults</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {permissionList.map(perm => {
-                    const active = selectedPermissions.includes(perm);
-                    const def = isDefault(perm);
-                    const extra = isExtra(perm);
-                    return (
-                      <button
-                        key={perm}
-                        onClick={() => togglePermission(perm)}
-                        className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                          active
-                            ? 'border-green-300 bg-green-50'
-                            : 'border-border hover:border-muted-foreground'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded flex items-center justify-center ${active ? 'bg-green-600' : 'border-2 border-border'}`}>
-                          {active && <Check className="h-3 w-3 text-white" />}
-                        </div>
-                        <span className={`text-sm font-medium ${active ? 'text-green-700' : 'text-foreground'}`}>{perm}</span>
-                        {def && active && <span className="text-xs text-muted-foreground ml-auto">default</span>}
-                        {extra && <span className="text-xs text-green-600 ml-auto">+extra</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  <span className="text-green-600 font-medium">+extra</span> = added beyond role · <span className="text-primary font-medium">revoked</span> = removed from role default
-                </p>
-              </div>
-            )}
+            {selectedRole && <PermissionsGrid />}
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setEditUser(null)} className="px-8 flex-1">Cancel</Button>
@@ -230,85 +248,73 @@ const AgencyClientTeamPage = () => {
         </div>
       )}
 
-      {/* Add User Modal (same role+permissions UI) */}
+      {/* Add Users Modal — Select User from existing agency users */}
       {showAddUser && (
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setShowAddUser(false)}>
           <div className="w-[600px] bg-card border border-border rounded-2xl p-8 max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-foreground">Add Users to {clientName}</h2>
+              <h2 className="text-lg font-bold text-foreground">Add Users</h2>
               <button onClick={() => setShowAddUser(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
             <hr className="border-border mb-6" />
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-1.5 block">Full Name <span className="text-primary">*</span></label>
-                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Jane Doe" />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-1.5 block">Email Address <span className="text-primary">*</span></label>
-                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="jane@company.com" />
+            {/* Select User Dropdown */}
+            <div className="mb-6">
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">Select User <span className="text-primary">*</span></label>
+              <div className="relative">
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {selectedUser ? (
+                    <span className="text-foreground">{selectedUser.name} ({selectedUser.email})</span>
+                  ) : (
+                    <span className="text-muted-foreground">Search agency users...</span>
+                  )}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+                {userDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                    <div className="p-2 border-b border-border">
+                      <input
+                        className="h-8 w-full px-3 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none"
+                        placeholder="Search agency users..."
+                        value={userSearch}
+                        onChange={e => setUserSearch(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto">
+                      {filteredAgencyUsers.map(u => (
+                        <button
+                          key={u.id}
+                          onClick={() => { setSelectedUser(u); setUserDropdownOpen(false); setUserSearch(''); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                            {u.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{u.name}</p>
+                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                          </div>
+                        </button>
+                      ))}
+                      {filteredAgencyUsers.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No users found</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="mb-6">
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
-              <div className="grid grid-cols-2 gap-3">
-                {roleCards.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => handleRoleSelect(r.id)}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      selectedRole === r.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:border-muted-foreground'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
-                      {selectedRole === r.id ? (
-                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="h-3 w-3 text-white" /></div>
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-border" />
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
-                  </button>
-                ))}
-              </div>
+              <RoleCardsGrid />
             </div>
 
-            {selectedRole && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-semibold text-foreground">Permissions</label>
-                  <span className="text-xs text-muted-foreground">Click to grant extra or revoke defaults</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {permissionList.map(perm => {
-                    const active = selectedPermissions.includes(perm);
-                    const def = isDefault(perm);
-                    const extra = isExtra(perm);
-                    return (
-                      <button
-                        key={perm}
-                        onClick={() => togglePermission(perm)}
-                        className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                          active ? 'border-green-300 bg-green-50' : 'border-border hover:border-muted-foreground'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded flex items-center justify-center ${active ? 'bg-green-600' : 'border-2 border-border'}`}>
-                          {active && <Check className="h-3 w-3 text-white" />}
-                        </div>
-                        <span className={`text-sm font-medium ${active ? 'text-green-700' : 'text-foreground'}`}>{perm}</span>
-                        {def && active && <span className="text-xs text-muted-foreground ml-auto">default</span>}
-                        {extra && <span className="text-xs text-green-600 ml-auto">+extra</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {selectedRole && <PermissionsGrid />}
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setShowAddUser(false)} className="px-8 flex-1">Cancel</Button>
