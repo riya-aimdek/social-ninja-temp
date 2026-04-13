@@ -6,7 +6,7 @@ import StatusBadge from "@/components/StatusBadge";
 const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
 
 const defaultPermissions: Record<string, string[]> = {
-  'client-admin': ['Engage', 'Listen', 'Boost', 'Analyze'],
+  'business-admin': ['Engage', 'Listen', 'Boost', 'Analyze'],
   'content-creator': ['Engage'],
   'approver': ['Analyze'],
   'social-media-manager': ['Engage', 'Listen', 'Boost', 'Analyze'],
@@ -21,16 +21,13 @@ const permissionColors: Record<string, string> = {
 };
 
 const roleCards = [
-  { id: 'client-admin', name: 'Client Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, invites client team members, and manages project teams." },
+  { id: 'business-admin', name: 'Business Admin', desc: "Manages one business's projects. Creates projects, adds social accounts, and invites business team members." },
   { id: 'content-creator', name: 'Content Creator', desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-  { id: 'approver', name: 'Approver', desc: 'Usually a contact at the client company. Can log in to see only their specific project to review and approve posts.' },
-  { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for that specific project.' },
-  { id: 'viewer', name: 'Viewer', desc: 'Read-only access to view content and reports. Cannot create, edit, or publish anything.' },
+  { id: 'approver', name: 'Approver (The Business)', desc: 'Usually a contact at the business company. Can log in to see their specific project to review and approve posts.' },
+  { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for their specific project.' },
 ];
 
-const initialMembers = [
-  { id: '1', name: 'user4', email: 'user4@yopmail.com', role: 'Client Admin', roleId: 'client-admin', permissions: ['Engage', 'Listen', 'Boost', 'Analyze'], status: 'active' as const },
-];
+const initialMembers: { id: string; name: string; email: string; role: string; roleId: string; permissions: string[]; status: 'active' | 'suspended' }[] = [];
 
 export default function ClientTeamPage() {
   const [search, setSearch] = useState("");
@@ -39,6 +36,7 @@ export default function ClientTeamPage() {
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [members] = useState(initialMembers);
 
   const filtered = members.filter(u =>
@@ -47,6 +45,13 @@ export default function ClientTeamPage() {
 
   const handleRoleSelect = (roleId: string) => {
     setSelectedRole(roleId);
+    setSelectedPermissions([...(defaultPermissions[roleId] || [])]);
+  };
+
+  const togglePermission = (perm: string) => {
+    setSelectedPermissions(prev =>
+      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
+    );
   };
 
   const openInvite = () => {
@@ -54,11 +59,13 @@ export default function ClientTeamPage() {
     setInviteName("");
     setInviteEmail("");
     setSelectedRole("");
+    setSelectedPermissions([]);
   };
 
   const openManage = (user: typeof initialMembers[0]) => {
     setManageUser(user);
     setSelectedRole(user.roleId);
+    setSelectedPermissions([...(defaultPermissions[user.roleId] || [])]);
   };
 
   const RoleCardsGrid = () => (
@@ -84,6 +91,31 @@ export default function ClientTeamPage() {
           <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
         </button>
       ))}
+    </div>
+  );
+
+  const PermissionsGrid = () => (
+    <div className="mb-6">
+      <label className="text-sm font-semibold text-foreground mb-3 block">Permissions</label>
+      <div className="grid grid-cols-2 gap-3">
+        {permissionList.map(perm => {
+          const active = selectedPermissions.includes(perm);
+          return (
+            <button
+              key={perm}
+              onClick={() => togglePermission(perm)}
+              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                active ? 'border-green-300 bg-green-50' : 'border-border hover:border-muted-foreground'
+              }`}
+            >
+              <div className={`w-5 h-5 rounded flex items-center justify-center ${active ? 'bg-green-600' : 'border-2 border-border'}`}>
+                {active && <Check className="h-3 w-3 text-white" />}
+              </div>
+              <span className={`text-sm font-medium ${active ? 'text-green-700' : 'text-foreground'}`}>{perm}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 
@@ -187,6 +219,8 @@ export default function ClientTeamPage() {
               <RoleCardsGrid />
             </div>
 
+            {selectedRole && <PermissionsGrid />}
+
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setShowModal(false)} className="px-8 flex-1">Cancel</Button>
               <Button className="px-8 flex-1" disabled={!inviteName.trim() || !inviteEmail.trim() || !selectedRole}>Send Invitation</Button>
@@ -208,6 +242,8 @@ export default function ClientTeamPage() {
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
               <RoleCardsGrid />
             </div>
+
+            {selectedRole && <PermissionsGrid />}
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setManageUser(null)} className="px-8 flex-1">Cancel</Button>
