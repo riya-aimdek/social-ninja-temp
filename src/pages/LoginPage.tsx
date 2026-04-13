@@ -25,17 +25,14 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen gradient-mesh bg-background flex items-center justify-center p-4">
       <div className="w-[440px] bg-card border border-border rounded-2xl p-10 shadow-card animate-fade-in">
-        <div className="flex flex-col items-center mb-8">
-          <SocialNinjaLogo size="lg" />
-          <p className="text-sm text-muted-foreground mt-3">Social Media Management Platform</p>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Login Now</h1>
+          <p className="text-sm text-muted-foreground">Welcome Back! Access your dashboard.</p>
         </div>
-
-        <h1 className="text-2xl font-semibold text-foreground mb-2">Welcome back</h1>
-        <p className="text-sm text-muted-foreground mb-8">Sign in to your account to continue</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Email Address</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Email Address <span className="text-primary">*</span></label>
             <input
               className="input-dark"
               type="email"
@@ -45,7 +42,10 @@ const LoginPage = () => {
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Password</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 flex items-center justify-between">
+              <span>Password <span className="text-primary">*</span></span>
+              <Link to="/forgot-password" className="text-xs text-primary hover:underline font-medium">Forgot Password?</Link>
+            </label>
             <div className="relative">
               <input
                 className="input-dark pr-10"
@@ -62,12 +62,9 @@ const LoginPage = () => {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <div className="flex justify-end mt-1.5">
-              <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
-            </div>
           </div>
           <Button type="submit" className="w-full mt-2">
-            Sign In
+            Login Now
           </Button>
         </form>
 
