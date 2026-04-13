@@ -1,12 +1,22 @@
 import { Link } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Building2, Users, Globe, Clock } from "lucide-react";
+import StatusBadge from "@/components/StatusBadge";
 
 const statCards = [
-  { label: "TOTAL CLIENTS", value: "0", icon: Building2, iconBg: "bg-purple-100", iconColor: "text-purple-600" },
-  { label: "TOTAL USERS", value: "0", icon: Users, iconBg: "bg-blue-100", iconColor: "text-blue-600" },
+  { label: "TOTAL CLIENTS", value: "1", icon: Building2, iconBg: "bg-purple-100", iconColor: "text-purple-600" },
+  { label: "TOTAL USERS", value: "2", icon: Users, iconBg: "bg-blue-100", iconColor: "text-blue-600" },
   { label: "CAMPAIGNS", value: "0", icon: Globe, iconBg: "bg-red-100", iconColor: "text-red-500" },
   { label: "PENDING", value: "0", icon: Clock, iconBg: "bg-green-100", iconColor: "text-green-600" },
+];
+
+const recentClients = [
+  { name: "Client-1", initials: "C", color: "bg-primary", owner: "—", status: "active" as const, created: "4/13/2026" },
+];
+
+const recentUsers = [
+  { name: "User-1", email: "user1@yopmail.com", role: "User", status: "active" as const },
+  { name: "User-2", email: "user2@yopmail.com", role: "User", status: "active" as const },
 ];
 
 const AgencyDashboard = () => {
@@ -44,11 +54,24 @@ const AgencyDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td colSpan={4} className="text-center py-8 text-sm text-muted-foreground">No records found</td>
-                </tr>
+                {recentClients.map(c => (
+                  <tr key={c.name} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-lg ${c.color} flex items-center justify-center text-xs font-bold text-white`}>{c.initials}</div>
+                        <span className="text-sm font-medium text-foreground">{c.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{c.owner}</td>
+                    <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{c.created}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+            <div className="px-4 py-3 border-t border-border text-xs text-muted-foreground">
+              Showing 1-0 of 0 results
+            </div>
           </div>
         </div>
 
@@ -69,11 +92,28 @@ const AgencyDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td colSpan={3} className="text-center py-8 text-sm text-muted-foreground">No records found</td>
-                </tr>
+                {recentUsers.map(u => (
+                  <tr key={u.name} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                          {u.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{u.name}</p>
+                          <p className="text-xs text-muted-foreground">{u.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{u.role}</td>
+                    <td className="px-4 py-3"><StatusBadge status={u.status} /></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+            <div className="px-4 py-3 border-t border-border text-xs text-muted-foreground">
+              Showing 1-0 of 0 results
+            </div>
           </div>
         </div>
       </div>

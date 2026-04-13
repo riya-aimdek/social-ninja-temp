@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Search, X, Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Search, X, Plus, Pencil, Trash2, RefreshCw, RotateCw } from "lucide-react";
 
 const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
 
@@ -16,14 +16,19 @@ const permissionColors: Record<string, string> = {
 
 const initialUsers = [
   {
-    id: '1', name: 'user-3', email: 'user3@yopmail.com',
+    id: '3', name: 'User-3', email: 'user3@yopmail.com',
     role: '', permissions: [] as string[],
-    status: 'active' as const,
+    status: 'active' as const, pending: true,
   },
   {
-    id: '2', name: 'user-1', email: 'user1@yopmail.com',
+    id: '2', name: 'User-2', email: 'user2@yopmail.com',
+    role: '', permissions: [] as string[],
+    status: 'active' as const, pending: false,
+  },
+  {
+    id: '1', name: 'User-1', email: 'user1@yopmail.com',
     role: 'Agency Admin', permissions: ['Engage', 'Listen', 'Boost', 'Analyze'],
-    status: 'active' as const,
+    status: 'active' as const, pending: false,
   },
 ];
 
@@ -93,7 +98,7 @@ const TeamMembersPage = () => {
                   </td>
                   <td className="px-4 py-3">
                     {u.role ? (
-                      <span className="text-sm text-foreground border border-border rounded px-2 py-0.5">{u.role}</span>
+                      <span className="text-sm text-foreground">{u.role}</span>
                     ) : (
                       <span className="text-sm text-muted-foreground">—</span>
                     )}
@@ -114,11 +119,23 @@ const TeamMembersPage = () => {
                   <td className="px-4 py-3"><StatusBadge status={u.status} /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Link to={`/agency/team/${u.id}/manage`} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
-                        <RefreshCw className="h-3.5 w-3.5" /> Manage Clients
-                      </Link>
-                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
-                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                      {u.pending ? (
+                        <>
+                          <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Resend invitation">
+                            <RotateCw className="h-4 w-4" />
+                          </button>
+                          <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Pending</span>
+                          <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                        </>
+                      ) : (
+                        <>
+                          <Link to={`/agency/team/${u.id}/manage`} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+                            <RefreshCw className="h-3.5 w-3.5" /> Manage Clients
+                          </Link>
+                          <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
+                          <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -128,7 +145,7 @@ const TeamMembersPage = () => {
         </table>
         {filtered.length > 0 && (
           <div className="px-4 py-3 border-t border-border text-xs text-muted-foreground">
-            Showing 1-{filtered.length} of {filtered.length} results
+            Showing {filtered.length}-{filtered.length} of {filtered.length} results
           </div>
         )}
       </div>

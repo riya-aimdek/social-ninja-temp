@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Search, X, Plus, Building2, CheckCircle, XCircle, Users, FolderOpen, Pencil, Power, Trash2, RefreshCw } from "lucide-react";
 
 const initialClients = [
-  { id: '1', name: 'client-1', initials: 'C', color: 'bg-primary', members: 2, status: 'active' as const, created: 'Apr 9, 2026' },
-  { id: '2', name: 'Inactive Co', initials: 'IC', color: 'bg-muted-foreground', members: 0, status: 'suspended' as const, created: 'Mar 1, 2026' },
+  { id: '1', name: 'Client-1', initials: 'C', color: 'bg-primary', owner: '—', members: 1, status: 'active' as const, created: 'Apr 6, 2026' },
+  { id: '2', name: 'Inactive Co', initials: 'IC', color: 'bg-muted-foreground', owner: '—', members: 0, status: 'suspended' as const, created: 'Mar 1, 2026' },
 ];
 
 const OrganizationsPage = () => {
@@ -40,7 +40,7 @@ const OrganizationsPage = () => {
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">Total Clients</p>
+            <p className="text-xs text-muted-foreground">Total Client</p>
             <p className="text-2xl font-bold text-foreground mt-1">{totalClients}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -80,7 +80,7 @@ const OrganizationsPage = () => {
       <div className="flex items-center justify-between mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input className="h-10 pl-9 pr-4 w-[280px] border border-border rounded-lg bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="h-10 pl-9 pr-4 w-[280px] border border-border rounded-lg bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search Businesses..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Button onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4" /> Add Client
@@ -110,7 +110,7 @@ const OrganizationsPage = () => {
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {['CLIENT', 'MEMBERS', 'STATUS', 'CREATED', 'ACTIONS'].map(h => (
+              {['CLIENT', 'OWNER', 'MEMBERS', 'STATUS', 'CREATED', 'ACTIONS'].map(h => (
                 <th key={h} className="text-left text-[11px] uppercase text-muted-foreground font-medium px-4 py-3">{h}</th>
               ))}
             </tr>
@@ -118,7 +118,7 @@ const OrganizationsPage = () => {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">No records found</td>
+                <td colSpan={6} className="text-center py-8 text-sm text-muted-foreground">No records found</td>
               </tr>
             ) : (
               filtered.map(c => (
@@ -129,6 +129,7 @@ const OrganizationsPage = () => {
                       <span className="text-sm font-medium text-foreground">{c.name}</span>
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{c.owner}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Users className="h-3.5 w-3.5" /> {c.members}

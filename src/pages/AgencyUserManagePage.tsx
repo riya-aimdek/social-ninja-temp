@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, X, ChevronDown } from "lucide-react";
 
 const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
 
@@ -29,16 +29,27 @@ const roleCards = [
   { id: 'viewer', name: 'Viewer', desc: 'Read-only access to view content and reports. Cannot create, edit, or publish anything.' },
 ];
 
+const mockClients = [
+  { id: '1', name: 'client-1', initials: 'C', color: 'bg-primary' },
+  { id: '2', name: 'Inactive Co', initials: 'IC', color: 'bg-muted-foreground' },
+];
+
 // Mock user data
 const usersData: Record<string, { name: string; email: string; role: string; clients: { id: string; name: string; initials: string; color: string; roleId: string; roleName: string; permissions: string[] }[] }> = {
-  '1': {
-    name: 'user-3',
+  '3': {
+    name: 'User-3',
     email: 'user3@yopmail.com',
     role: '',
     clients: [],
   },
   '2': {
-    name: 'user-1',
+    name: 'User-2',
+    email: 'user2@yopmail.com',
+    role: '',
+    clients: [],
+  },
+  '1': {
+    name: 'User-1',
     email: 'user1@yopmail.com',
     role: 'Agency Admin',
     clients: [
@@ -50,10 +61,14 @@ const usersData: Record<string, { name: string; email: string; role: string; cli
 const AgencyUserManagePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const user = usersData[userId || ''] || usersData['2'];
+  const user = usersData[userId || ''] || usersData['1'];
   const [editingClient, setEditingClient] = useState<typeof user.clients[0] | null>(null);
+  const [showAddClient, setShowAddClient] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [addClientDropdownOpen, setAddClientDropdownOpen] = useState(false);
+  const [addClientSelected, setAddClientSelected] = useState<typeof mockClients[0] | null>(null);
+  const [addClientSearch, setAddClientSearch] = useState('');
 
   const handleEditOpen = (client: typeof user.clients[0]) => {
     setEditingClient(client);
@@ -74,6 +89,18 @@ const AgencyUserManagePage = () => {
 
   const isDefault = (perm: string) => (defaultPermissions[selectedRole] || []).includes(perm);
   const isExtra = (perm: string) => selectedPermissions.includes(perm) && !isDefault(perm);
+
+  const filteredClients = mockClients.filter(c =>
+    !addClientSearch || c.name.toLowerCase().includes(addClientSearch.toLowerCase())
+  );
+
+  const openAddClient = () => {
+    setShowAddClient(true);
+    setSelectedRole('');
+    setSelectedPermissions([]);
+    setAddClientSelected(null);
+    setAddClientSearch('');
+  };
 
   return (
     <AgencyLayout title="Manage">
@@ -101,7 +128,7 @@ const AgencyUserManagePage = () => {
           <div>
             <h3 className="text-sm font-bold text-foreground">Client Access (Auto-Saving)</h3>
           </div>
-          <Button size="sm">
+          <Button size="sm" onClick={openAddClient}>
             <Plus className="h-4 w-4" /> Add Client
           </Button>
         </div>
@@ -196,13 +223,10 @@ const AgencyUserManagePage = () => {
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-semibold text-foreground">Permissions</label>
-                  <span className="text-xs text-muted-foreground">Click to grant extra or revoke defaults</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {permissionList.map(perm => {
                     const active = selectedPermissions.includes(perm);
-                    const def = isDefault(perm);
-                    const extra = isExtra(perm);
                     return (
                       <button
                         key={perm}
@@ -215,21 +239,106 @@ const AgencyUserManagePage = () => {
                           {active && <Check className="h-3 w-3 text-white" />}
                         </div>
                         <span className={`text-sm font-medium ${active ? 'text-green-700' : 'text-foreground'}`}>{perm}</span>
-                        {def && active && <span className="text-xs text-muted-foreground ml-auto">default</span>}
-                        {extra && <span className="text-xs text-green-600 ml-auto">+extra</span>}
                       </button>
                     );
                   })}
                 </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  <span className="text-green-600 font-medium">+extra</span> = added beyond role · <span className="text-primary font-medium">revoked</span> = removed from role default
-                </p>
               </div>
             )}
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setEditingClient(null)} className="px-8 flex-1">Cancel</Button>
               <Button className="px-8 flex-1">Save</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Client Modal */}
+      {showAddClient && (
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setShowAddClient(false)}>
+          <div className="w-[600px] bg-card border border-border rounded-2xl p-8 max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-foreground">Add Client</h2>
+              <button onClick={() => setShowAddClient(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+            </div>
+
+            {/* Select Client Dropdown */}
+            <div className="mb-6">
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">Select Client <span className="text-primary">*</span></label>
+              <div className="relative">
+                <button
+                  onClick={() => setAddClientDropdownOpen(!addClientDropdownOpen)}
+                  className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {addClientSelected ? (
+                    <span className="text-foreground">{addClientSelected.name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Select a client...</span>
+                  )}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+                {addClientDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                    <div className="p-2 border-b border-border">
+                      <input
+                        className="h-8 w-full px-3 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none"
+                        placeholder="Search clients..."
+                        value={addClientSearch}
+                        onChange={e => setAddClientSearch(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto">
+                      {filteredClients.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => { setAddClientSelected(c); setAddClientDropdownOpen(false); setAddClientSearch(''); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <div className={`w-7 h-7 rounded-lg ${c.color} flex items-center justify-center text-xs font-bold text-white`}>
+                            {c.initials}
+                          </div>
+                          <span className="text-sm font-medium text-foreground">{c.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Role Cards */}
+            <div className="mb-6">
+              <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
+              <div className="grid grid-cols-2 gap-3">
+                {roleCards.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => handleRoleSelect(r.id)}
+                    className={`p-4 rounded-xl border text-left transition-all ${
+                      selectedRole === r.id
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                        : 'border-border hover:border-muted-foreground'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
+                      {selectedRole === r.id ? (
+                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="h-3 w-3 text-white" /></div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-border" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
+              <Button variant="outline" onClick={() => setShowAddClient(false)} className="px-8 flex-1">Cancel</Button>
+              <Button className="px-8 flex-1">Add Client</Button>
             </div>
           </div>
         </div>
