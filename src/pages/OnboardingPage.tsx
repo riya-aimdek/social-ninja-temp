@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   User, Link2, Users, CheckCircle2, Upload, ArrowRight, ArrowLeft,
   Instagram, Facebook, Linkedin, Twitter, Plus, X, Building2, Palette,
-  Clock, CalendarDays, FolderOpen, BarChart3, Sparkles
+  FolderOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 import { markOnboardingStep } from "@/components/OnboardingWidget";
+import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
+import OnboardingStepWrapper from "@/components/onboarding/OnboardingStepWrapper";
+import SocialPlatformCard from "@/components/onboarding/SocialPlatformCard";
+import OnboardingDoneStep from "@/components/onboarding/OnboardingDoneStep";
+import { Progress } from "@/components/ui/progress";
 
 const socialPlatforms = [
   { name: "Facebook", icon: Facebook, color: "text-facebook" },
@@ -18,7 +23,7 @@ const socialPlatforms = [
 
 const agencySteps = [
   { label: "Agency", icon: Building2 },
-  { label: "First Business", icon: Users },
+  { label: "First Client", icon: Users },
   { label: "Connect", icon: Link2 },
   { label: "Team", icon: User },
   { label: "Done", icon: CheckCircle2 },
@@ -39,6 +44,7 @@ const OnboardingPage = () => {
   const steps = isAgency ? agencySteps : clientSteps;
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -48,6 +54,25 @@ const OnboardingPage = () => {
   const [industry, setIndustry] = useState("");
   const [projectName, setProjectName] = useState("");
   const [projectDesc, setProjectDesc] = useState("");
+
+  const totalSteps = steps.length;
+  const dashboardPath = isAgency ? "/agency/dashboard" : "/client/dashboard";
+  const progressPercent = ((currentStep) / (totalSteps - 1)) * 100;
+
+  const goNext = useCallback(() => {
+    if (!isAgency) {
+      if (currentStep === 0 && clientName.trim()) markOnboardingStep("brand");
+      if (currentStep === 1 && projectName.trim()) markOnboardingStep("project");
+      if (currentStep === 2 && connectedPlatforms.length > 0) markOnboardingStep("connect");
+    }
+    setDirection("forward");
+    setCurrentStep((s) => Math.min(s + 1, totalSteps - 1));
+  }, [currentStep, isAgency, clientName, projectName, connectedPlatforms, totalSteps]);
+
+  const goBack = useCallback(() => {
+    setDirection("back");
+    setCurrentStep((s) => Math.max(s - 1, 0));
+  }, []);
 
   const togglePlatform = (name: string) => {
     setConnectedPlatforms((prev) =>
@@ -66,52 +91,35 @@ const OnboardingPage = () => {
     setInvitedEmails(invitedEmails.filter((e) => e !== email));
   };
 
-  const dashboardPath = isAgency ? "/agency/dashboard" : "/client/dashboard";
-  const totalSteps = steps.length;
+  const isDoneStep = currentStep === totalSteps - 1;
 
   return (
     <div className="min-h-screen gradient-mesh bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl animate-fade-in">
-        <div className="bg-card rounded-2xl shadow-card p-8">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <SocialNinjaLogo size="lg" />
+      <div className="w-full max-w-2xl">
+        <div className="bg-card rounded-2xl shadow-card overflow-hidden">
+          {/* Top progress bar */}
+          <div className="px-0">
+            <Progress value={progressPercent} className="h-1 rounded-none" />
           </div>
 
-          {/* Stepper */}
-          <div className="flex items-center justify-center gap-0 mb-8">
-            {steps.map((step, idx) => (
-              <div key={step.label} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                    idx <= currentStep ? "gradient-coral text-white shadow-coral" : "bg-muted text-muted-foreground"
-                  }`}>
-                    <step.icon className="h-5 w-5" />
-                  </div>
-                  <span className={`text-xs mt-1.5 font-medium ${idx <= currentStep ? "text-foreground" : "text-muted-foreground"}`}>
-                    {step.label}
-                  </span>
-                </div>
-                {idx < steps.length - 1 && (
-                  <div className={`w-12 h-0.5 mx-1.5 rounded-full ${idx < currentStep ? "bg-primary" : "bg-border"}`} />
-                )}
-              </div>
-            ))}
-          </div>
+          <div className="p-8">
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              <SocialNinjaLogo size="lg" />
+            </div>
 
-          {/* ===== AGENCY ONBOARDING ===== */}
-          {isAgency && (
-            <>
-              {currentStep === 0 && (
-                <div className="space-y-5 max-w-md mx-auto">
-                  <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground">Set up your agency workspace</h2>
-                    <p className="text-sm text-muted-foreground mt-1">This will be your agency's home base</p>
-                  </div>
+            {/* Stepper */}
+            <OnboardingStepper steps={steps} currentStep={currentStep} />
+
+            {/* Step content with key-based animation */}
+            <div key={`${accountType}-${currentStep}`} className={direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"}>
+              {/* ===== AGENCY FLOW ===== */}
+              {isAgency && currentStep === 0 && (
+                <OnboardingStepWrapper title="Set up your agency workspace" subtitle="This will be your agency's home base">
                   <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center hover:border-primary cursor-pointer transition-colors shrink-0">
-                      <Upload className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground mt-1">Agency Logo</span>
+                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center hover:border-primary cursor-pointer transition-all hover:scale-105 shrink-0 group">
+                      <Upload className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="text-[10px] text-muted-foreground group-hover:text-primary mt-1 transition-colors">Agency Logo</span>
                     </div>
                     <div className="flex-1 space-y-3">
                       <div>
@@ -124,18 +132,14 @@ const OnboardingPage = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </OnboardingStepWrapper>
               )}
 
-              {currentStep === 1 && (
-                <div className="space-y-5 max-w-md mx-auto">
-                  <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground">Create your first business</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Each client gets a fully isolated environment</p>
-                  </div>
+              {isAgency && currentStep === 1 && (
+                <OnboardingStepWrapper title="Create your first client" subtitle="Each client gets a fully isolated environment">
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-foreground mb-1 block">Business Name</label>
+                      <label className="text-sm font-medium text-foreground mb-1 block">Client Name</label>
                       <input className="input-dark" placeholder="e.g. Acme Corp" />
                     </div>
                     <div>
@@ -149,109 +153,93 @@ const OnboardingPage = () => {
                         <option>Other</option>
                       </select>
                     </div>
-                    <div className="bg-muted rounded-lg p-3">
+                    <div className="bg-muted rounded-lg p-3 hover:bg-muted/80 transition-colors">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <button
                           onClick={() => setApprovalEnabled(!approvalEnabled)}
-                          className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
-                            approvalEnabled ? "bg-primary border-primary" : "border-border"
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all shrink-0 ${
+                            approvalEnabled ? "bg-primary border-primary scale-110" : "border-border hover:border-primary/50"
                           }`}
                         >
                           {approvalEnabled && <CheckCircle2 className="h-3 w-3 text-white" />}
                         </button>
                         <div>
-                          <p className="text-sm font-medium text-foreground">Enable business approval workflow</p>
-                          <p className="text-xs text-muted-foreground">Businesses can review and approve content before publishing</p>
+                          <p className="text-sm font-medium text-foreground">Enable client approval workflow</p>
+                          <p className="text-xs text-muted-foreground">Clients can review and approve content before publishing</p>
                         </div>
                       </label>
                     </div>
                   </div>
-                </div>
+                </OnboardingStepWrapper>
               )}
 
-              {currentStep === 2 && (
-                <div className="space-y-5 max-w-md mx-auto">
-                  <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground">Connect business's social accounts</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Link the social profiles for this business</p>
-                  </div>
+              {isAgency && currentStep === 2 && (
+                <OnboardingStepWrapper
+                  title="Connect client's social accounts"
+                  subtitle="Link the social profiles for this client"
+                  icon={<Link2 className="h-6 w-6 text-primary" />}
+                >
                   <div className="space-y-3">
-                    {socialPlatforms.map((platform) => {
-                      const isConnected = connectedPlatforms.includes(platform.name);
-                      return (
-                        <button
-                          key={platform.name}
-                          onClick={() => togglePlatform(platform.name)}
-                          className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
-                            isConnected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                          }`}
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                            <platform.icon className={`h-5 w-5 ${platform.color}`} />
-                          </div>
-                          <div className="flex-1 text-left">
-                            <p className="text-sm font-medium text-foreground">{platform.name}</p>
-                            <p className="text-xs text-muted-foreground">{isConnected ? "Connected ✓" : "Click to connect via OAuth"}</p>
-                          </div>
-                          {isConnected && <CheckCircle2 className="h-5 w-5 text-primary" />}
-                        </button>
-                      );
-                    })}
+                    {socialPlatforms.map((platform) => (
+                      <SocialPlatformCard
+                        key={platform.name}
+                        name={platform.name}
+                        icon={platform.icon}
+                        color={platform.color}
+                        isConnected={connectedPlatforms.includes(platform.name)}
+                        onClick={() => togglePlatform(platform.name)}
+                      />
+                    ))}
                   </div>
-                </div>
+                </OnboardingStepWrapper>
               )}
 
-              {currentStep === 3 && (
-                <div className="space-y-5 max-w-md mx-auto">
-                  <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground">Invite team members</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Assign roles scoped to this business only</p>
-                  </div>
+              {isAgency && currentStep === 3 && (
+                <OnboardingStepWrapper
+                  title="Invite team members"
+                  subtitle="Assign roles scoped to this client only"
+                  icon={<User className="h-6 w-6 text-primary" />}
+                >
                   <div className="flex gap-2">
-                    <input className="input-dark flex-1" placeholder="colleague@agency.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addInvite()} />
+                    <input
+                      className="input-dark flex-1"
+                      placeholder="colleague@agency.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addInvite()}
+                    />
                     <select className="input-dark w-36" value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
                       <option value="account-manager">Account Manager</option>
                       <option value="content-creator">Content Creator</option>
                       <option value="approver">Approver</option>
                       <option value="analyst">Analyst</option>
                     </select>
-                    <Button onClick={addInvite} size="sm" className="shrink-0"><Plus className="h-4 w-4" /></Button>
+                    <Button onClick={addInvite} size="sm" className="shrink-0">
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
                   {invitedEmails.length > 0 && (
                     <div className="space-y-2">
                       {invitedEmails.map((email) => (
-                        <div key={email} className="flex items-center justify-between px-3 py-2 bg-muted rounded-lg">
+                        <div key={email} className="flex items-center justify-between px-3 py-2 bg-muted rounded-lg animate-step-in">
                           <span className="text-sm text-foreground">{email}</span>
-                          <button onClick={() => removeInvite(email)} className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
+                          <button onClick={() => removeInvite(email)} className="text-muted-foreground hover:text-destructive transition-colors">
+                            <X className="h-4 w-4" />
+                          </button>
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
+                </OnboardingStepWrapper>
               )}
 
-              {currentStep === 4 && (
-                <div className="space-y-5 max-w-md mx-auto text-center">
-                  <div className="w-16 h-16 gradient-coral rounded-full flex items-center justify-center mx-auto shadow-coral">
-                    <CheckCircle2 className="h-8 w-8 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-foreground">Your agency is ready! 🎉</h2>
-                  <p className="text-sm text-muted-foreground">Start managing businesses, scheduling content, and growing brands.</p>
-                </div>
+              {isAgency && currentStep === 4 && (
+                <OnboardingDoneStep isAgency onGoDashboard={() => navigate(dashboardPath)} />
               )}
-            </>
-          )}
 
-          {/* ===== BUSINESS ONBOARDING (4 steps: Brand → Project → Connect → Done) ===== */}
-          {!isAgency && (
-            <>
-              {/* Step 0: Brand Setup */}
-              {currentStep === 0 && (
-                <div className="space-y-5 max-w-md mx-auto">
-                  <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground">Set up your brand workspace</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Tell us about your brand</p>
-                  </div>
+              {/* ===== BUSINESS FLOW ===== */}
+              {!isAgency && currentStep === 0 && (
+                <OnboardingStepWrapper title="Set up your brand workspace" subtitle="Tell us about your brand">
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm font-medium text-foreground mb-1 block">Business Name *</label>
@@ -274,19 +262,15 @@ const OnboardingPage = () => {
                       <textarea className="input-dark resize-none" rows={2} placeholder="Brief description (optional)" />
                     </div>
                   </div>
-                </div>
+                </OnboardingStepWrapper>
               )}
 
-              {/* Step 1: Create First Project */}
-              {currentStep === 1 && (
-                <div className="space-y-5 max-w-md mx-auto">
-                  <div className="text-center">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                      <FolderOpen className="h-6 w-6 text-primary" />
-                    </div>
-                    <h2 className="text-xl font-bold text-foreground">Create your first project</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Projects help you organize your social media presence.</p>
-                  </div>
+              {!isAgency && currentStep === 1 && (
+                <OnboardingStepWrapper
+                  title="Create your first project"
+                  subtitle="Projects help you organize your social media presence."
+                  icon={<FolderOpen className="h-6 w-6 text-primary" />}
+                >
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm font-medium text-foreground mb-1 block">Project Name *</label>
@@ -297,113 +281,62 @@ const OnboardingPage = () => {
                       <textarea className="input-dark resize-none" rows={3} placeholder="What is this project about? (Optional)" value={projectDesc} onChange={(e) => setProjectDesc(e.target.value)} />
                     </div>
                   </div>
-                </div>
+                </OnboardingStepWrapper>
               )}
 
-              {/* Step 2: Connect Social Accounts */}
-              {currentStep === 2 && (
-                <div className="space-y-5 max-w-md mx-auto">
-                  <div className="text-center">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                      <Link2 className="h-6 w-6 text-primary" />
-                    </div>
-                    <h2 className="text-xl font-bold text-foreground">Connect social accounts</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Link your social profiles to this project's social channel.</p>
-                  </div>
+              {!isAgency && currentStep === 2 && (
+                <OnboardingStepWrapper
+                  title="Connect social accounts"
+                  subtitle="Link your social profiles to this project."
+                  icon={<Link2 className="h-6 w-6 text-primary" />}
+                >
                   <div className="grid grid-cols-2 gap-3">
-                    {socialPlatforms.map((platform) => {
-                      const isConnected = connectedPlatforms.includes(platform.name);
-                      return (
-                        <button
-                          key={platform.name}
-                          onClick={() => togglePlatform(platform.name)}
-                          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
-                            isConnected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                          }`}
-                        >
-                          <platform.icon className={`h-5 w-5 ${platform.color}`} />
-                          <span className="text-sm font-medium text-foreground">{platform.name}</span>
-                        </button>
-                      );
-                    })}
+                    {socialPlatforms.map((platform) => (
+                      <SocialPlatformCard
+                        key={platform.name}
+                        name={platform.name}
+                        icon={platform.icon}
+                        color={platform.color}
+                        isConnected={connectedPlatforms.includes(platform.name)}
+                        onClick={() => togglePlatform(platform.name)}
+                        compact
+                      />
+                    ))}
                   </div>
-                </div>
+                </OnboardingStepWrapper>
               )}
 
-              {/* Step 3: Done */}
-              {currentStep === 3 && (
-                <div className="space-y-6 max-w-md mx-auto text-center">
-                  <div className="w-16 h-16 gradient-coral rounded-full flex items-center justify-center mx-auto shadow-coral">
-                    <CheckCircle2 className="h-8 w-8 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-foreground">You're all set!</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Dive in, it's ready to go.
-                  </p>
-
-                  {/* Quick action icons */}
-                  <div className="flex justify-center gap-8 mt-4">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                        <BarChart3 className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <span className="text-xs text-muted-foreground">Analyze</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <span className="text-xs text-muted-foreground">Create</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                        <CalendarDays className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <span className="text-xs text-muted-foreground">Publish</span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground mt-2">
-                    <a href="/client/team" className="text-primary hover:underline">+ Add team members</a>
-                  </p>
-                </div>
+              {!isAgency && currentStep === 3 && (
+                <OnboardingDoneStep isAgency={false} onGoDashboard={() => navigate(dashboardPath)} />
               )}
-            </>
-          )}
+            </div>
 
-          {/* Navigation */}
-          <div className="flex justify-between mt-8">
-            {currentStep > 0 && currentStep < totalSteps - 1 ? (
-              <Button variant="outline" onClick={() => setCurrentStep(currentStep - 1)}>
-                <ArrowLeft className="h-4 w-4 mr-1" /> Back
-              </Button>
-            ) : (
-              <div />
+            {/* Navigation */}
+            {!isDoneStep && (
+              <div className="flex justify-between mt-8">
+                {currentStep > 0 ? (
+                  <Button variant="outline" onClick={goBack}>
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                  </Button>
+                ) : (
+                  <div />
+                )}
+                <div className="flex gap-3">
+                  <Button variant="ghost" className="text-muted-foreground" onClick={() => { setDirection("forward"); setCurrentStep(currentStep + 1); }}>
+                    Skip
+                  </Button>
+                  <Button onClick={goNext}>
+                    Continue <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
             )}
 
-            {currentStep < totalSteps - 1 ? (
-              <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setCurrentStep(currentStep + 1)}>Skip</Button>
-                <Button onClick={() => {
-                  // Mark business onboarding steps as completed
-                  if (!isAgency) {
-                    const stepMap = ["brand", "project", "connect"];
-                    if (stepMap[currentStep]) {
-                      // Only mark if user actually filled something
-                      if (currentStep === 0 && clientName.trim()) markOnboardingStep("brand");
-                      if (currentStep === 1 && projectName.trim()) markOnboardingStep("project");
-                      if (currentStep === 2 && connectedPlatforms.length > 0) markOnboardingStep("connect");
-                    }
-                  }
-                  setCurrentStep(currentStep + 1);
-                }}>
-                  Continue <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            ) : (
-              <Button className="w-full shadow-coral" onClick={() => navigate(dashboardPath)}>
-                Go to Dashboard <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
+            {/* Step indicator text */}
+            {!isDoneStep && (
+              <p className="text-center text-xs text-muted-foreground mt-4">
+                Step {currentStep + 1} of {totalSteps - 1}
+              </p>
             )}
           </div>
         </div>
