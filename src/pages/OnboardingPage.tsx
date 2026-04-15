@@ -7,7 +7,19 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
-import { markOnboardingStep } from "@/components/OnboardingWidget";
+
+const STORAGE_KEY = "sn_onboarding_state";
+function markOnboardingStep(stepId: string) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const completed: string[] = raw ? JSON.parse(raw) : [];
+    if (!completed.includes(stepId)) {
+      completed.push(stepId);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+    }
+  } catch {}
+}
+
 import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
 import OnboardingStepWrapper from "@/components/onboarding/OnboardingStepWrapper";
 import SocialPlatformCard from "@/components/onboarding/SocialPlatformCard";
