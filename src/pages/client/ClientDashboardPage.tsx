@@ -1,6 +1,6 @@
 import { Users, FolderOpen, Clock, Link2, TrendingUp, TrendingDown, ArrowRight, MoreHorizontal, Plus } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
-import OnboardingWidget from "@/components/OnboardingWidget";
+
 import StatusBadge from "@/components/StatusBadge";
 
 const sparkTeam = [{ v: 1 }, { v: 2 }, { v: 2 }, { v: 3 }, { v: 4 }, { v: 5 }, { v: 6 }];
@@ -158,9 +158,6 @@ export default function ClientDashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* Onboarding widget */}
-      <OnboardingWidget />
     </div>
   );
 }
