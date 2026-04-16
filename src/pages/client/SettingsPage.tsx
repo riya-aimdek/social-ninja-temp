@@ -3,6 +3,7 @@ import {
   User, CreditCard, Users, Bell, Hash, Shield, Save,
   Upload, Plus, Trash2, MessageSquare, Tag, Check, AlertCircle, Download, X
 } from "lucide-react";
+import { teamMembers, connectedAccounts, totalPosts, socialAccounts } from "@/data/businessMockData";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: User },
@@ -13,13 +14,6 @@ const tabs = [
   { id: "saved-replies", label: "Saved Replies", icon: MessageSquare },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "security", label: "Security", icon: Shield },
-];
-
-const teamMembers = [
-  { name: "John Doe", email: "john@socialninja.com", role: "Admin", avatar: "JD" },
-  { name: "Sarah Wilson", email: "sarah@socialninja.com", role: "Content Creator", avatar: "SW" },
-  { name: "Mike Chen", email: "mike@socialninja.com", role: "Social Media Manager", avatar: "MC" },
-  { name: "Emma Davis", email: "emma@socialninja.com", role: "Approver", avatar: "ED" },
 ];
 
 const notifications = [
@@ -68,6 +62,10 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
 
   const title = tabs.find(t => t.id === activeTab);
 
+  // Use shared data for billing stats
+  const connectedCount = connectedAccounts.length;
+  const totalPlatforms = socialAccounts.length;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
@@ -79,7 +77,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
           <div className="bg-card rounded-xl shadow-card p-6 space-y-5">
             <h2 className="text-lg font-semibold text-foreground">Profile Settings</h2>
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full gradient-coral flex items-center justify-center text-primary-foreground text-xl font-bold">JD</div>
+              <div className="w-16 h-16 rounded-full gradient-coral flex items-center justify-center text-primary-foreground text-xl font-bold">JS</div>
               <button className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors flex items-center gap-1">
                 <Upload className="w-3 h-3" /> Upload Photo
               </button>
@@ -87,12 +85,12 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Full Name</label>
-                <input className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" defaultValue="John Doe" />
+                <input className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" defaultValue="John Smith" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Email</label>
                 <div className="relative">
-                  <input className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-20" defaultValue="john@socialninja.com" />
+                  <input className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-20" defaultValue="john@business.com" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] bg-success/10 text-success px-1.5 py-0.5 rounded font-medium">Verified</span>
                 </div>
                 <p className="text-[10px] text-muted-foreground">Email verification required upon change</p>
@@ -133,17 +131,17 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Accounts Connected</span>
-                <span className="font-medium text-foreground">3 / 10</span>
+                <span className="font-medium text-foreground">{connectedCount} / {totalPlatforms}</span>
               </div>
               <div className="w-full h-2 bg-accent rounded-full overflow-hidden">
-                <div className="h-full gradient-coral rounded-full" style={{ width: "30%" }} />
+                <div className="h-full gradient-coral rounded-full" style={{ width: `${(connectedCount / totalPlatforms) * 100}%` }} />
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Posts This Month</span>
-                <span className="font-medium text-foreground">18 / 100</span>
+                <span className="text-muted-foreground">Total Posts</span>
+                <span className="font-medium text-foreground">{totalPosts}</span>
               </div>
               <div className="w-full h-2 bg-accent rounded-full overflow-hidden">
-                <div className="h-full gradient-coral rounded-full" style={{ width: "18%" }} />
+                <div className="h-full gradient-coral rounded-full" style={{ width: `${Math.min((totalPosts / 500) * 100, 100)}%` }} />
               </div>
             </div>
 
@@ -179,7 +177,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                 <Plus className="w-3 h-3" /> Invite
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">Manage team access. Permissions: Manage Social Accounts, Manage Users, Manage Posts, Approve Posts, Manage Engagements, View Analytics.</p>
+            <p className="text-xs text-muted-foreground">Manage team access. Permissions: Engage, Listen, Boost, Analyze.</p>
             <div className="space-y-2">
               {teamMembers.map((m) => (
                 <div key={m.email} className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/30 transition-colors">
@@ -321,20 +319,9 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                   </div>
                   <button
                     onClick={() => setTwoFAEnabled(!twoFAEnabled)}
-                    className={`w-10 h-6 rounded-full transition-colors ${twoFAEnabled ? "bg-primary" : "bg-border"} relative`}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${twoFAEnabled ? "bg-primary" : "bg-muted"}`}
                   >
-                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${twoFAEnabled ? "left-5" : "left-1"}`} />
-                  </button>
-                </div>
-              </div>
-              <div className="border border-border rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Phone-based 2FA</p>
-                    <p className="text-xs text-muted-foreground">Receive a verification code via SMS at login</p>
-                  </div>
-                  <button className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">
-                    Enable
+                    <span className={`block w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${twoFAEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
                   </button>
                 </div>
               </div>
@@ -343,60 +330,81 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
             {/* Change Password */}
             <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
               <h2 className="text-lg font-semibold text-foreground">Change Password</h2>
-              <div className="space-y-3 max-w-sm">
-                <input type="password" className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="Current password" />
-                <div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Current Password</label>
+                  <input type="password" className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="••••••••" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">New Password</label>
                   <input
                     type="password"
                     className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    placeholder="New password"
+                    placeholder="••••••••"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
-                  {newPassword && (
-                    <div className="mt-2 space-y-1">
-                      {passwordRules.map((rule) => (
-                        <div key={rule.label} className={`flex items-center gap-1.5 text-[11px] ${rule.test(newPassword) ? "text-success" : "text-muted-foreground"}`}>
-                          {rule.test(newPassword) ? <Check className="h-3 w-3" /> : <div className="w-3 h-3 rounded-full border border-current" />}
-                          {rule.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
-                <input type="password" className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="Confirm new password" />
-                <button className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors">Update Password</button>
               </div>
+              {newPassword && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {passwordRules.map((rule) => (
+                    <div key={rule.label} className={`flex items-center gap-2 text-xs ${rule.test(newPassword) ? "text-emerald-600" : "text-muted-foreground"}`}>
+                      {rule.test(newPassword) ? <Check className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                      {rule.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button className="px-4 py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium shadow-coral hover:opacity-90 transition-all flex items-center gap-2">
+                <Save className="w-4 h-4" /> Update Password
+              </button>
             </div>
 
             {/* Danger Zone */}
             <div className="bg-card rounded-xl shadow-card p-6 border border-destructive/20">
               <h2 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h2>
-              <p className="text-sm text-muted-foreground mb-4">Once you delete your account, there is no going back. You can reactivate using the password recovery process.</p>
-              <button onClick={() => setShowDeleteModal(true)} className="px-4 py-2 rounded-lg bg-destructive text-white text-sm font-medium hover:opacity-90 transition-all">
+              <p className="text-xs text-muted-foreground mb-4">Permanently delete your account and all associated data. This action cannot be undone.</p>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 transition-all"
+              >
                 Delete Account
               </button>
             </div>
-
-            {showDeleteModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-card rounded-2xl shadow-lg p-6 w-full max-w-md space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2"><AlertCircle className="h-5 w-5 text-destructive" /> Delete Account</h3>
-                    <button onClick={() => setShowDeleteModal(false)}><X className="h-4 w-4 text-muted-foreground" /></button>
-                  </div>
-                  <p className="text-sm text-muted-foreground">This action is irreversible. Type <span className="font-mono font-bold text-foreground">DELETE</span> to confirm.</p>
-                  <input className="w-full px-3 py-2 rounded-lg border border-input text-sm" placeholder='Type "DELETE"' value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} />
-                  <div className="flex gap-3">
-                    <button onClick={() => setShowDeleteModal(false)} className="flex-1 px-4 py-2 rounded-lg border border-border text-sm font-medium">Cancel</button>
-                    <button disabled={deleteConfirm !== "DELETE"} className="flex-1 px-4 py-2 rounded-lg bg-destructive text-white text-sm font-medium disabled:opacity-50">Confirm Delete</button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setShowDeleteModal(false)}>
+          <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-destructive">Delete Account</h3>
+              <button onClick={() => setShowDeleteModal(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              This will permanently delete your account and all data. Type <strong className="text-foreground">DELETE</strong> to confirm.
+            </p>
+            <input
+              className="w-full px-3 py-2 rounded-lg border border-destructive/30 text-sm outline-none focus:ring-2 focus:ring-destructive/20 focus:border-destructive"
+              placeholder='Type "DELETE"'
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-accent transition-colors">Cancel</button>
+              <button
+                disabled={deleteConfirm !== "DELETE"}
+                className="px-4 py-2 text-sm rounded-lg bg-destructive text-destructive-foreground font-medium disabled:opacity-50"
+              >
+                Permanently Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

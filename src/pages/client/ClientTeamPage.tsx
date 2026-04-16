@@ -2,39 +2,11 @@ import { useState } from "react";
 import { Search, Plus, X, Check, Pencil, Trash2, Users, UserCheck, UserPlus, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
-
-const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
-
-const defaultPermissions: Record<string, string[]> = {
-  'business-admin': ['Engage', 'Listen', 'Boost', 'Analyze'],
-  'content-creator': ['Engage'],
-  'approver': ['Analyze'],
-  'social-media-manager': ['Engage', 'Listen', 'Boost', 'Analyze'],
-  'viewer': ['Analyze'],
-};
-
-const permissionColors: Record<string, string> = {
-  Engage: 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
-  Listen: 'bg-blue-500/10 text-blue-700 border-blue-200',
-  Boost: 'bg-primary/10 text-primary border-primary/20',
-  Analyze: 'bg-violet-500/10 text-violet-700 border-violet-200',
-};
-
-const roleCards = [
-  { id: 'business-admin', name: 'Business Admin', desc: "Manages one business's projects. Creates projects, adds social accounts, and invites business team members." },
-  { id: 'content-creator', name: 'Content Creator', desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-  { id: 'approver', name: 'Approver (The Business)', desc: 'Usually a contact at the business company. Can log in to see their specific project to review and approve posts.' },
-  { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for their specific project.' },
-];
-
-const initialMembers = [
-  { id: "u1", name: "John Smith", email: "john@business.com", role: "Business Admin", roleId: "business-admin", permissions: ["Engage", "Listen", "Boost", "Analyze"], status: "active" as const, avatar: "JS", lastActive: "Online", projects: 3 },
-  { id: "u2", name: "Emily Davis", email: "emily@business.com", role: "Content Creator", roleId: "content-creator", permissions: ["Engage"], status: "active" as const, avatar: "ED", lastActive: "2h ago", projects: 2 },
-  { id: "u3", name: "Mike Wilson", email: "mike@business.com", role: "Approver", roleId: "approver", permissions: ["Analyze"], status: "active" as const, avatar: "MW", lastActive: "5h ago", projects: 1 },
-  { id: "u4", name: "Lisa Chen", email: "lisa@business.com", role: "Social Manager", roleId: "social-media-manager", permissions: ["Engage", "Listen", "Boost", "Analyze"], status: "invited" as const, avatar: "LC", lastActive: "Invited", projects: 0 },
-  { id: "u5", name: "Sarah Park", email: "sarah@business.com", role: "Content Creator", roleId: "content-creator", permissions: ["Engage"], status: "active" as const, avatar: "SP", lastActive: "1d ago", projects: 2 },
-  { id: "u6", name: "David Lee", email: "david@business.com", role: "Social Manager", roleId: "social-media-manager", permissions: ["Engage", "Listen", "Boost", "Analyze"], status: "active" as const, avatar: "DL", lastActive: "3h ago", projects: 3 },
-];
+import {
+  teamMembers as initialMembers,
+  permissionList, defaultPermissions, permissionColors, roleCards,
+  activeMembers, invitedMembers,
+} from "@/data/businessMockData";
 
 export default function ClientTeamPage() {
   const [search, setSearch] = useState("");
@@ -45,9 +17,6 @@ export default function ClientTeamPage() {
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [members] = useState(initialMembers);
-
-  const activeCount = members.filter(m => m.status === "active").length;
-  const invitedCount = members.filter(m => m.status === "invited").length;
 
   const filtered = members.filter(u =>
     !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
@@ -80,23 +49,15 @@ export default function ClientTeamPage() {
 
   const statCards = [
     { label: "Total Members", value: members.length.toString(), sub: "+2 this month", icon: Users, iconBg: "bg-primary/10", iconColor: "text-primary" },
-    { label: "Active", value: activeCount.toString(), sub: "Currently active", icon: UserCheck, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
-    { label: "Invited", value: invitedCount.toString(), sub: "Pending acceptance", icon: UserPlus, iconBg: "bg-amber-500/10", iconColor: "text-amber-600" },
-    { label: "Roles in Use", value: "4", sub: "Across team", icon: Shield, iconBg: "bg-violet-500/10", iconColor: "text-violet-600" },
+    { label: "Active", value: activeMembers.length.toString(), sub: "Currently active", icon: UserCheck, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
+    { label: "Invited", value: invitedMembers.length.toString(), sub: "Pending acceptance", icon: UserPlus, iconBg: "bg-amber-500/10", iconColor: "text-amber-600" },
+    { label: "Roles in Use", value: new Set(members.map(m => m.roleId)).size.toString(), sub: "Across team", icon: Shield, iconBg: "bg-violet-500/10", iconColor: "text-violet-600" },
   ];
 
   const RoleCardsGrid = () => (
     <div className="grid grid-cols-2 gap-3">
       {roleCards.map(r => (
-        <button
-          key={r.id}
-          onClick={() => handleRoleSelect(r.id)}
-          className={`p-4 rounded-xl border text-left transition-all ${
-            selectedRole === r.id
-              ? 'border-primary bg-primary/5 ring-1 ring-primary'
-              : 'border-border hover:border-muted-foreground'
-          }`}
-        >
+        <button key={r.id} onClick={() => handleRoleSelect(r.id)} className={`p-4 rounded-xl border text-left transition-all ${selectedRole === r.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground'}`}>
           <div className="flex items-center justify-between mb-1">
             <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
             {selectedRole === r.id ? (
@@ -118,13 +79,7 @@ export default function ClientTeamPage() {
         {permissionList.map(perm => {
           const active = selectedPermissions.includes(perm);
           return (
-            <button
-              key={perm}
-              onClick={() => togglePermission(perm)}
-              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                active ? 'border-emerald-300 bg-emerald-500/5' : 'border-border hover:border-muted-foreground'
-              }`}
-            >
+            <button key={perm} onClick={() => togglePermission(perm)} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${active ? 'border-emerald-300 bg-emerald-500/5' : 'border-border hover:border-muted-foreground'}`}>
               <div className={`w-5 h-5 rounded flex items-center justify-center ${active ? 'bg-emerald-600' : 'border-2 border-border'}`}>
                 {active && <Check className="h-3 w-3 text-white" />}
               </div>
@@ -143,9 +98,7 @@ export default function ClientTeamPage() {
         {statCards.map((card) => (
           <div key={card.label} className="bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
-              <div className={`p-2 rounded-lg ${card.iconBg}`}>
-                <card.icon className={`w-4 h-4 ${card.iconColor}`} />
-              </div>
+              <div className={`p-2 rounded-lg ${card.iconBg}`}><card.icon className={`w-4 h-4 ${card.iconColor}`} /></div>
               <span className="text-xs text-muted-foreground">{card.sub}</span>
             </div>
             <p className="text-2xl font-bold text-foreground tabular-nums">{card.value}</p>
@@ -158,16 +111,9 @@ export default function ClientTeamPage() {
       <div className="flex items-center justify-between">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            className="h-10 pl-9 pr-4 w-[280px] border border-border rounded-lg bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Search team members..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <input className="h-10 pl-9 pr-4 w-[280px] border border-border rounded-lg bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search team members..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <Button onClick={openInvite} className="gap-2">
-          <Plus className="w-4 h-4" /> Invite User
-        </Button>
+        <Button onClick={openInvite} className="gap-2"><Plus className="w-4 h-4" /> Invite User</Button>
       </div>
 
       {/* Table */}
@@ -187,39 +133,29 @@ export default function ClientTeamPage() {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
-                    No records found
-                  </td>
-                </tr>
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">No records found</td></tr>
               ) : (
                 filtered.map(u => (
                   <tr key={u.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-[11px] font-bold text-primary">
-                          {u.avatar}
-                        </div>
+                        <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-[11px] font-bold text-primary">{u.avatar}</div>
                         <div>
                           <p className="text-sm font-medium text-foreground">{u.name}</p>
                           <p className="text-xs text-muted-foreground">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3">
-                      <span className="text-sm text-foreground border border-border rounded px-2 py-0.5">{u.role}</span>
-                    </td>
+                    <td className="px-5 py-3"><span className="text-sm text-foreground border border-border rounded px-2 py-0.5">{u.role}</span></td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {u.permissions.map(p => (
-                          <span key={p} className={`text-xs font-medium px-2 py-0.5 rounded border ${permissionColors[p] || 'bg-muted text-muted-foreground border-border'}`}>
-                            {p}
-                          </span>
+                          <span key={p} className={`text-xs font-medium px-2 py-0.5 rounded border ${permissionColors[p] || 'bg-muted text-muted-foreground border-border'}`}>{p}</span>
                         ))}
                       </div>
                     </td>
                     <td className="px-5 py-3 text-foreground tabular-nums">{u.projects}</td>
-                    <td className="px-5 py-3"><StatusBadge status={u.status === "invited" ? "invited" : u.status} /></td>
+                    <td className="px-5 py-3"><StatusBadge status={u.status} /></td>
                     <td className="px-5 py-3 text-sm text-muted-foreground">{u.lastActive}</td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -234,9 +170,7 @@ export default function ClientTeamPage() {
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="px-5 py-3 border-t border-border text-sm text-muted-foreground">
-            Showing 1-{filtered.length} of {filtered.length} results
-          </div>
+          <div className="px-5 py-3 border-t border-border text-sm text-muted-foreground">Showing 1-{filtered.length} of {filtered.length} results</div>
         )}
       </div>
 
@@ -249,7 +183,6 @@ export default function ClientTeamPage() {
               <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
             <hr className="border-border mb-6" />
-
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">Full Name <span className="text-primary">*</span></label>
@@ -260,14 +193,11 @@ export default function ClientTeamPage() {
                 <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="jane@company.com" type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
               </div>
             </div>
-
             <div className="mb-6">
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
               <RoleCardsGrid />
             </div>
-
             {selectedRole && <PermissionsGrid />}
-
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setShowModal(false)} className="px-8 flex-1">Cancel</Button>
               <Button className="px-8 flex-1" disabled={!inviteName.trim() || !inviteEmail.trim() || !selectedRole}>Send Invitation</Button>
@@ -284,14 +214,11 @@ export default function ClientTeamPage() {
               <h2 className="text-lg font-bold text-foreground">Manage — {manageUser.name}</h2>
               <button onClick={() => setManageUser(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
-
             <div className="mb-6">
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
               <RoleCardsGrid />
             </div>
-
             {selectedRole && <PermissionsGrid />}
-
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setManageUser(null)} className="px-8 flex-1">Cancel</Button>
               <Button className="px-8 flex-1">Save Changes</Button>

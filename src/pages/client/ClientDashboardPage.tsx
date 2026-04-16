@@ -1,44 +1,25 @@
 import { Users, FolderOpen, Clock, Link2, TrendingUp, TrendingDown, ArrowRight, MoreHorizontal, Plus } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
-
 import StatusBadge from "@/components/StatusBadge";
+import {
+  teamMembers, activeProjects, connectedAccounts, activities, totalPosts,
+} from "@/data/businessMockData";
 
 const sparkTeam = [{ v: 1 }, { v: 2 }, { v: 2 }, { v: 3 }, { v: 4 }, { v: 5 }, { v: 6 }];
 const sparkProjects = [{ v: 0 }, { v: 1 }, { v: 1 }, { v: 2 }, { v: 2 }, { v: 3 }, { v: 3 }];
 const sparkPending = [{ v: 5 }, { v: 4 }, { v: 3 }, { v: 3 }, { v: 2 }, { v: 2 }, { v: 1 }];
-const sparkAccounts = [{ v: 2 }, { v: 3 }, { v: 4 }, { v: 5 }, { v: 5 }, { v: 6 }, { v: 7 }];
+const sparkAccounts = [{ v: 1 }, { v: 1 }, { v: 2 }, { v: 2 }, { v: 2 }, { v: 3 }, { v: 3 }];
 
 const statCards = [
-  { label: "Team Members", value: "6", change: "+2 this month", up: true, icon: Users, spark: sparkTeam, color: "hsl(358, 97%, 68%)" },
-  { label: "Active Projects", value: "3", change: "+1 this week", up: true, icon: FolderOpen, spark: sparkProjects, color: "hsl(217, 91%, 60%)" },
-  { label: "Pending Approvals", value: "1", change: "-4 from last week", up: false, icon: Clock, spark: sparkPending, color: "hsl(38, 92%, 50%)" },
-  { label: "Connected Accounts", value: "7", change: "+1 today", up: true, icon: Link2, spark: sparkAccounts, color: "hsl(142, 71%, 45%)" },
-];
-
-const projects = [
-  { name: "Social Campaign", status: "active" as const, posts: 142, accounts: 4, lastActive: "2h ago" },
-  { name: "Website Redesign", status: "active" as const, posts: 67, accounts: 2, lastActive: "1d ago" },
-  { name: "Brand Launch", status: "pending" as const, posts: 0, accounts: 0, lastActive: "3d ago" },
-];
-
-const teamMembers = [
-  { name: "John Smith", email: "john@business.com", role: "Admin", status: "active" as const, avatar: "JS" },
-  { name: "Emily Davis", email: "emily@business.com", role: "Content Creator", status: "active" as const, avatar: "ED" },
-  { name: "Mike Wilson", email: "mike@business.com", role: "Approver", status: "active" as const, avatar: "MW" },
-  { name: "Lisa Chen", email: "lisa@business.com", role: "Social Manager", status: "invited" as const, avatar: "LC" },
-];
-
-const activities = [
-  { time: "2h ago", text: "Emily published 3 posts to Instagram for Social Campaign", dot: "bg-emerald-500" },
-  { time: "5h ago", text: "Mike approved the weekly content batch", dot: "bg-blue-500" },
-  { time: "1d ago", text: "New project 'Brand Launch' was created", dot: "bg-primary" },
-  { time: "2d ago", text: "Lisa Chen was invited to join the team", dot: "bg-purple-500" },
+  { label: "Team Members", value: teamMembers.length.toString(), change: "+2 this month", up: true, icon: Users, spark: sparkTeam, color: "hsl(358, 97%, 68%)" },
+  { label: "Active Projects", value: activeProjects.length.toString(), change: "+1 this week", up: true, icon: FolderOpen, spark: sparkProjects, color: "hsl(217, 91%, 60%)" },
+  { label: "Total Posts", value: totalPosts.toString(), change: `Across ${activeProjects.length} active projects`, up: true, icon: Clock, spark: sparkPending, color: "hsl(38, 92%, 50%)" },
+  { label: "Connected Accounts", value: connectedAccounts.length.toString(), change: `${connectedAccounts.length} of 7 platforms`, up: true, icon: Link2, spark: sparkAccounts, color: "hsl(142, 71%, 45%)" },
 ];
 
 export default function ClientDashboardPage() {
   return (
     <div className="flex gap-6 animate-fade-in">
-      {/* Main dashboard content */}
       <div className="flex-1 space-y-6 min-w-0">
         {/* Welcome Banner */}
         <div className="gradient-coral rounded-2xl p-6 text-primary-foreground">
@@ -83,13 +64,13 @@ export default function ClientDashboardPage() {
           {/* Projects */}
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Projects</h2>
+              <h2 className="text-sm font-semibold text-foreground">Active Projects</h2>
               <button className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
                 <Plus className="w-3 h-3" /> New Project
               </button>
             </div>
             <div className="divide-y divide-border">
-              {projects.map((p) => (
+              {activeProjects.map((p) => (
                 <div key={p.name} className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 transition-colors cursor-pointer">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -97,11 +78,11 @@ export default function ClientDashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-foreground">{p.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{p.posts} posts · {p.accounts} accounts</p>
+                      <p className="text-[11px] text-muted-foreground">{p.posts} posts · {p.accounts} accounts · {p.members} members</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <StatusBadge status={p.status} />
+                    <StatusBadge status="active" />
                     <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
                 </div>
