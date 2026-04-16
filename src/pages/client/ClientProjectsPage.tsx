@@ -1,15 +1,8 @@
 import { useState } from "react";
-import { FolderOpen, CheckCircle2, XCircle, Search, Plus, Link2, Pencil, Power, Trash2, FileText, Users, TrendingUp, Clock } from "lucide-react";
+import { FolderOpen, CheckCircle2, XCircle, Search, Plus, Link2, Pencil, Power, Trash2, FileText, Users, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
-
-const mockProjects = [
-  { id: "p1", name: "Social Campaign", status: "Active", created: "Jan 12, 2026", posts: 142, accounts: 4, members: 3, lastActive: "2h ago", description: "Main social media campaign across all platforms" },
-  { id: "p2", name: "Website Redesign", status: "Active", created: "Feb 3, 2026", posts: 67, accounts: 2, members: 2, lastActive: "1d ago", description: "Content for the new website launch" },
-  { id: "p3", name: "Brand Launch", status: "Active", created: "Mar 15, 2026", posts: 23, accounts: 3, members: 4, lastActive: "3h ago", description: "New brand identity rollout on social channels" },
-  { id: "p4", name: "Holiday Promo", status: "Inactive", created: "Dec 1, 2025", posts: 89, accounts: 3, members: 2, lastActive: "2mo ago", description: "Seasonal holiday promotional content" },
-  { id: "p5", name: "Product Launch Q1", status: "Inactive", created: "Nov 20, 2025", posts: 54, accounts: 2, members: 3, lastActive: "3mo ago", description: "Q1 product launch social strategy" },
-];
+import { projects, activeProjects, inactiveProjects, totalPosts } from "@/data/businessMockData";
 
 export default function ClientProjectsPage() {
   const [search, setSearch] = useState("");
@@ -18,11 +11,7 @@ export default function ClientProjectsPage() {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDesc, setNewProjectDesc] = useState("");
 
-  const activeCount = mockProjects.filter(p => p.status === "Active").length;
-  const inactiveCount = mockProjects.filter(p => p.status === "Inactive").length;
-  const totalPosts = mockProjects.reduce((sum, p) => sum + p.posts, 0);
-
-  const filtered = mockProjects.filter(p => {
+  const filtered = projects.filter(p => {
     if (activeTab === "active" && p.status !== "Active") return false;
     if (activeTab === "inactive" && p.status !== "Inactive") return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -30,16 +19,16 @@ export default function ClientProjectsPage() {
   });
 
   const tabs = [
-    { key: "all", label: "All", count: mockProjects.length },
-    { key: "active", label: "Active", count: activeCount },
-    { key: "inactive", label: "Inactive", count: inactiveCount },
+    { key: "all", label: "All", count: projects.length },
+    { key: "active", label: "Active", count: activeProjects.length },
+    { key: "inactive", label: "Inactive", count: inactiveProjects.length },
   ];
 
   const statCards = [
-    { label: "Total Projects", value: mockProjects.length.toString(), sub: `${activeCount} active`, icon: FolderOpen, iconBg: "bg-primary/10", iconColor: "text-primary" },
-    { label: "Active Projects", value: activeCount.toString(), sub: "+1 this week", icon: CheckCircle2, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
+    { label: "Total Projects", value: projects.length.toString(), sub: `${activeProjects.length} active`, icon: FolderOpen, iconBg: "bg-primary/10", iconColor: "text-primary" },
+    { label: "Active Projects", value: activeProjects.length.toString(), sub: "+1 this week", icon: CheckCircle2, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
     { label: "Total Posts", value: totalPosts.toString(), sub: "Across all projects", icon: FileText, iconBg: "bg-blue-500/10", iconColor: "text-blue-600" },
-    { label: "Inactive Projects", value: inactiveCount.toString(), sub: "Archived", icon: XCircle, iconBg: "bg-muted", iconColor: "text-muted-foreground" },
+    { label: "Inactive Projects", value: inactiveProjects.length.toString(), sub: "Archived", icon: XCircle, iconBg: "bg-muted", iconColor: "text-muted-foreground" },
   ];
 
   return (
@@ -64,39 +53,22 @@ export default function ClientProjectsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2 w-72">
           <Search className="w-4 h-4 text-muted-foreground" />
-          <input
-            className="text-sm outline-none bg-transparent w-full placeholder:text-muted-foreground"
-            placeholder="Search projects..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <input className="text-sm outline-none bg-transparent w-full placeholder:text-muted-foreground" placeholder="Search projects..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <Button onClick={() => setShowModal(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> New Project
-        </Button>
+        <Button onClick={() => setShowModal(true)} className="gap-2"><Plus className="w-4 h-4" /> New Project</Button>
       </div>
 
       {/* Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
-        {/* Tabs */}
         <div className="border-b border-border px-5">
           <div className="flex gap-6">
             {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.key
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
                 {tab.label} ({tab.count})
               </button>
             ))}
           </div>
         </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -112,66 +84,30 @@ export default function ClientProjectsPage() {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
-                    No records found
-                  </td>
-                </tr>
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">No records found</td></tr>
               ) : (
                 filtered.map((project) => (
                   <tr key={project.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <FolderOpen className="w-4 h-4 text-primary" />
-                        </div>
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center"><FolderOpen className="w-4 h-4 text-primary" /></div>
                         <div>
                           <span className="font-medium text-foreground">{project.name}</span>
                           <p className="text-[11px] text-muted-foreground mt-0.5">{project.description}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3">
-                      <StatusBadge status={project.status === "Active" ? "active" : "suspended"} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-foreground tabular-nums">{project.posts}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-foreground tabular-nums">{project.accounts}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-foreground tabular-nums">{project.members}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-muted-foreground">{project.lastActive}</span>
-                      </div>
-                    </td>
+                    <td className="px-5 py-3"><StatusBadge status={project.status === "Active" ? "active" : "suspended"} /></td>
+                    <td className="px-5 py-3"><div className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-muted-foreground" /><span className="text-foreground tabular-nums">{project.posts}</span></div></td>
+                    <td className="px-5 py-3"><div className="flex items-center gap-1.5"><Link2 className="w-3.5 h-3.5 text-muted-foreground" /><span className="text-foreground tabular-nums">{project.accounts}</span></div></td>
+                    <td className="px-5 py-3"><div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-muted-foreground" /><span className="text-foreground tabular-nums">{project.members}</span></div></td>
+                    <td className="px-5 py-3"><div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-muted-foreground" /><span className="text-muted-foreground">{project.lastActive}</span></div></td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Connect accounts">
-                          <Link2 className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Edit">
-                          <Pencil className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Toggle status">
-                          <Power className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Delete">
-                          <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                        </button>
+                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Connect accounts"><Link2 className="w-4 h-4 text-muted-foreground" /></button>
+                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Edit"><Pencil className="w-4 h-4 text-muted-foreground" /></button>
+                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Toggle status"><Power className="w-4 h-4 text-muted-foreground" /></button>
+                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Delete"><Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" /></button>
                       </div>
                     </td>
                   </tr>
@@ -181,9 +117,7 @@ export default function ClientProjectsPage() {
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="px-5 py-3 border-t border-border text-sm text-muted-foreground">
-            Showing 1-{filtered.length} of {filtered.length} results
-          </div>
+          <div className="px-5 py-3 border-t border-border text-sm text-muted-foreground">Showing 1-{filtered.length} of {filtered.length} results</div>
         )}
       </div>
 
@@ -195,22 +129,11 @@ export default function ClientProjectsPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">Project Name *</label>
-                <input
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary"
-                  placeholder="Enter project name"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                />
+                <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary" placeholder="Enter project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">Description</label>
-                <textarea
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary resize-none"
-                  rows={3}
-                  placeholder="What is this project about? (Optional)"
-                  value={newProjectDesc}
-                  onChange={(e) => setNewProjectDesc(e.target.value)}
-                />
+                <textarea className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary resize-none" rows={3} placeholder="What is this project about? (Optional)" value={newProjectDesc} onChange={(e) => setNewProjectDesc(e.target.value)} />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
