@@ -1,9 +1,14 @@
 import { useState } from "react";
-import { FolderOpen, CheckCircle2, XCircle, Search, Plus, Link2, Pencil, Power, Trash2 } from "lucide-react";
+import { FolderOpen, CheckCircle2, XCircle, Search, Plus, Link2, Pencil, Power, Trash2, FileText, Users, TrendingUp, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import StatusBadge from "@/components/StatusBadge";
 
 const mockProjects = [
-  { id: "p1", name: "123", status: "Active", created: "Apr 7, 2026" },
+  { id: "p1", name: "Social Campaign", status: "Active", created: "Jan 12, 2026", posts: 142, accounts: 4, members: 3, lastActive: "2h ago", description: "Main social media campaign across all platforms" },
+  { id: "p2", name: "Website Redesign", status: "Active", created: "Feb 3, 2026", posts: 67, accounts: 2, members: 2, lastActive: "1d ago", description: "Content for the new website launch" },
+  { id: "p3", name: "Brand Launch", status: "Active", created: "Mar 15, 2026", posts: 23, accounts: 3, members: 4, lastActive: "3h ago", description: "New brand identity rollout on social channels" },
+  { id: "p4", name: "Holiday Promo", status: "Inactive", created: "Dec 1, 2025", posts: 89, accounts: 3, members: 2, lastActive: "2mo ago", description: "Seasonal holiday promotional content" },
+  { id: "p5", name: "Product Launch Q1", status: "Inactive", created: "Nov 20, 2025", posts: 54, accounts: 2, members: 3, lastActive: "3mo ago", description: "Q1 product launch social strategy" },
 ];
 
 export default function ClientProjectsPage() {
@@ -15,6 +20,7 @@ export default function ClientProjectsPage() {
 
   const activeCount = mockProjects.filter(p => p.status === "Active").length;
   const inactiveCount = mockProjects.filter(p => p.status === "Inactive").length;
+  const totalPosts = mockProjects.reduce((sum, p) => sum + p.posts, 0);
 
   const filtered = mockProjects.filter(p => {
     if (activeTab === "active" && p.status !== "Active") return false;
@@ -30,24 +36,26 @@ export default function ClientProjectsPage() {
   ];
 
   const statCards = [
-    { label: "Total Projects", value: mockProjects.length.toString(), icon: FolderOpen, iconBg: "bg-blue-50", iconColor: "text-blue-500" },
-    { label: "Active", value: activeCount.toString(), icon: CheckCircle2, iconBg: "bg-emerald-50", iconColor: "text-emerald-500" },
-    { label: "Inactive", value: inactiveCount.toString(), icon: XCircle, iconBg: "bg-red-50", iconColor: "text-red-500" },
+    { label: "Total Projects", value: mockProjects.length.toString(), sub: `${activeCount} active`, icon: FolderOpen, iconBg: "bg-primary/10", iconColor: "text-primary" },
+    { label: "Active Projects", value: activeCount.toString(), sub: "+1 this week", icon: CheckCircle2, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
+    { label: "Total Posts", value: totalPosts.toString(), sub: "Across all projects", icon: FileText, iconBg: "bg-blue-500/10", iconColor: "text-blue-600" },
+    { label: "Inactive Projects", value: inactiveCount.toString(), sub: "Archived", icon: XCircle, iconBg: "bg-muted", iconColor: "text-muted-foreground" },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card) => (
-          <div key={card.label} className="bg-card rounded-xl border border-border p-5 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">{card.label}</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{card.value}</p>
+          <div key={card.label} className="bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`p-2 rounded-lg ${card.iconBg}`}>
+                <card.icon className={`w-4 h-4 ${card.iconColor}`} />
+              </div>
+              <span className="text-xs text-muted-foreground">{card.sub}</span>
             </div>
-            <div className={`w-12 h-12 rounded-xl ${card.iconBg} flex items-center justify-center`}>
-              <card.icon className={`w-6 h-6 ${card.iconColor}`} />
-            </div>
+            <p className="text-2xl font-bold text-foreground tabular-nums">{card.value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
           </div>
         ))}
       </div>
@@ -95,14 +103,17 @@ export default function ClientProjectsPage() {
               <tr className="text-left text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                 <th className="px-5 py-3 font-medium">Project</th>
                 <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Created</th>
+                <th className="px-5 py-3 font-medium">Posts</th>
+                <th className="px-5 py-3 font-medium">Accounts</th>
+                <th className="px-5 py-3 font-medium">Members</th>
+                <th className="px-5 py-3 font-medium">Last Active</th>
                 <th className="px-5 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-5 py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
                     No records found
                   </td>
                 </tr>
@@ -111,25 +122,44 @@ export default function ClientProjectsPage() {
                   <tr key={project.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                          <FolderOpen className="w-4 h-4 text-blue-500" />
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <FolderOpen className="w-4 h-4 text-primary" />
                         </div>
-                        <span className="font-medium text-foreground">{project.name}</span>
+                        <div>
+                          <span className="font-medium text-foreground">{project.name}</span>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{project.description}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${
-                        project.status === "Active"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-red-50 text-red-700"
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${project.status === "Active" ? "bg-emerald-500" : "bg-red-500"}`} />
-                        {project.status}
-                      </span>
+                      <StatusBadge status={project.status === "Active" ? "active" : "suspended"} />
                     </td>
-                    <td className="px-5 py-3 text-muted-foreground">{project.created}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-foreground tabular-nums">{project.posts}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-foreground tabular-nums">{project.accounts}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-foreground tabular-nums">{project.members}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-muted-foreground">{project.lastActive}</span>
+                      </div>
+                    </td>
                     <td className="px-5 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Connect accounts">
                           <Link2 className="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -140,7 +170,7 @@ export default function ClientProjectsPage() {
                           <Power className="w-4 h-4 text-muted-foreground" />
                         </button>
                         <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Delete">
-                          <Trash2 className="w-4 h-4 text-muted-foreground" />
+                          <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
                         </button>
                       </div>
                     </td>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, X, Check, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, X, Check, Pencil, Trash2, Users, UserCheck, UserPlus, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 
@@ -14,10 +14,10 @@ const defaultPermissions: Record<string, string[]> = {
 };
 
 const permissionColors: Record<string, string> = {
-  Engage: 'bg-green-50 text-green-700 border-green-200',
-  Listen: 'bg-green-50 text-green-700 border-green-200',
-  Boost: 'bg-red-50 text-red-600 border-red-200',
-  Analyze: 'bg-green-50 text-green-700 border-green-200',
+  Engage: 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
+  Listen: 'bg-blue-500/10 text-blue-700 border-blue-200',
+  Boost: 'bg-primary/10 text-primary border-primary/20',
+  Analyze: 'bg-violet-500/10 text-violet-700 border-violet-200',
 };
 
 const roleCards = [
@@ -27,7 +27,14 @@ const roleCards = [
   { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for their specific project.' },
 ];
 
-const initialMembers: { id: string; name: string; email: string; role: string; roleId: string; permissions: string[]; status: 'active' | 'suspended' }[] = [];
+const initialMembers = [
+  { id: "u1", name: "John Smith", email: "john@business.com", role: "Business Admin", roleId: "business-admin", permissions: ["Engage", "Listen", "Boost", "Analyze"], status: "active" as const, avatar: "JS", lastActive: "Online", projects: 3 },
+  { id: "u2", name: "Emily Davis", email: "emily@business.com", role: "Content Creator", roleId: "content-creator", permissions: ["Engage"], status: "active" as const, avatar: "ED", lastActive: "2h ago", projects: 2 },
+  { id: "u3", name: "Mike Wilson", email: "mike@business.com", role: "Approver", roleId: "approver", permissions: ["Analyze"], status: "active" as const, avatar: "MW", lastActive: "5h ago", projects: 1 },
+  { id: "u4", name: "Lisa Chen", email: "lisa@business.com", role: "Social Manager", roleId: "social-media-manager", permissions: ["Engage", "Listen", "Boost", "Analyze"], status: "invited" as const, avatar: "LC", lastActive: "Invited", projects: 0 },
+  { id: "u5", name: "Sarah Park", email: "sarah@business.com", role: "Content Creator", roleId: "content-creator", permissions: ["Engage"], status: "active" as const, avatar: "SP", lastActive: "1d ago", projects: 2 },
+  { id: "u6", name: "David Lee", email: "david@business.com", role: "Social Manager", roleId: "social-media-manager", permissions: ["Engage", "Listen", "Boost", "Analyze"], status: "active" as const, avatar: "DL", lastActive: "3h ago", projects: 3 },
+];
 
 export default function ClientTeamPage() {
   const [search, setSearch] = useState("");
@@ -38,6 +45,9 @@ export default function ClientTeamPage() {
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [members] = useState(initialMembers);
+
+  const activeCount = members.filter(m => m.status === "active").length;
+  const invitedCount = members.filter(m => m.status === "invited").length;
 
   const filtered = members.filter(u =>
     !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
@@ -67,6 +77,13 @@ export default function ClientTeamPage() {
     setSelectedRole(user.roleId);
     setSelectedPermissions([...(defaultPermissions[user.roleId] || [])]);
   };
+
+  const statCards = [
+    { label: "Total Members", value: members.length.toString(), sub: "+2 this month", icon: Users, iconBg: "bg-primary/10", iconColor: "text-primary" },
+    { label: "Active", value: activeCount.toString(), sub: "Currently active", icon: UserCheck, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
+    { label: "Invited", value: invitedCount.toString(), sub: "Pending acceptance", icon: UserPlus, iconBg: "bg-amber-500/10", iconColor: "text-amber-600" },
+    { label: "Roles in Use", value: "4", sub: "Across team", icon: Shield, iconBg: "bg-violet-500/10", iconColor: "text-violet-600" },
+  ];
 
   const RoleCardsGrid = () => (
     <div className="grid grid-cols-2 gap-3">
@@ -105,13 +122,13 @@ export default function ClientTeamPage() {
               key={perm}
               onClick={() => togglePermission(perm)}
               className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                active ? 'border-green-300 bg-green-50' : 'border-border hover:border-muted-foreground'
+                active ? 'border-emerald-300 bg-emerald-500/5' : 'border-border hover:border-muted-foreground'
               }`}
             >
-              <div className={`w-5 h-5 rounded flex items-center justify-center ${active ? 'bg-green-600' : 'border-2 border-border'}`}>
+              <div className={`w-5 h-5 rounded flex items-center justify-center ${active ? 'bg-emerald-600' : 'border-2 border-border'}`}>
                 {active && <Check className="h-3 w-3 text-white" />}
               </div>
-              <span className={`text-sm font-medium ${active ? 'text-green-700' : 'text-foreground'}`}>{perm}</span>
+              <span className={`text-sm font-medium ${active ? 'text-emerald-700' : 'text-foreground'}`}>{perm}</span>
             </button>
           );
         })}
@@ -121,13 +138,29 @@ export default function ClientTeamPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((card) => (
+          <div key={card.label} className="bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`p-2 rounded-lg ${card.iconBg}`}>
+                <card.icon className={`w-4 h-4 ${card.iconColor}`} />
+              </div>
+              <span className="text-xs text-muted-foreground">{card.sub}</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground tabular-nums">{card.value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Search + Invite */}
       <div className="flex items-center justify-between">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             className="h-10 pl-9 pr-4 w-[280px] border border-border rounded-lg bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Search users..."
+            placeholder="Search team members..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -143,27 +176,34 @@ export default function ClientTeamPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-                <th className="px-5 py-3 font-medium">Name</th>
+                <th className="px-5 py-3 font-medium">Member</th>
                 <th className="px-5 py-3 font-medium">Role</th>
-                <th className="px-5 py-3 font-medium">Permission</th>
+                <th className="px-5 py-3 font-medium">Permissions</th>
+                <th className="px-5 py-3 font-medium">Projects</th>
                 <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Last Active</th>
                 <th className="px-5 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
                     No records found
                   </td>
                 </tr>
               ) : (
                 filtered.map(u => (
-                  <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                  <tr key={u.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
                     <td className="px-5 py-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{u.name}</p>
-                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-[11px] font-bold text-primary">
+                          {u.avatar}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{u.name}</p>
+                          <p className="text-xs text-muted-foreground">{u.email}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-3">
@@ -178,9 +218,11 @@ export default function ClientTeamPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-5 py-3"><StatusBadge status={u.status} /></td>
+                    <td className="px-5 py-3 text-foreground tabular-nums">{u.projects}</td>
+                    <td className="px-5 py-3"><StatusBadge status={u.status === "invited" ? "invited" : u.status} /></td>
+                    <td className="px-5 py-3 text-sm text-muted-foreground">{u.lastActive}</td>
                     <td className="px-5 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button onClick={() => openManage(u)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
                         <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                       </div>
@@ -191,6 +233,11 @@ export default function ClientTeamPage() {
             </tbody>
           </table>
         </div>
+        {filtered.length > 0 && (
+          <div className="px-5 py-3 border-t border-border text-sm text-muted-foreground">
+            Showing 1-{filtered.length} of {filtered.length} results
+          </div>
+        )}
       </div>
 
       {/* Invite User Modal */}
