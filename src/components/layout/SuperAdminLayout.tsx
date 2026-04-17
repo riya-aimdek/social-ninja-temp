@@ -1,5 +1,5 @@
 import { ReactNode, useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText,
   Bell, Search, Settings,
@@ -23,6 +23,7 @@ interface SuperAdminLayoutProps {
 
 const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [globalSearch, setGlobalSearch] = useState("");
   const notificationCount = 3;
 
@@ -44,13 +45,17 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
           })}
         </nav>
         <div className="px-3 py-3 border-t border-sidebar-border/50">
-          <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/super-admin/profile")}
+            className="w-full flex items-center gap-3 p-1.5 rounded-lg hover:bg-sidebar-accent/60 transition-colors text-left"
+            title="View profile & settings"
+          >
             <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">SA</div>
-            <div>
-              <p className="text-sm font-semibold text-white">John Doe</p>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">John Doe</p>
               <p className="text-[11px] text-sidebar-foreground">Super Admin</p>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0">

@@ -214,13 +214,17 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
 
         {/* User profile at bottom */}
         <div className="px-3 py-3 border-t border-sidebar-border/50">
-          <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/agency/profile")}
+            className="w-full flex items-center gap-3 p-1.5 rounded-lg hover:bg-sidebar-accent/60 transition-colors text-left"
+            title="View profile & settings"
+          >
             <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">A</div>
-            <div>
-              <p className="text-sm font-semibold text-white">{selectedAgency.name.toLowerCase()}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{selectedAgency.name.toLowerCase()}</p>
               <p className="text-[11px] text-sidebar-foreground">Agency</p>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
