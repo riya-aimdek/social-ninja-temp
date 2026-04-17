@@ -116,6 +116,7 @@ const App = () => (
             <Route path="/client/settings/saved-replies" element={<ClientSettingsPage defaultTab="saved-replies" />} />
             <Route path="/client/settings/tags" element={<ClientSettingsPage defaultTab="tags" />} />
             <Route path="/client/settings/security" element={<ClientSettingsPage defaultTab="security" />} />
+            <Route path="/client/profile" element={<ProfileSettingsPage role="client" />} />
             <Route path="/client/customization" element={<div className="text-muted-foreground">Customization settings coming soon.</div>} />
           </Route>
 
