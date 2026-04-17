@@ -43,6 +43,7 @@ import ListenPage from "./pages/client/ListenPage";
 import LocationsPage from "./pages/client/LocationsPage";
 import ClientSettingsPage from "./pages/client/SettingsPage";
 
+import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 import OrgSwitcher from "./pages/OrgSwitcher";
 import OrgSelector from "./pages/OrgSelector";
 import NotFound from "./pages/NotFound";
@@ -74,6 +75,7 @@ const App = () => (
           <Route path="/super-admin/billing" element={<SuperAdminBilling />} />
           <Route path="/super-admin/audit-log" element={<AuditLogPage />} />
           <Route path="/super-admin/settings" element={<SuperAdminSettings />} />
+          <Route path="/super-admin/profile" element={<ProfileSettingsPage role="super-admin" />} />
 
           {/* Agency */}
           <Route path="/agency/onboarding" element={<AgencyOnboarding />} />
@@ -85,6 +87,7 @@ const App = () => (
           <Route path="/agency/team/:userId/manage" element={<AgencyUserManagePage />} />
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
+          <Route path="/agency/profile" element={<ProfileSettingsPage role="agency" />} />
 
           {/* Business — two-level navigation */}
           <Route element={<ClientLayout />}>
