@@ -178,14 +178,18 @@ export default function ClientLayout() {
 
         {/* User profile at bottom */}
         <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-bold">
+          <button
+            onClick={() => navigate("/client/profile")}
+            className="w-full flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent/40 transition-colors text-left"
+            title="View profile & settings"
+          >
+            <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-bold shrink-0">
               {selectedClient.initial}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-sidebar-accent-foreground truncate">Business</p>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
