@@ -70,7 +70,7 @@ const AgencyOnboarding = () => {
     (current === "client" && !clientName.trim());
 
   const leftCopy = current === "done"
-    ? { eyebrow: "STEP 04 OF 04", title: "Ready to go 🚀", subtitle: "Your agency is set up. Start managing clients and growing." }
+    ? { eyebrow: "STEP 04 OF 04", title: "Ready to go 🚀", subtitle: "Your agency workspace is live. Time to plan, publish, and grow your clients' brands." }
     : stepMeta[current as Exclude<StepKey, "done">];
 
   return (
@@ -252,21 +252,21 @@ const AgencyOnboarding = () => {
               </div>
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-foreground">
-                  {Object.values(skipped).some(Boolean) ? "Complete your setup" : "You're all set!"}
+                  {Object.values(skipped).some(Boolean) ? "Almost there" : "Your agency is ready! 🎉"}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2">
                   {Object.values(skipped).some(Boolean) ? (
-                    <>You skipped a few steps. Finish them to get the most out of <span className="font-semibold text-foreground">{agencyName || "your agency"}</span>.</>
+                    <>You skipped a few steps. Finish them anytime to get the most out of <span className="font-semibold text-foreground">{agencyName || "your agency"}</span>.</>
                   ) : (
-                    <>Your agency <span className="font-semibold text-foreground">{agencyName}</span> is ready to go.</>
+                    <><span className="font-semibold text-foreground">{agencyName}</span> is set up. Start managing clients, scheduling content, and tracking results.</>
                   )}
                 </p>
               </div>
               {Object.values(skipped).some(Boolean) && (
                 <div className="flex flex-wrap gap-2 justify-center mb-6">
-                  {skipped.agency && <Chip label="Agency setup" />}
-                  {skipped.client && <Chip label="Add a client" />}
-                  {skipped.team && <Chip label="Invite team member" />}
+                  {skipped.agency && <Chip label="Finish agency setup" />}
+                  {skipped.client && <Chip label="Add your first client" />}
+                  {skipped.team && <Chip label="Invite a teammate" />}
                 </div>
               )}
               <Button className="w-full shadow-coral" size="lg" onClick={() => navigate("/agency/dashboard")}>
