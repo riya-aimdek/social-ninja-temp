@@ -10,23 +10,31 @@ const stepMeta: Record<Exclude<StepKey, "done">, { eyebrow: string; title: strin
   agency: {
     eyebrow: "STEP 01 OF 04",
     title: "Set up your\nagency.",
-    subtitle: "Tell us about your agency so clients know who they're working with.",
+    subtitle: "This is your agency's home base — where you'll manage every client, project, and social account in one place.",
   },
   client: {
     eyebrow: "STEP 02 OF 04",
     title: "Add your first\nclient.",
-    subtitle: "Create a client workspace to organise their accounts and content.",
+    subtitle: "Each client gets a fully isolated workspace for their brand, projects, and connected social accounts.",
   },
   team: {
     eyebrow: "STEP 03 OF 04",
     title: "Build your team.",
-    subtitle: "Invite team members to collaborate across client accounts.",
+    subtitle: "Invite teammates and assign roles so everyone has the right level of access across your clients.",
   },
 };
 
 const roles = [
-  { id: "agency-admin", name: "Agency Admin", desc: "Full access across all clients and settings" },
-  { id: "account-manager", name: "Agency Account Manager", desc: "Manages specific client accounts" },
+  {
+    id: "agency-admin",
+    name: "Agency Admin",
+    desc: "Full control. Can create clients, manage billing, and access everything across the agency.",
+  },
+  {
+    id: "agency-account-manager",
+    name: "Agency Account Manager",
+    desc: "Handles day-to-day work across multiple clients. Cannot access billing or delete clients.",
+  },
 ];
 
 const AgencyOnboarding = () => {
@@ -101,19 +109,19 @@ const AgencyOnboarding = () => {
           {current === "agency" && (
             <>
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-foreground">Set up your agency</h2>
-                <p className="text-sm text-muted-foreground mt-1">Tell us about your agency</p>
+                <h2 className="text-2xl font-bold text-foreground">Tell us about your agency</h2>
+                <p className="text-sm text-muted-foreground mt-1">This appears on client invites and reports</p>
               </div>
               <div className="flex gap-4 mb-4">
                 <button className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center transition-all shrink-0 group">
                   <Upload className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
-                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">Agency Logo</span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1 text-center px-1">Agency Logo</span>
                 </button>
                 <div className="flex-1">
                   <label className="text-xs font-semibold tracking-wider text-foreground mb-1.5 block">AGENCY NAME</label>
                   <input
                     className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
-                    placeholder="Your agency name"
+                    placeholder="e.g. Digital Spark Agency"
                     value={agencyName}
                     onChange={(e) => setAgencyName(e.target.value)}
                   />
@@ -126,7 +134,7 @@ const AgencyOnboarding = () => {
                 <textarea
                   rows={3}
                   className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none resize-none"
-                  placeholder="Brief description of your agency"
+                  placeholder="What does your agency do? (e.g. Full-service social media for D2C brands)"
                   value={agencyDesc}
                   onChange={(e) => setAgencyDesc(e.target.value)}
                 />
@@ -142,8 +150,8 @@ const AgencyOnboarding = () => {
                 </div>
               </div>
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-foreground">Add your first client</h2>
-                <p className="text-sm text-muted-foreground mt-1">Create a workspace for your client's brand</p>
+                <h2 className="text-2xl font-bold text-foreground">Create your first client workspace</h2>
+                <p className="text-sm text-muted-foreground mt-1">You can add projects and social accounts after this</p>
               </div>
               <div className="space-y-4">
                 <div>
@@ -162,7 +170,7 @@ const AgencyOnboarding = () => {
                   <textarea
                     rows={3}
                     className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none resize-none"
-                    placeholder="What does this client do?"
+                    placeholder="A short note about this client's brand or industry"
                     value={clientDesc}
                     onChange={(e) => setClientDesc(e.target.value)}
                   />
@@ -174,8 +182,8 @@ const AgencyOnboarding = () => {
           {current === "team" && (
             <>
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-foreground">Invite your first team member</h2>
-                <p className="text-sm text-muted-foreground mt-1">Add someone to collaborate with you</p>
+                <h2 className="text-2xl font-bold text-foreground">Invite your first teammate</h2>
+                <p className="text-sm text-muted-foreground mt-1">They'll get an email to join your agency workspace</p>
               </div>
               <div className="space-y-4">
                 <div>
@@ -184,7 +192,7 @@ const AgencyOnboarding = () => {
                   </label>
                   <input
                     className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
-                    placeholder="Jane Doe"
+                    placeholder="e.g. Jane Doe"
                     value={memberName}
                     onChange={(e) => setMemberName(e.target.value)}
                   />
@@ -194,7 +202,7 @@ const AgencyOnboarding = () => {
                   <input
                     type="email"
                     className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
-                    placeholder="jane@yourteam.com"
+                    placeholder="jane@youragency.com"
                     value={memberEmail}
                     onChange={(e) => setMemberEmail(e.target.value)}
                   />
@@ -209,7 +217,7 @@ const AgencyOnboarding = () => {
                   >
                     {assignRole && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
                   </button>
-                  <span className="text-sm font-medium text-foreground">Assign a role to this member</span>
+                  <span className="text-sm font-medium text-foreground">Assign an agency role</span>
                 </label>
                 {assignRole && (
                   <div className="space-y-2 animate-fade-in">
