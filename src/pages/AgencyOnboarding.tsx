@@ -1,0 +1,302 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Upload, ArrowRight, ArrowLeft, Building2, ClipboardCheck, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import SocialNinjaLogo from "@/components/SocialNinjaLogo";
+
+type StepKey = "agency" | "client" | "team" | "done";
+
+const stepMeta: Record<Exclude<StepKey, "done">, { eyebrow: string; title: string; subtitle: string }> = {
+  agency: {
+    eyebrow: "STEP 01 OF 04",
+    title: "Set up your\nagency.",
+    subtitle: "Tell us about your agency so clients know who they're working with.",
+  },
+  client: {
+    eyebrow: "STEP 02 OF 04",
+    title: "Add your first\nclient.",
+    subtitle: "Create a client workspace to organise their accounts and content.",
+  },
+  team: {
+    eyebrow: "STEP 03 OF 04",
+    title: "Build your team.",
+    subtitle: "Invite team members to collaborate across client accounts.",
+  },
+};
+
+const roles = [
+  { id: "agency-admin", name: "Agency Admin", desc: "Full access across all clients and settings" },
+  { id: "account-manager", name: "Agency Account Manager", desc: "Manages specific client accounts" },
+];
+
+const AgencyOnboarding = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(0); // 0..3
+  const stepKeys: StepKey[] = ["agency", "client", "team", "done"];
+  const current = stepKeys[step];
+
+  // form state
+  const [agencyName, setAgencyName] = useState("");
+  const [agencyDesc, setAgencyDesc] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [clientDesc, setClientDesc] = useState("");
+  const [memberName, setMemberName] = useState("");
+  const [memberEmail, setMemberEmail] = useState("");
+  const [assignRole, setAssignRole] = useState(true);
+  const [selectedRole, setSelectedRole] = useState("account-manager");
+
+  // skipped tracking for done summary
+  const [skipped, setSkipped] = useState<Record<string, boolean>>({});
+
+  const goNext = () => setStep((s) => Math.min(s + 1, 3));
+  const goBack = () => setStep((s) => Math.max(s - 1, 0));
+  const skip = () => {
+    if (current === "agency") setSkipped((p) => ({ ...p, agency: !agencyName.trim() }));
+    if (current === "client") setSkipped((p) => ({ ...p, client: !clientName.trim() }));
+    if (current === "team") setSkipped((p) => ({ ...p, team: !memberEmail.trim() }));
+    goNext();
+  };
+
+  const continueDisabled =
+    (current === "agency" && !agencyName.trim()) ||
+    (current === "client" && !clientName.trim());
+
+  const leftCopy = current === "done"
+    ? { eyebrow: "STEP 04 OF 04", title: "Ready to go 🚀", subtitle: "Your agency is set up. Start managing clients and growing." }
+    : stepMeta[current as Exclude<StepKey, "done">];
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+      {/* LEFT — dark panel */}
+      <div className="relative md:w-1/2 bg-[hsl(0_0%_8%)] text-white p-8 md:p-14 flex flex-col justify-between min-h-[280px] md:min-h-screen overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-primary/10 pointer-events-none" />
+        <div className="relative z-10">
+          <SocialNinjaLogo size="lg" />
+        </div>
+
+        <div className="relative z-10 max-w-md">
+          <p className="text-primary text-xs font-bold tracking-[0.2em] mb-4">{leftCopy.eyebrow}</p>
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight whitespace-pre-line mb-4">
+            {leftCopy.title}
+          </h1>
+          <p className="text-white/70 text-base leading-relaxed">{leftCopy.subtitle}</p>
+        </div>
+
+        {/* Progress dots */}
+        <div className="relative z-10 flex gap-2">
+          {stepKeys.map((_, i) => (
+            <div
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === step ? "w-10 bg-primary" : i < step ? "w-6 bg-primary/60" : "w-6 bg-white/20"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* RIGHT — light card */}
+      <div className="md:w-1/2 flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-orange-50/40 via-background to-rose-50/30">
+        <div className="w-full max-w-md bg-card rounded-2xl shadow-card p-8 md:p-10 animate-fade-in">
+          {current === "agency" && (
+            <>
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Set up your agency</h2>
+                <p className="text-sm text-muted-foreground mt-1">Tell us about your agency</p>
+              </div>
+              <div className="flex gap-4 mb-4">
+                <button className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center transition-all shrink-0 group">
+                  <Upload className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">Agency Logo</span>
+                </button>
+                <div className="flex-1">
+                  <label className="text-xs font-semibold tracking-wider text-foreground mb-1.5 block">AGENCY NAME</label>
+                  <input
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
+                    placeholder="Your agency name"
+                    value={agencyName}
+                    onChange={(e) => setAgencyName(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold tracking-wider text-foreground mb-1.5 block">
+                  DESCRIPTION <span className="text-muted-foreground font-normal normal-case">(optional)</span>
+                </label>
+                <textarea
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none resize-none"
+                  placeholder="Brief description of your agency"
+                  value={agencyDesc}
+                  onChange={(e) => setAgencyDesc(e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
+          {current === "client" && (
+            <>
+              <div className="flex justify-center mb-4">
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Add your first client</h2>
+                <p className="text-sm text-muted-foreground mt-1">Create a workspace for your client's brand</p>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold tracking-wider text-foreground mb-1.5 block">CLIENT NAME</label>
+                  <input
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
+                    placeholder="e.g. Acme Corp"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold tracking-wider text-foreground mb-1.5 block">
+                    DESCRIPTION <span className="text-muted-foreground font-normal normal-case">(optional)</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none resize-none"
+                    placeholder="What does this client do?"
+                    value={clientDesc}
+                    onChange={(e) => setClientDesc(e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {current === "team" && (
+            <>
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Invite your first team member</h2>
+                <p className="text-sm text-muted-foreground mt-1">Add someone to collaborate with you</p>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold tracking-wider text-foreground mb-1.5 block">
+                    FULL NAME <span className="text-muted-foreground font-normal normal-case">(optional)</span>
+                  </label>
+                  <input
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
+                    placeholder="Jane Doe"
+                    value={memberName}
+                    onChange={(e) => setMemberName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold tracking-wider text-foreground mb-1.5 block">EMAIL ADDRESS</label>
+                  <input
+                    type="email"
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
+                    placeholder="jane@yourteam.com"
+                    value={memberEmail}
+                    onChange={(e) => setMemberEmail(e.target.value)}
+                  />
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => setAssignRole(!assignRole)}
+                    className={`w-5 h-5 rounded flex items-center justify-center transition-all shrink-0 ${
+                      assignRole ? "bg-primary" : "border-2 border-border"
+                    }`}
+                  >
+                    {assignRole && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+                  </button>
+                  <span className="text-sm font-medium text-foreground">Assign a role to this member</span>
+                </label>
+                {assignRole && (
+                  <div className="space-y-2 animate-fade-in">
+                    {roles.map((r) => {
+                      const active = selectedRole === r.id;
+                      return (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => setSelectedRole(r.id)}
+                          className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                            active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <p className={`text-sm font-semibold ${active ? "text-primary" : "text-foreground"}`}>{r.name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{r.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {current === "done" && (
+            <>
+              <div className="flex justify-center mb-4">
+                <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center">
+                  <ClipboardCheck className="h-7 w-7 text-amber-600" />
+                </div>
+              </div>
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground">
+                  {Object.values(skipped).some(Boolean) ? "Complete your setup" : "You're all set!"}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {Object.values(skipped).some(Boolean) ? (
+                    <>You skipped a few steps. Finish them to get the most out of <span className="font-semibold text-foreground">{agencyName || "your agency"}</span>.</>
+                  ) : (
+                    <>Your agency <span className="font-semibold text-foreground">{agencyName}</span> is ready to go.</>
+                  )}
+                </p>
+              </div>
+              {Object.values(skipped).some(Boolean) && (
+                <div className="flex flex-wrap gap-2 justify-center mb-6">
+                  {skipped.agency && <Chip label="Agency setup" />}
+                  {skipped.client && <Chip label="Add a client" />}
+                  {skipped.team && <Chip label="Invite team member" />}
+                </div>
+              )}
+              <Button className="w-full shadow-coral" size="lg" onClick={() => navigate("/agency/dashboard")}>
+                {Object.values(skipped).some(Boolean) ? "Go to Dashboard anyway" : "Go to Dashboard"}
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </>
+          )}
+
+          {/* Footer nav */}
+          {current !== "done" && (
+            <div className="flex items-center justify-between mt-8">
+              {step > 0 ? (
+                <button onClick={goBack} className="text-muted-foreground hover:text-foreground transition-colors p-2">
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+              ) : <div className="w-8" />}
+              <div className="flex items-center gap-4">
+                <button onClick={skip} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Skip
+                </button>
+                <Button onClick={goNext} disabled={continueDisabled} size="lg" className="shadow-coral px-6">
+                  Continue <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Chip = ({ label }: { label: string }) => (
+  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
+    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+    {label}
+  </span>
+);
+
+export default AgencyOnboarding;
