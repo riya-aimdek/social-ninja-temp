@@ -285,20 +285,8 @@ export default function CreatePage() {
         {/* ===== CENTER: Composer ===== */}
         <section className="xl:col-span-5 space-y-4">
           <div className="bg-card rounded-xl shadow-card overflow-hidden">
-            {/* AI CTA strip — placed at top of composer where it belongs in flow */}
-            <div className="px-4 py-2.5 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent border-b border-border flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs text-foreground">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="font-medium">Need ideas?</span>
-                <span className="text-muted-foreground hidden sm:inline">Let AI draft a caption.</span>
-              </div>
-              <button
-                onClick={() => setAiOpen(true)}
-                className="px-3 py-1.5 rounded-lg gradient-coral text-primary-foreground text-xs font-semibold shadow-coral hover:opacity-90 transition-all flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5" /> Create with AI
-              </button>
-            </div>
+            {/* Editor */}
+            <div className="p-4 space-y-3">
 
 
 
