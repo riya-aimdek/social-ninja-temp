@@ -35,6 +35,7 @@ import ClientTeamPage from "./pages/client/ClientTeamPage";
 import DashboardPage from "./pages/client/DashboardPage";
 import ConnectPage from "./pages/client/ConnectPage";
 import CreatePage from "./pages/client/CreatePage";
+import CreateAiPage from "./pages/client/CreateAiPage";
 import PublishPage from "./pages/client/PublishPage";
 import EngagePage from "./pages/client/EngagePage";
 import AnalyzePage from "./pages/client/AnalyzePage";
@@ -101,6 +102,7 @@ const App = () => (
             <Route path="/client/project/team" element={<ClientTeamPage />} />
             <Route path="/client/connect" element={<ConnectPage />} />
             <Route path="/client/create" element={<CreatePage />} />
+            <Route path="/client/create/ai" element={<CreateAiPage />} />
             <Route path="/client/publish" element={<PublishPage />} />
             <Route path="/client/engage" element={<EngagePage />} />
             <Route path="/client/analyze" element={<AnalyzePage />} />
