@@ -287,11 +287,6 @@ export default function CreatePage() {
           <div className="bg-card rounded-xl shadow-card overflow-hidden">
             {/* Editor */}
             <div className="p-4 space-y-3">
-
-
-
-            {/* Editor */}
-            <div className="p-4 space-y-3">
               <textarea
                 value={sharedCaption}
                 onChange={(e) => setSharedCaption(e.target.value)}
