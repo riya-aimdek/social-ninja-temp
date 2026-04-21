@@ -427,7 +427,7 @@ export default function CreatePage() {
         </section>
 
         {/* ===== RIGHT: Live Preview ===== */}
-        <aside className="xl:col-span-4 space-y-4">
+        <aside className="xl:col-span-5 space-y-4">
           <div className="bg-card rounded-xl shadow-card overflow-hidden sticky top-4">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
               <h3 className="text-sm font-semibold flex items-center gap-2">
