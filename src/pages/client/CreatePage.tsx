@@ -184,24 +184,14 @@ export default function CreatePage() {
 
   return (
     <div className="space-y-5 animate-fade-in pb-8">
-      {/* ============ Header ============ */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" /> Compose Post
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Publish to multiple networks with platform-specific captions and media.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => toast.success("Draft saved")}
-            className="px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors flex items-center gap-1.5"
-          >
-            <Save className="w-4 h-4" /> Save Draft
-          </button>
-        </div>
+      {/* ============ Action bar ============ */}
+      <div className="flex items-center justify-end">
+        <button
+          onClick={() => toast.success("Draft saved")}
+          className="px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors flex items-center gap-1.5"
+        >
+          <Save className="w-4 h-4" /> Save Draft
+        </button>
       </div>
 
       {/* ============ 3-col Layout ============ */}
