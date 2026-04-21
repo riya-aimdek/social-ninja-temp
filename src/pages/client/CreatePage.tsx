@@ -490,7 +490,7 @@ export default function CreatePage() {
                 </div>
               </>
             ) : (
-              <div className="p-3 space-y-3 max-h-[700px] overflow-y-auto">
+              <div className="p-3 space-y-3">
                 {selectedPlatforms.map((p) => (
                   <details key={p} open className="rounded-lg border border-border overflow-hidden group">
                     <summary className="flex items-center gap-2 px-3 py-2 bg-muted/30 cursor-pointer text-xs font-semibold list-none">
