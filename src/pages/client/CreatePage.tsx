@@ -1,263 +1,954 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import {
-  Sparkles, Copy, Edit3, Hash, Image, Facebook, Instagram, Linkedin, Twitter,
-  AlertCircle, RefreshCw, Check, Undo2, Plus, X, Upload, Loader2, Save
+  Sparkles, Image as ImageIcon, Facebook, Instagram, Linkedin, Twitter,
+  AlertCircle, RefreshCw, Check, X, Upload, Loader2, Save, Hash,
+  Calendar as CalendarIcon, Clock, Eye, ChevronDown, ChevronRight, Plus,
+  MoreHorizontal, Heart, MessageCircle, Repeat2, Send, Settings2, Trash2,
+  CheckCircle2, Globe2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-const tones = ["Professional", "Casual", "Creative", "Promotional"];
-const platformOptions = [
-  { label: "IG", icon: Instagram, charLimit: 2200, hashtagLimit: 30 },
-  { label: "FB", icon: Facebook, charLimit: 63206, hashtagLimit: 30 },
-  { label: "LinkedIn", icon: Linkedin, charLimit: 3000, hashtagLimit: 5 },
-  { label: "X", icon: Twitter, charLimit: 280, hashtagLimit: 10 },
-];
+/* ---------------- Platform model ---------------- */
+type PlatformKey = "instagram" | "facebook" | "linkedin" | "twitter";
 
-const imageStyles = ["Photorealistic", "Illustrative", "Minimalist", "Branded"];
-
-const defaultCaptions = [
-  { text: "🚀 Transform your social media game with AI-powered automation. Spend less time posting, more time growing. #SocialMedia #AI #Marketing", chars: 138 },
-  { text: "Stop guessing, start knowing. Our AI analyzes your audience behavior to find the perfect posting times. Ready to level up? 📈", chars: 122 },
-  { text: "Your competitors are already using AI for social media. Here's why you should too — and how to get started in under 5 minutes. ⚡", chars: 131 },
-];
-
-const hashtagGroups = {
-  "High Reach": ["#socialmedia", "#marketing", "#AI", "#digitalmarketing", "#growth", "#trending", "#business", "#branding", "#strategy", "#viral"],
-  "Medium Reach": ["#contentcreation", "#socialstrategy", "#marketingtips", "#automation", "#contentmarketing", "#socialmediamanager", "#onlinemarketing"],
-  "Niche": ["#socialninja", "#aimarketing", "#smm2026", "#postautomation", "#schedulingtools", "#marketingautomation"],
+const PLATFORMS: Record<PlatformKey, {
+  name: string; icon: typeof Instagram; color: string; charLimit: number;
+  hashtagLimit: number; aspect: string; aspectLabel: string; recSize: string;
+}> = {
+  instagram: { name: "Instagram", icon: Instagram, color: "bg-[hsl(var(--instagram))]", charLimit: 2200, hashtagLimit: 30, aspect: "1 / 1", aspectLabel: "1:1 Square", recSize: "1080×1080" },
+  facebook:  { name: "Facebook",  icon: Facebook,  color: "bg-[hsl(var(--facebook))]",  charLimit: 63206, hashtagLimit: 30, aspect: "1.91 / 1", aspectLabel: "1.91:1 Landscape", recSize: "1200×630" },
+  linkedin:  { name: "LinkedIn",  icon: Linkedin,  color: "bg-[hsl(var(--linkedin))]",  charLimit: 3000,  hashtagLimit: 5,  aspect: "1.91 / 1", aspectLabel: "1.91:1 Landscape", recSize: "1200×627" },
+  twitter:   { name: "X",         icon: Twitter,   color: "bg-[hsl(var(--twitter))]",   charLimit: 280,   hashtagLimit: 10, aspect: "16 / 9", aspectLabel: "16:9 Landscape",  recSize: "1600×900" },
 };
 
-type CaptionItem = { text: string; chars: number; originalText: string; isEditing: boolean };
-type GenerationState = "idle" | "loading" | "success" | "error";
+/* ---------------- Mock connected accounts ---------------- */
+type Account = { id: string; platform: PlatformKey; handle: string; name: string; avatar?: string };
+const MOCK_ACCOUNTS: Account[] = [
+  { id: "ig-1", platform: "instagram", handle: "@aimdek",       name: "Aimdek Official" },
+  { id: "ig-2", platform: "instagram", handle: "@aimdek.team",  name: "Aimdek Team" },
+  { id: "fb-1", platform: "facebook",  handle: "Aimdek Page",   name: "Aimdek" },
+  { id: "fb-2", platform: "facebook",  handle: "Aimdek Studio", name: "Aimdek Studio" },
+  { id: "li-1", platform: "linkedin",  handle: "Aimdek Inc",    name: "Aimdek Inc" },
+  { id: "tw-1", platform: "twitter",   handle: "@aimdek",       name: "Aimdek" },
+];
+
+const TONES = ["Professional", "Casual", "Creative", "Promotional"];
+const HASHTAG_GROUPS: Record<string, string[]> = {
+  "High Reach": ["#socialmedia", "#marketing", "#AI", "#growth", "#trending"],
+  "Niche": ["#socialninja", "#aimarketing", "#smm2026"],
+};
+
+/* ---------------- Types ---------------- */
+type PlatformMedia = Partial<Record<PlatformKey, string>>; // platform → image url
+type CaptionVariant = { caption: string; useShared: boolean };
+type PlatformOverrides = Partial<Record<PlatformKey, CaptionVariant>>;
 
 export default function CreatePage() {
-  const [selectedTone, setSelectedTone] = useState("Professional");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["IG", "FB"]);
-  const [selectedHashtags, setSelectedHashtags] = useState<string[]>(["#socialmedia", "#AI"]);
-  const [promptText, setPromptText] = useState("");
-  const [genState, setGenState] = useState<GenerationState>("idle");
-  const [captions, setCaptions] = useState<CaptionItem[]>([]);
+  /* ---- selection state ---- */
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(["ig-1", "fb-1"]);
+  const [accountPickerOpen, setAccountPickerOpen] = useState(false);
+
+  /* ---- composer ---- */
+  const [sharedCaption, setSharedCaption] = useState("");
+  const [overrides, setOverrides] = useState<PlatformOverrides>({});
+  const [customizePerNetwork, setCustomizePerNetwork] = useState(false);
+  const [activeOverrideTab, setActiveOverrideTab] = useState<PlatformKey | null>(null);
+
+  /* ---- media (per-platform variants) ---- */
+  const [sharedMedia, setSharedMedia] = useState<string | null>(null);
+  const [platformMedia, setPlatformMedia] = useState<PlatformMedia>({});
+  const [mediaVariantsOpen, setMediaVariantsOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadTarget, setUploadTarget] = useState<PlatformKey | "shared">("shared");
+
+  /* ---- AI ---- */
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiTone, setAiTone] = useState("Professional");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+
+  /* ---- hashtags ---- */
+  const [hashtagsOpen, setHashtagsOpen] = useState(false);
+  const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
   const [customHashtag, setCustomHashtag] = useState("");
-  const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
-  const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [imagePrompt, setImagePrompt] = useState("");
-  const [imageStyle, setImageStyle] = useState("Photorealistic");
-  const [imageGenState, setImageGenState] = useState<GenerationState>("idle");
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-  const [selectedImage, setSelectedImage] = useState<number | null>(null);
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const activePlatformLimit = Math.min(...selectedPlatforms.map((p) => platformOptions.find((po) => po.label === p)?.charLimit ?? 9999));
-  const activeHashtagLimit = Math.min(...selectedPlatforms.map((p) => platformOptions.find((po) => po.label === p)?.hashtagLimit ?? 30));
-  const wordCount = promptText.trim().split(/\s+/).filter(Boolean).length;
-  const isPromptValid = wordCount >= 4;
+  /* ---- schedule ---- */
+  const [scheduleMode, setScheduleMode] = useState<"now" | "schedule">("now");
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
 
-  useEffect(() => {
-    if (captions.length === 0 && selectedHashtags.length === 0) return;
-    setAutoSaveStatus("saving");
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => {
-      setAutoSaveStatus("saved");
-      setTimeout(() => setAutoSaveStatus("idle"), 2000);
+  /* ---- preview ---- */
+  const [previewMode, setPreviewMode] = useState<"tabs" | "grid">("tabs");
+  const [activePreview, setActivePreview] = useState<PlatformKey>("instagram");
+
+  /* ---- derived ---- */
+  const selectedAccounts = useMemo(
+    () => MOCK_ACCOUNTS.filter((a) => selectedAccountIds.includes(a.id)),
+    [selectedAccountIds]
+  );
+  const selectedPlatforms = useMemo(
+    () => Array.from(new Set(selectedAccounts.map((a) => a.platform))) as PlatformKey[],
+    [selectedAccounts]
+  );
+
+  const getCaptionFor = (p: PlatformKey) => {
+    if (customizePerNetwork && overrides[p] && !overrides[p]!.useShared) return overrides[p]!.caption;
+    return sharedCaption;
+  };
+  const getMediaFor = (p: PlatformKey) => platformMedia[p] ?? sharedMedia ?? null;
+
+  /* ---- account toggle ---- */
+  const toggleAccount = (id: string) =>
+    setSelectedAccountIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
+
+  /* ---- caption override ---- */
+  const setOverrideCaption = (p: PlatformKey, caption: string) =>
+    setOverrides((prev) => ({ ...prev, [p]: { caption, useShared: false } }));
+
+  const resetOverride = (p: PlatformKey) =>
+    setOverrides((prev) => {
+      const n = { ...prev };
+      delete n[p];
+      return n;
+    });
+
+  /* ---- media upload (mock) ---- */
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const url = e.target?.result as string;
+      if (uploadTarget === "shared") setSharedMedia(url);
+      else setPlatformMedia((prev) => ({ ...prev, [uploadTarget]: url }));
+      toast.success(uploadTarget === "shared" ? "Media added" : `${PLATFORMS[uploadTarget as PlatformKey].name} variant added`);
+    };
+    reader.readAsDataURL(file);
+  };
+  const triggerUpload = (target: PlatformKey | "shared") => {
+    setUploadTarget(target);
+    fileInputRef.current?.click();
+  };
+  const removeMedia = (target: PlatformKey | "shared") => {
+    if (target === "shared") setSharedMedia(null);
+    else setPlatformMedia((prev) => { const n = { ...prev }; delete n[target]; return n; });
+  };
+
+  /* ---- AI generate ---- */
+  const handleAiGenerate = useCallback(() => {
+    if (aiPrompt.trim().split(/\s+/).filter(Boolean).length < 4) {
+      toast.error("Please enter at least 4 words"); return;
+    }
+    setAiLoading(true); setAiSuggestions([]);
+    setTimeout(() => {
+      setAiSuggestions([
+        `🚀 ${aiPrompt} — discover how AI is reshaping the way teams create and publish content. #SocialMedia #AI`,
+        `Stop guessing, start knowing. ${aiPrompt} Ready to level up your social game? 📈`,
+        `Here's why ${aiPrompt.toLowerCase()} matters in 2026 — and how to act on it in under 5 minutes. ⚡`,
+      ]);
+      setAiLoading(false);
     }, 1500);
-    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [captions, selectedHashtags]);
+  }, [aiPrompt]);
 
-  const togglePlatform = (label: string) => setSelectedPlatforms((prev) => prev.includes(label) ? prev.filter((p) => p !== label) : [...prev, label]);
-  const toggleHashtag = (tag: string) => {
-    if (!selectedHashtags.includes(tag) && selectedHashtags.length >= activeHashtagLimit) { toast.error(`Maximum ${activeHashtagLimit} hashtags allowed.`); return; }
-    setSelectedHashtags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+  const useAiSuggestion = (text: string) => {
+    setSharedCaption(text);
+    setAiOpen(false);
+    toast.success("Caption applied");
+  };
+
+  /* ---- hashtag select ---- */
+  const toggleHashtag = (tag: string) =>
+    setSelectedHashtags((p) => p.includes(tag) ? p.filter((t) => t !== tag) : [...p, tag]);
+  const insertHashtagsToCaption = () => {
+    if (!selectedHashtags.length) return;
+    setSharedCaption((c) => `${c}${c ? "\n\n" : ""}${selectedHashtags.join(" ")}`);
+    setHashtagsOpen(false);
+    toast.success("Hashtags added");
   };
   const addCustomHashtag = () => {
-    const tag = customHashtag.trim().startsWith("#") ? customHashtag.trim() : `#${customHashtag.trim()}`;
-    if (!tag || tag === "#") return;
-    if (selectedHashtags.length >= activeHashtagLimit) { toast.error(`Maximum ${activeHashtagLimit} hashtags allowed.`); return; }
-    if (!selectedHashtags.includes(tag)) setSelectedHashtags((prev) => [...prev, tag]);
+    const t = customHashtag.trim().replace(/^#?/, "#");
+    if (t.length < 2) return;
+    if (!selectedHashtags.includes(t)) setSelectedHashtags((p) => [...p, t]);
     setCustomHashtag("");
   };
 
-  const handleGenerate = useCallback(() => {
-    if (!isPromptValid) { toast.error("Please enter at least 4 words."); return; }
-    setGenState("loading"); setCaptions([]);
-    setTimeout(() => {
-      if (Math.random() > 0.1) {
-        setCaptions(defaultCaptions.map((c) => ({ ...c, originalText: c.text, isEditing: false })));
-        setGenState("success");
-      } else setGenState("error");
-    }, 2000);
-  }, [isPromptValid]);
-
-  const handleCaptionEdit = (index: number, newText: string) => setCaptions((prev) => prev.map((c, i) => i === index ? { ...c, text: newText, chars: newText.length } : c));
-  const toggleEditMode = (index: number) => setCaptions((prev) => prev.map((c, i) => i === index ? { ...c, isEditing: !c.isEditing } : c));
-  const undoEdit = (index: number) => setCaptions((prev) => prev.map((c, i) => i === index ? { ...c, text: c.originalText, chars: c.originalText.length, isEditing: false } : c));
-  const copyCaption = (text: string) => { navigator.clipboard.writeText(text); toast.success("Copied!"); };
-
-  const handleImageGenerate = () => {
-    if (!imagePrompt.trim()) { toast.error("Please enter an image prompt."); return; }
-    setImageGenState("loading"); setGeneratedImages([]); setSelectedImage(null);
-    setTimeout(() => {
-      if (Math.random() > 0.1) {
-        setGeneratedImages(["https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400&h=400&fit=crop", "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400&h=400&fit=crop"]);
-        setImageGenState("success");
-      } else setImageGenState("error");
-    }, 3000);
+  /* ---- publish ---- */
+  const handlePublish = () => {
+    if (!selectedAccountIds.length) return toast.error("Select at least one account");
+    if (!sharedCaption.trim() && !Object.values(overrides).some((v) => v?.caption.trim()))
+      return toast.error("Caption is empty");
+    toast.success(scheduleMode === "now" ? "Publishing…" : "Scheduled");
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 animate-fade-in pb-8">
+      {/* ============ Header ============ */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" /> Create Content
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-primary" /> Compose Post
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Generate AI-powered content for your social channels.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Publish to multiple networks with platform-specific captions and media.
+          </p>
         </div>
-        {autoSaveStatus !== "idle" && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            {autoSaveStatus === "saving" ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</> : <><Save className="w-3 h-3 text-emerald-500" /> Draft saved</>}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => toast.success("Draft saved")}
+            className="px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors flex items-center gap-1.5"
+          >
+            <Save className="w-4 h-4" /> Save Draft
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-2 space-y-5">
-          <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Describe your post idea</label>
-              <textarea value={promptText} onChange={(e) => setPromptText(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-input bg-card text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-28" placeholder="E.g., Announce our new AI scheduling feature..." />
-              <div className="flex items-center justify-between">
-                <span className={`text-[11px] ${isPromptValid ? "text-emerald-600" : "text-muted-foreground"}`}>{wordCount}/4 words minimum</span>
-                {!isPromptValid && wordCount > 0 && <span className="text-[11px] text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Need at least 4 words</span>}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5"><label className="text-xs font-medium text-muted-foreground">Target Audience</label><input className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="e.g., Marketers" /></div>
-              <div className="space-y-1.5"><label className="text-xs font-medium text-muted-foreground">Keywords</label><input className="w-full px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="e.g., AI, social" /></div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Tone</label>
-              <div className="flex gap-2 flex-wrap">
-                {tones.map((tone) => (<button key={tone} onClick={() => setSelectedTone(tone)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedTone === tone ? "gradient-coral text-primary-foreground shadow-coral" : "bg-accent text-foreground hover:bg-accent/80"}`}>{tone}</button>))}
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Platforms</label>
-              <div className="flex gap-2">
-                {platformOptions.map((p) => (<button key={p.label} onClick={() => togglePlatform(p.label)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPlatforms.includes(p.label) ? "bg-foreground text-card" : "bg-accent text-foreground hover:bg-accent/80"}`}><p.icon className="w-3.5 h-3.5" />{p.label}</button>))}
-              </div>
-            </div>
-            <button onClick={handleGenerate} disabled={genState === "loading" || !isPromptValid} className="w-full py-2.5 rounded-lg gradient-coral text-primary-foreground font-medium text-sm shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-              {genState === "loading" ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4" /> Generate with AI</>}
-            </button>
-          </div>
-          <div className="bg-card rounded-xl shadow-card p-5">
-            <button onClick={() => { if (captions.length > 0 && !imagePrompt) setImagePrompt(captions[0].text.slice(0, 100)); setImageModalOpen(true); }} className="w-full py-2.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2">
-              <Image className="w-4 h-4" /> Generate Image with AI
-            </button>
-            {selectedImage !== null && generatedImages[selectedImage] && (
-              <div className="mt-3 relative">
-                <img src={generatedImages[selectedImage]} alt="Selected AI image" className="w-full rounded-lg border border-border" />
-                <button onClick={() => setSelectedImage(null)} className="absolute top-2 right-2 p-1 rounded-full bg-card/80 hover:bg-card text-muted-foreground"><X className="w-4 h-4" /></button>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* ============ 3-col Layout ============ */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+        {/* ===== LEFT: Connected Accounts ===== */}
+        <aside className="xl:col-span-3 space-y-4">
+          <ConnectedAccountsPanel
+            accounts={MOCK_ACCOUNTS}
+            selectedIds={selectedAccountIds}
+            onToggle={toggleAccount}
+            onClearAll={() => setSelectedAccountIds([])}
+          />
 
-        <div className="lg:col-span-3 space-y-5">
-          <div className="bg-card rounded-xl shadow-card p-5">
-            <h2 className="text-sm font-semibold text-foreground mb-4">Generated Captions</h2>
-            {genState === "loading" && <div className="space-y-3">{[1, 2, 3].map((i) => (<div key={i} className="border border-border rounded-xl p-4"><div className="skeleton-shimmer h-4 rounded w-full mb-2" /><div className="skeleton-shimmer h-4 rounded w-3/4 mb-2" /><div className="skeleton-shimmer h-4 rounded w-1/2" /></div>))}</div>}
-            {genState === "error" && (
-              <div className="border border-destructive/30 bg-destructive/5 rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-                <AlertCircle className="w-8 h-8 text-destructive" /><p className="text-sm font-medium text-foreground">Content generation failed</p>
-                <button onClick={handleGenerate} className="px-4 py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-all"><RefreshCw className="w-3.5 h-3.5" /> Retry</button>
+          <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-primary" /> Media
+              </h3>
+              {selectedPlatforms.length > 1 && (
+                <button
+                  onClick={() => setMediaVariantsOpen(true)}
+                  className="text-[11px] font-medium text-primary hover:underline"
+                >
+                  Customize per platform
+                </button>
+              )}
+            </div>
+
+            {sharedMedia ? (
+              <div className="relative group">
+                <img src={sharedMedia} alt="Shared media" className="w-full rounded-lg border border-border aspect-video object-cover" />
+                <button
+                  onClick={() => removeMedia("shared")}
+                  className="absolute top-2 right-2 p-1 rounded-full bg-card/90 hover:bg-card border border-border opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => triggerUpload("shared")}
+                className="w-full border-2 border-dashed border-border rounded-lg p-6 hover:border-primary hover:bg-accent/40 transition-all flex flex-col items-center gap-2 text-muted-foreground"
+              >
+                <Upload className="w-6 h-6" />
+                <span className="text-xs font-medium">Upload shared media</span>
+                <span className="text-[10px]">JPG, PNG, WEBP — max 10MB</span>
+              </button>
+            )}
+
+            {/* per-platform variant chips */}
+            {selectedPlatforms.length > 0 && Object.keys(platformMedia).length > 0 && (
+              <div className="space-y-1.5 pt-1">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground">Platform variants</p>
+                {selectedPlatforms.filter((p) => platformMedia[p]).map((p) => {
+                  const meta = PLATFORMS[p]; const Icon = meta.icon;
+                  return (
+                    <div key={p} className="flex items-center gap-2 p-1.5 pl-2 rounded-md bg-accent/50 text-xs">
+                      <span className={cn("w-5 h-5 rounded flex items-center justify-center text-white", meta.color)}>
+                        <Icon className="w-3 h-3" />
+                      </span>
+                      <span className="flex-1 font-medium truncate">{meta.name}</span>
+                      <span className="text-muted-foreground text-[10px]">{meta.recSize}</span>
+                      <button onClick={() => removeMedia(p)} className="p-0.5 hover:text-destructive">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
-            {genState === "success" && captions.length > 0 && (
-              <div className="space-y-3">
-                {captions.map((cap, i) => (
-                  <div key={i} className="border border-border rounded-xl p-4 hover:border-primary/30 transition-colors">
-                    {cap.isEditing ? <textarea value={cap.text} onChange={(e) => handleCaptionEdit(i, e.target.value)} className="w-full text-sm text-foreground leading-relaxed bg-accent/30 rounded-lg p-2 outline-none focus:ring-2 focus:ring-primary/20 resize-none min-h-[80px]" autoFocus /> : <p className="text-sm text-foreground leading-relaxed">{cap.text}</p>}
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center gap-3">
-                        <span className={`text-[11px] tabular-nums ${cap.chars > activePlatformLimit ? "text-destructive font-medium" : "text-muted-foreground"}`}>{cap.chars}/{activePlatformLimit} chars</span>
-                        <div className="w-20 h-1.5 rounded-full bg-accent overflow-hidden"><div className={`h-full rounded-full ${cap.chars > activePlatformLimit ? "bg-destructive" : "gradient-coral"}`} style={{ width: `${Math.min((cap.chars / activePlatformLimit) * 100, 100)}%` }} /></div>
+          </div>
+        </aside>
+
+        {/* ===== CENTER: Composer ===== */}
+        <section className="xl:col-span-5 space-y-4">
+          <div className="bg-card rounded-xl shadow-card overflow-hidden">
+            {/* AI CTA strip — placed at top of composer where it belongs in flow */}
+            <div className="px-4 py-2.5 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent border-b border-border flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs text-foreground">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span className="font-medium">Need ideas?</span>
+                <span className="text-muted-foreground hidden sm:inline">Let AI draft a caption.</span>
+              </div>
+              <button
+                onClick={() => setAiOpen(true)}
+                className="px-3 py-1.5 rounded-lg gradient-coral text-primary-foreground text-xs font-semibold shadow-coral hover:opacity-90 transition-all flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Create with AI
+              </button>
+            </div>
+
+            {/* Selected scope chip */}
+            <div className="px-4 pt-3">
+              <SelectedAccountsBar accounts={selectedAccounts} onOpen={() => setAccountPickerOpen(true)} />
+            </div>
+
+            {/* Editor */}
+            <div className="p-4 space-y-3">
+              <textarea
+                value={sharedCaption}
+                onChange={(e) => setSharedCaption(e.target.value)}
+                placeholder="Start writing your post…"
+                className="w-full min-h-[180px] resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent leading-relaxed"
+              />
+
+              {/* Character meters */}
+              {selectedPlatforms.length > 0 && (
+                <div className="space-y-1.5 pt-1 border-t border-border">
+                  {selectedPlatforms.map((p) => {
+                    const meta = PLATFORMS[p];
+                    const text = getCaptionFor(p);
+                    const len = text.length;
+                    const pct = Math.min((len / meta.charLimit) * 100, 100);
+                    const over = len > meta.charLimit;
+                    const Icon = meta.icon;
+                    return (
+                      <div key={p} className="flex items-center gap-2 text-[11px]">
+                        <Icon className="w-3 h-3 text-muted-foreground" />
+                        <span className="w-20 text-muted-foreground">{meta.name}</span>
+                        <div className="flex-1 h-1 rounded-full bg-accent overflow-hidden">
+                          <div className={cn("h-full rounded-full transition-all", over ? "bg-destructive" : "gradient-coral")} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={cn("tabular-nums w-20 text-right", over ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                          {len.toLocaleString()}/{meta.charLimit.toLocaleString()}
+                        </span>
                       </div>
-                      <div className="flex gap-1.5">
-                        <button onClick={() => copyCaption(cap.text)} className="p-1.5 rounded-md hover:bg-accent transition-colors"><Copy className="w-3.5 h-3.5 text-muted-foreground" /></button>
-                        <button onClick={() => toggleEditMode(i)} className="p-1.5 rounded-md hover:bg-accent transition-colors">{cap.isEditing ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />}</button>
-                        {cap.text !== cap.originalText && <button onClick={() => undoEdit(i)} className="p-1.5 rounded-md hover:bg-accent transition-colors"><Undo2 className="w-3.5 h-3.5 text-muted-foreground" /></button>}
-                        <button className="px-3 py-1 rounded-lg gradient-coral text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">Use This</button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Toolbar */}
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <div className="flex items-center gap-1">
+                  <button onClick={() => triggerUpload("shared")} className="p-2 rounded-md hover:bg-accent transition-colors text-muted-foreground" title="Add image">
+                    <ImageIcon className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setHashtagsOpen(true)} className="p-2 rounded-md hover:bg-accent transition-colors text-muted-foreground" title="Hashtags">
+                    <Hash className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setAiOpen(true)} className="p-2 rounded-md hover:bg-accent transition-colors text-primary" title="AI Assist">
+                    <Sparkles className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">Customize per network</span>
+                  <input
+                    type="checkbox"
+                    checked={customizePerNetwork}
+                    onChange={(e) => {
+                      setCustomizePerNetwork(e.target.checked);
+                      if (e.target.checked && selectedPlatforms.length) setActiveOverrideTab(selectedPlatforms[0]);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <span className="relative w-9 h-5 bg-accent peer-checked:bg-primary rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-4" />
+                </label>
+              </div>
+
+              {/* Per-network override editor */}
+              {customizePerNetwork && selectedPlatforms.length > 0 && (
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <div className="flex border-b border-border bg-muted/30 overflow-x-auto">
+                    {selectedPlatforms.map((p) => {
+                      const meta = PLATFORMS[p]; const Icon = meta.icon;
+                      const customized = overrides[p] && !overrides[p]!.useShared;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setActiveOverrideTab(p)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap",
+                            activeOverrideTab === p ? "border-primary text-foreground bg-card" : "border-transparent text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Icon className="w-3.5 h-3.5" /> {meta.name}
+                          {customized && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {activeOverrideTab && (
+                    <div className="p-3 space-y-2">
+                      <textarea
+                        value={overrides[activeOverrideTab]?.caption ?? sharedCaption}
+                        onChange={(e) => setOverrideCaption(activeOverrideTab, e.target.value)}
+                        placeholder={`Custom ${PLATFORMS[activeOverrideTab].name} caption…`}
+                        className="w-full min-h-[100px] resize-none text-sm bg-transparent outline-none"
+                      />
+                      <div className="flex justify-between items-center text-[11px]">
+                        <button
+                          onClick={() => resetOverride(activeOverrideTab)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          Reset to shared
+                        </button>
+                        <span className="text-muted-foreground">
+                          Recommended: {PLATFORMS[activeOverrideTab].recSize} · {PLATFORMS[activeOverrideTab].aspectLabel}
+                        </span>
                       </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Scheduling */}
+          <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <CalendarIcon className="w-4 h-4 text-primary" /> Scheduling
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setScheduleMode("now")}
+                className={cn(
+                  "py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 border",
+                  scheduleMode === "now" ? "gradient-coral text-primary-foreground border-transparent shadow-coral" : "bg-card border-border text-foreground hover:bg-accent"
+                )}
+              >
+                <Send className="w-3.5 h-3.5" /> Send Now
+              </button>
+              <button
+                onClick={() => setScheduleMode("schedule")}
+                className={cn(
+                  "py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 border",
+                  scheduleMode === "schedule" ? "gradient-coral text-primary-foreground border-transparent shadow-coral" : "bg-card border-border text-foreground hover:bg-accent"
+                )}
+              >
+                <Clock className="w-3.5 h-3.5" /> Schedule
+              </button>
+            </div>
+            {scheduleMode === "schedule" && (
+              <div className="grid grid-cols-2 gap-2">
+                <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+              </div>
+            )}
+          </div>
+
+          {/* Action bar */}
+          <div className="flex items-center justify-between gap-2">
+            <button className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors">
+              Send for Approval
+            </button>
+            <button
+              onClick={handlePublish}
+              className="px-5 py-2.5 rounded-lg gradient-coral text-primary-foreground font-semibold text-sm shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2"
+            >
+              {scheduleMode === "now" ? <><Send className="w-4 h-4" /> Publish Now</> : <><Clock className="w-4 h-4" /> Schedule Post</>}
+            </button>
+          </div>
+        </section>
+
+        {/* ===== RIGHT: Live Preview ===== */}
+        <aside className="xl:col-span-4 space-y-4">
+          <div className="bg-card rounded-xl shadow-card overflow-hidden sticky top-4">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Eye className="w-4 h-4 text-primary" /> Live Preview
+              </h3>
+              <div className="flex bg-accent rounded-md p-0.5 text-[11px] font-medium">
+                <button
+                  onClick={() => setPreviewMode("tabs")}
+                  className={cn("px-2 py-1 rounded", previewMode === "tabs" ? "bg-card shadow-sm" : "text-muted-foreground")}
+                >Tabs</button>
+                <button
+                  onClick={() => setPreviewMode("grid")}
+                  className={cn("px-2 py-1 rounded", previewMode === "grid" ? "bg-card shadow-sm" : "text-muted-foreground")}
+                >Side-by-side</button>
+              </div>
+            </div>
+
+            {selectedPlatforms.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                <Globe2 className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                Select an account to see a live preview.
+              </div>
+            ) : previewMode === "tabs" ? (
+              <>
+                <div className="flex border-b border-border overflow-x-auto bg-muted/20">
+                  {selectedPlatforms.map((p) => {
+                    const meta = PLATFORMS[p]; const Icon = meta.icon;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => setActivePreview(p)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap",
+                          activePreview === p ? "border-primary text-foreground bg-card" : "border-transparent text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Icon className="w-3.5 h-3.5" /> {meta.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="p-4">
+                  <PlatformPreview
+                    platform={activePreview}
+                    caption={getCaptionFor(activePreview)}
+                    media={getMediaFor(activePreview)}
+                    handle={selectedAccounts.find((a) => a.platform === activePreview)?.handle ?? ""}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="p-3 space-y-3 max-h-[700px] overflow-y-auto">
+                {selectedPlatforms.map((p) => (
+                  <details key={p} open className="rounded-lg border border-border overflow-hidden group">
+                    <summary className="flex items-center gap-2 px-3 py-2 bg-muted/30 cursor-pointer text-xs font-semibold list-none">
+                      <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
+                      {(() => { const Icon = PLATFORMS[p].icon; return <Icon className="w-3.5 h-3.5" />; })()}
+                      {PLATFORMS[p].name}
+                    </summary>
+                    <div className="p-3">
+                      <PlatformPreview
+                        platform={p}
+                        caption={getCaptionFor(p)}
+                        media={getMediaFor(p)}
+                        handle={selectedAccounts.find((a) => a.platform === p)?.handle ?? ""}
+                      />
+                    </div>
+                  </details>
+                ))}
+              </div>
+            )}
+
+            <div className="px-4 py-2.5 border-t border-border bg-muted/20 text-[11px] text-muted-foreground text-center">
+              Preview approximates how content will display. Actual rendering may differ.
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
+      />
+
+      {/* ============ Account Picker Dialog ============ */}
+      <Dialog open={accountPickerOpen} onOpenChange={setAccountPickerOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Select accounts to publish to</DialogTitle></DialogHeader>
+          <ConnectedAccountsPanel
+            accounts={MOCK_ACCOUNTS}
+            selectedIds={selectedAccountIds}
+            onToggle={toggleAccount}
+            onClearAll={() => setSelectedAccountIds([])}
+            embedded
+          />
+          <button onClick={() => setAccountPickerOpen(false)} className="mt-2 w-full py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium hover:opacity-90 transition-all">
+            Done · {selectedAccountIds.length} selected
+          </button>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ Per-Platform Media Variants Dialog ============ */}
+      <Dialog open={mediaVariantsOpen} onOpenChange={setMediaVariantsOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-primary" /> Platform-specific media
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">Each platform has different optimal dimensions. Upload tailored variants or fall back to the shared image.</p>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+            {selectedPlatforms.map((p) => {
+              const meta = PLATFORMS[p]; const Icon = meta.icon;
+              const url = platformMedia[p] ?? sharedMedia;
+              const isVariant = !!platformMedia[p];
+              return (
+                <div key={p} className="rounded-lg border border-border p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("w-6 h-6 rounded flex items-center justify-center text-white", meta.color)}>
+                        <Icon className="w-3.5 h-3.5" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold leading-tight">{meta.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{meta.recSize} · {meta.aspectLabel}</p>
+                      </div>
+                    </div>
+                    {isVariant && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">Custom</span>}
+                  </div>
+                  <div className="rounded-md border border-dashed border-border bg-muted/30 overflow-hidden flex items-center justify-center" style={{ aspectRatio: meta.aspect }}>
+                    {url ? <img src={url} alt={meta.name} className="w-full h-full object-cover" /> : <span className="text-[11px] text-muted-foreground">No image</span>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => triggerUpload(p)}
+                      className="flex-1 px-2 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-accent transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Upload className="w-3 h-3" /> {isVariant ? "Replace" : "Upload variant"}
+                    </button>
+                    {isVariant && (
+                      <button onClick={() => removeMedia(p)} className="px-2 py-1.5 rounded-md border border-border text-xs hover:bg-destructive/10 hover:text-destructive transition-colors">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <button onClick={() => setMediaVariantsOpen(false)} className="mt-2 w-full py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium hover:opacity-90 transition-all">Done</button>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ AI Assist Dialog ============ */}
+      <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> AI Caption Assistant</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="Describe your post… e.g., Announce our new AI scheduling feature for marketing teams"
+              className="w-full min-h-[80px] resize-none px-3 py-2.5 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Tone</p>
+              <div className="flex gap-2 flex-wrap">
+                {TONES.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setAiTone(t)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      aiTone === t ? "gradient-coral text-primary-foreground shadow-coral" : "bg-accent text-foreground hover:bg-accent/80"
+                    )}
+                  >{t}</button>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={handleAiGenerate}
+              disabled={aiLoading}
+              className="w-full py-2.5 rounded-lg gradient-coral text-primary-foreground font-medium text-sm shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {aiLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : <><Sparkles className="w-4 h-4" /> Generate Suggestions</>}
+            </button>
+            {aiSuggestions.length > 0 && (
+              <div className="space-y-2">
+                {aiSuggestions.map((s, i) => (
+                  <div key={i} className="p-3 rounded-lg border border-border hover:border-primary/40 transition-colors">
+                    <p className="text-sm leading-relaxed mb-2">{s}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-muted-foreground">{s.length} chars</span>
+                      <button onClick={() => useAiSuggestion(s)} className="px-3 py-1 rounded-md gradient-coral text-primary-foreground text-xs font-medium hover:opacity-90">Use this</button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-            {genState === "idle" && <div className="text-center py-8 text-muted-foreground"><Sparkles className="w-10 h-10 mx-auto mb-3 opacity-20" /><p className="text-sm">Enter your post idea and click "Generate with AI" to get started.</p></div>}
-          </div>
-
-          <div className="bg-card rounded-xl shadow-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2"><Hash className="w-4 h-4 text-primary" /> AI Hashtag Suggestions</h2>
-              <span className={`text-[11px] font-medium tabular-nums px-2 py-0.5 rounded-full ${selectedHashtags.length >= activeHashtagLimit ? "bg-destructive/10 text-destructive" : "bg-accent text-muted-foreground"}`}>{selectedHashtags.length}/{activeHashtagLimit} hashtags</span>
-            </div>
-            {Object.entries(hashtagGroups).map(([group, tags]) => (
-              <div key={group} className="mb-3">
-                <p className="text-[11px] font-medium text-muted-foreground mb-2">{group}</p>
-                <div className="flex flex-wrap gap-2">{tags.map((tag) => (<button key={tag} onClick={() => toggleHashtag(tag)} className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${selectedHashtags.includes(tag) ? "gradient-coral text-primary-foreground" : "bg-accent text-foreground hover:bg-accent/80"}`}>{tag}</button>))}</div>
-              </div>
-            ))}
-            <div className="mt-4 flex gap-2">
-              <input value={customHashtag} onChange={(e) => setCustomHashtag(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustomHashtag()} className="flex-1 px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="Add custom hashtag..." />
-              <button onClick={addCustomHashtag} className="px-3 py-2 rounded-lg bg-accent hover:bg-accent/80 text-foreground text-sm font-medium transition-colors flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add</button>
-            </div>
-            {selectedHashtags.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border">
-                <p className="text-[11px] font-medium text-muted-foreground mb-2">Selected</p>
-                <div className="flex flex-wrap gap-1.5">{selectedHashtags.map((tag) => (<span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">{tag}<button onClick={() => toggleHashtag(tag)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button></span>))}</div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <button className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors">Save Draft</button>
-            <button className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors">Send for Approval</button>
-            <button className="px-4 py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium shadow-coral hover:opacity-90 transition-all">Go to Publish</button>
-          </div>
-        </div>
-      </div>
-
-      <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Image className="w-5 h-5 text-primary" /> Generate Image with AI</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Image Prompt</label>
-              <textarea value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-input bg-card text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-20" placeholder="Describe the image you want to generate..." />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Image Style</label>
-              <div className="flex gap-2 flex-wrap">{imageStyles.map((style) => (<button key={style} onClick={() => setImageStyle(style)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${imageStyle === style ? "gradient-coral text-primary-foreground shadow-coral" : "bg-accent text-foreground hover:bg-accent/80"}`}>{style}</button>))}</div>
-            </div>
-            <button onClick={handleImageGenerate} disabled={imageGenState === "loading" || !imagePrompt.trim()} className="w-full py-2.5 rounded-lg gradient-coral text-primary-foreground font-medium text-sm shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-              {imageGenState === "loading" ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating images...</> : <><Sparkles className="w-4 h-4" /> Generate Images</>}
-            </button>
-            {imageGenState === "loading" && <div className="grid grid-cols-2 gap-3"><div className="skeleton-shimmer aspect-square rounded-xl" /><div className="skeleton-shimmer aspect-square rounded-xl" /></div>}
-            {imageGenState === "error" && <div className="border border-destructive/30 bg-destructive/5 rounded-xl p-4 flex flex-col items-center gap-2 text-center"><AlertCircle className="w-6 h-6 text-destructive" /><p className="text-sm font-medium text-foreground">Image generation failed</p><button onClick={handleImageGenerate} className="px-4 py-1.5 rounded-lg gradient-coral text-primary-foreground text-xs font-medium flex items-center gap-1.5 hover:opacity-90 transition-all"><RefreshCw className="w-3 h-3" /> Retry</button></div>}
-            {imageGenState === "success" && generatedImages.length > 0 && (
-              <div className="grid grid-cols-2 gap-3">{generatedImages.map((img, i) => (<button key={i} onClick={() => setSelectedImage(i)} className={`relative rounded-xl overflow-hidden border-2 transition-all ${selectedImage === i ? "border-primary shadow-coral" : "border-border hover:border-primary/30"}`}><img src={img} alt={`Variation ${i + 1}`} className="w-full aspect-square object-cover" />{selectedImage === i && <div className="absolute top-2 right-2 w-6 h-6 rounded-full gradient-coral flex items-center justify-center"><Check className="w-3.5 h-3.5 text-primary-foreground" /></div>}</button>))}</div>
-            )}
-            {imageGenState === "success" && <button onClick={handleImageGenerate} className="w-full py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2"><RefreshCw className="w-3.5 h-3.5" /> Regenerate</button>}
-            <div className="flex gap-3 pt-2 border-t border-border">
-              <button onClick={() => setImageModalOpen(false)} disabled={selectedImage === null} className="flex-1 py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"><Check className="w-4 h-4" /> Use Selected</button>
-              <button className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors flex items-center gap-2"><Upload className="w-4 h-4" /> Upload Own</button>
-              <button onClick={() => { setSelectedImage(null); setImageModalOpen(false); }} className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent transition-colors">Skip</button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ============ Hashtags Dialog ============ */}
+      <Dialog open={hashtagsOpen} onOpenChange={setHashtagsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Hash className="w-5 h-5 text-primary" /> Hashtag Suggestions</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {Object.entries(HASHTAG_GROUPS).map(([group, tags]) => (
+              <div key={group}>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{group}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleHashtag(tag)}
+                      className={cn(
+                        "px-2.5 py-1 rounded-full text-xs font-medium transition-all",
+                        selectedHashtags.includes(tag) ? "gradient-coral text-primary-foreground" : "bg-accent text-foreground hover:bg-accent/80"
+                      )}
+                    >{tag}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-2 pt-2 border-t border-border">
+              <input
+                value={customHashtag}
+                onChange={(e) => setCustomHashtag(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addCustomHashtag()}
+                placeholder="Add custom…"
+                className="flex-1 px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <button onClick={addCustomHashtag} className="px-3 py-2 rounded-lg bg-accent hover:bg-accent/80 text-sm font-medium flex items-center gap-1">
+                <Plus className="w-3.5 h-3.5" /> Add
+              </button>
+            </div>
+            {selectedHashtags.length > 0 && (
+              <div className="pt-2 border-t border-border">
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Selected ({selectedHashtags.length})</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedHashtags.map((t) => (
+                    <span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                      {t}<button onClick={() => toggleHashtag(t)}><X className="w-3 h-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <button onClick={insertHashtagsToCaption} disabled={!selectedHashtags.length} className="w-full py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-all">
+              Insert into caption
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* ================================================================
+   Sub-components
+   ================================================================ */
+
+function ConnectedAccountsPanel({
+  accounts, selectedIds, onToggle, onClearAll, embedded,
+}: {
+  accounts: Account[]; selectedIds: string[]; onToggle: (id: string) => void;
+  onClearAll: () => void; embedded?: boolean;
+}) {
+  const grouped = useMemo(() => {
+    const m: Record<PlatformKey, Account[]> = { instagram: [], facebook: [], linkedin: [], twitter: [] };
+    accounts.forEach((a) => m[a.platform].push(a));
+    return m;
+  }, [accounts]);
+
+  return (
+    <div className={cn(!embedded && "bg-card rounded-xl shadow-card p-4", "space-y-3")}>
+      {!embedded && (
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Globe2 className="w-4 h-4 text-primary" /> Accounts
+            <span className="text-[11px] font-normal text-muted-foreground">({selectedIds.length} selected)</span>
+          </h3>
+          {selectedIds.length > 0 && (
+            <button onClick={onClearAll} className="text-[11px] font-medium text-muted-foreground hover:text-destructive">Clear</button>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+        {(Object.keys(grouped) as PlatformKey[]).map((p) => {
+          if (!grouped[p].length) return null;
+          const meta = PLATFORMS[p]; const Icon = meta.icon;
+          const allSelected = grouped[p].every((a) => selectedIds.includes(a.id));
+          return (
+            <div key={p}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                  <Icon className="w-3 h-3" /> {meta.name}
+                </div>
+                <button
+                  onClick={() => grouped[p].forEach((a) => {
+                    if (allSelected ? selectedIds.includes(a.id) : !selectedIds.includes(a.id)) onToggle(a.id);
+                  })}
+                  className="text-[10px] font-medium text-primary hover:underline"
+                >
+                  {allSelected ? "Deselect all" : "Select all"}
+                </button>
+              </div>
+              <div className="space-y-1">
+                {grouped[p].map((a) => {
+                  const checked = selectedIds.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => onToggle(a.id)}
+                      className={cn(
+                        "w-full flex items-center gap-2.5 px-2 py-2 rounded-lg border transition-all text-left",
+                        checked ? "border-primary bg-primary/5" : "border-transparent hover:bg-accent/60"
+                      )}
+                    >
+                      <div className="relative">
+                        <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold", meta.color)}>
+                          {a.name.charAt(0)}
+                        </div>
+                        <span className={cn("absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card flex items-center justify-center", meta.color)}>
+                          <Icon className="w-2 h-2 text-white" />
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{a.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{a.handle}</p>
+                      </div>
+                      <span className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", checked ? "bg-primary border-primary" : "border-border")}>
+                        {checked && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {!embedded && (
+        <button className="w-full py-2 rounded-lg border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1.5">
+          <Plus className="w-3.5 h-3.5" /> Connect new account
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SelectedAccountsBar({ accounts, onOpen }: { accounts: Account[]; onOpen: () => void }) {
+  if (!accounts.length) {
+    return (
+      <button onClick={onOpen} className="w-full px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1.5">
+        <Plus className="w-3.5 h-3.5" /> Select accounts
+      </button>
+    );
+  }
+  return (
+    <button onClick={onOpen} className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-border hover:border-primary/40 hover:bg-accent/40 transition-all flex-wrap">
+      {accounts.slice(0, 5).map((a) => {
+        const meta = PLATFORMS[a.platform]; const Icon = meta.icon;
+        return (
+          <span key={a.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-accent text-[11px] font-medium">
+            <span className={cn("w-3.5 h-3.5 rounded-sm flex items-center justify-center text-white", meta.color)}>
+              <Icon className="w-2 h-2" />
+            </span>
+            {a.handle}
+          </span>
+        );
+      })}
+      {accounts.length > 5 && <span className="text-[11px] text-muted-foreground">+{accounts.length - 5} more</span>}
+      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto" />
+    </button>
+  );
+}
+
+/* ---------------- Platform Previews ---------------- */
+function PlatformPreview({ platform, caption, media, handle }: { platform: PlatformKey; caption: string; media: string | null; handle: string }) {
+  const meta = PLATFORMS[platform];
+  const Icon = meta.icon;
+  const initial = handle.replace(/^@/, "").charAt(0).toUpperCase() || "N";
+
+  const Header = (
+    <div className="flex items-center gap-2 p-3">
+      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold", meta.color)}>{initial}</div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold truncate">{handle || "Your account"}</p>
+        <p className="text-[11px] text-muted-foreground">Just now · <Globe2 className="inline w-2.5 h-2.5" /></p>
+      </div>
+      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+    </div>
+  );
+
+  const Caption = caption ? (
+    <p className="px-3 pb-3 text-sm leading-relaxed whitespace-pre-wrap break-words">{caption}</p>
+  ) : (
+    <p className="px-3 pb-3 text-sm text-muted-foreground italic">Your caption will appear here…</p>
+  );
+
+  const Media = media && (
+    <div className="w-full bg-muted overflow-hidden" style={{ aspectRatio: meta.aspect }}>
+      <img src={media} alt="Preview" className="w-full h-full object-cover" />
+    </div>
+  );
+
+  if (platform === "twitter") {
+    return (
+      <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
+        <div className="flex gap-3 p-3">
+          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0", meta.color)}>{initial}</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm"><span className="font-semibold">{handle.replace(/^@/, "") || "Your account"}</span> <span className="text-muted-foreground">{handle.startsWith("@") ? handle : `@${handle}`} · now</span></p>
+            <p className="text-sm leading-relaxed mt-0.5 whitespace-pre-wrap break-words">{caption || <span className="text-muted-foreground italic">Your tweet will appear here…</span>}</p>
+            {media && (
+              <div className="mt-2 rounded-2xl overflow-hidden border border-border bg-muted" style={{ aspectRatio: meta.aspect }}>
+                <img src={media} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="flex justify-between mt-2 max-w-xs text-muted-foreground text-xs">
+              <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> 0</span>
+              <span className="flex items-center gap-1"><Repeat2 className="w-3.5 h-3.5" /> 0</span>
+              <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> 0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (platform === "instagram") {
+    return (
+      <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
+        {Header}
+        {media ? Media : (
+          <div className="w-full bg-muted flex items-center justify-center text-muted-foreground text-xs" style={{ aspectRatio: meta.aspect }}>
+            <ImageIcon className="w-10 h-10 opacity-30" />
+          </div>
+        )}
+        <div className="flex items-center gap-3 p-3 text-foreground">
+          <Heart className="w-5 h-5" /><MessageCircle className="w-5 h-5" /><Send className="w-5 h-5" />
+        </div>
+        {Caption}
+      </div>
+    );
+  }
+
+  if (platform === "linkedin") {
+    return (
+      <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
+        {Header}
+        {Caption}
+        {Media}
+        <div className="border-t border-border px-3 py-2 flex justify-around text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">👍 Like</span>
+          <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
+          <span className="flex items-center gap-1"><Repeat2 className="w-3.5 h-3.5" /> Repost</span>
+          <span className="flex items-center gap-1"><Send className="w-3.5 h-3.5" /> Send</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Facebook
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
+      {Header}
+      {Caption}
+      {Media}
+      <div className="px-3 py-1.5 flex items-center justify-between text-[11px] text-muted-foreground border-t border-border">
+        <span>0 reactions</span><span>0 comments</span>
+      </div>
+      <div className="border-t border-border px-3 py-1.5 flex justify-around text-sm text-muted-foreground">
+        <span className="flex items-center gap-1">👍 Like</span>
+        <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
+        <span className="flex items-center gap-1"><Send className="w-3.5 h-3.5" /> Share</span>
+      </div>
     </div>
   );
 }
