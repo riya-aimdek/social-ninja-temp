@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import RichTextToolbar from "@/components/composer/RichTextToolbar";
 
 /* ---------------- Platform model ---------------- */
 type PlatformKey = "instagram" | "facebook" | "linkedin" | "twitter";
@@ -65,6 +66,8 @@ export default function CreatePage() {
   const [mediaVariantsOpen, setMediaVariantsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadTarget, setUploadTarget] = useState<PlatformKey | "shared">("shared");
+  const sharedTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const overrideTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   /* ---- AI ---- */
   const [aiOpen, setAiOpen] = useState(false);
@@ -275,6 +278,7 @@ export default function CreatePage() {
             {/* Editor */}
             <div className="p-4 space-y-3">
               <textarea
+                ref={sharedTextareaRef}
                 value={sharedCaption}
                 onChange={(e) => setSharedCaption(e.target.value)}
                 placeholder="Start writing your post…"
@@ -308,12 +312,13 @@ export default function CreatePage() {
               )}
 
               {/* Toolbar */}
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <div className="flex items-center gap-1">
-                  <button onClick={() => setAiOpen(true)} className="p-2 rounded-md hover:bg-accent transition-colors text-primary" title="AI Assist">
-                    <Sparkles className="w-4 h-4" />
-                  </button>
-                </div>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-border flex-wrap">
+                <RichTextToolbar
+                  textareaRef={sharedTextareaRef}
+                  value={sharedCaption}
+                  onChange={setSharedCaption}
+                  onAiClick={() => setAiOpen(true)}
+                />
 
                 <label className="flex items-center gap-2 text-xs cursor-pointer">
                   <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
@@ -356,10 +361,16 @@ export default function CreatePage() {
                   {activeOverrideTab && (
                     <div className="p-3 space-y-2">
                       <textarea
+                        ref={overrideTextareaRef}
                         value={overrides[activeOverrideTab]?.caption ?? sharedCaption}
                         onChange={(e) => setOverrideCaption(activeOverrideTab, e.target.value)}
                         placeholder={`Custom ${PLATFORMS[activeOverrideTab].name} caption…`}
                         className="w-full min-h-[100px] resize-none text-sm bg-transparent outline-none"
+                      />
+                      <RichTextToolbar
+                        textareaRef={overrideTextareaRef}
+                        value={overrides[activeOverrideTab]?.caption ?? sharedCaption}
+                        onChange={(v) => setOverrideCaption(activeOverrideTab!, v)}
                       />
                       <div className="flex justify-between items-center text-[11px]">
                         <button
