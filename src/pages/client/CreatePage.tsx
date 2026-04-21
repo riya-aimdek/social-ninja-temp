@@ -730,6 +730,19 @@ export default function CreatePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ============ AI FULL FLOW (multi-step) ============ */}
+      <AiFlowModal
+        open={aiFlowOpen}
+        onOpenChange={setAiFlowOpen}
+        selectedPlatforms={selectedPlatforms}
+        onApply={({ caption, hashtags, media }) => {
+          setSharedCaption(`${caption}${hashtags.length ? "\n\n" + hashtags.join(" ") : ""}`);
+          if (media) setSharedMedia(media);
+          setAiFlowOpen(false);
+          toast.success("AI content applied to composer");
+        }}
+      />
     </div>
   );
 }
