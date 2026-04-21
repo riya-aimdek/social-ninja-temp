@@ -202,10 +202,10 @@ export default function CreatePage() {
         </button>
       </div>
 
-      {/* ============ 3-col Layout ============ */}
+      {/* ============ 2-col Layout ============ */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-        {/* ===== LEFT: Connected Accounts ===== */}
-        <aside className="xl:col-span-3 space-y-4">
+        {/* ===== LEFT: Accounts + Media + Composer ===== */}
+        <section className="xl:col-span-7 space-y-4">
           <ConnectedAccountsPanel
             accounts={MOCK_ACCOUNTS}
             selectedIds={selectedAccountIds}
@@ -249,7 +249,6 @@ export default function CreatePage() {
               </button>
             )}
 
-            {/* per-platform variant chips */}
             {selectedPlatforms.length > 0 && Object.keys(platformMedia).length > 0 && (
               <div className="space-y-1.5 pt-1">
                 <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground">Platform variants</p>
@@ -271,10 +270,7 @@ export default function CreatePage() {
               </div>
             )}
           </div>
-        </aside>
 
-        {/* ===== CENTER: Composer ===== */}
-        <section className="xl:col-span-5 space-y-4">
           <div className="bg-card rounded-xl shadow-card overflow-hidden">
             {/* Editor */}
             <div className="p-4 space-y-3">
