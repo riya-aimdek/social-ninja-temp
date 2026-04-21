@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Sparkles, Image as ImageIcon, Facebook, Instagram, Linkedin, Twitter,
   AlertCircle, RefreshCw, Check, X, Upload, Loader2, Save, Hash,
@@ -47,6 +48,7 @@ type CaptionVariant = { caption: string; useShared: boolean };
 type PlatformOverrides = Partial<Record<PlatformKey, CaptionVariant>>;
 
 export default function CreatePage() {
+  const navigate = useNavigate();
   /* ---- selection state ---- */
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(["ig-1", "fb-1"]);
   const [accountPickerOpen, setAccountPickerOpen] = useState(false);
@@ -205,7 +207,7 @@ export default function CreatePage() {
           </div>
           {/* AI — opens guided flow */}
           <button
-            onClick={() => setAiFlowOpen(true)}
+            onClick={() => navigate("/client/create/ai")}
             className="flex items-center gap-3 p-4 hover:bg-accent/40 transition-colors text-left group"
           >
             <div className="w-10 h-10 rounded-lg gradient-coral flex items-center justify-center shadow-coral shrink-0 group-hover:scale-105 transition-transform">
@@ -731,18 +733,6 @@ export default function CreatePage() {
         </DialogContent>
       </Dialog>
 
-      {/* ============ AI FULL FLOW (multi-step) ============ */}
-      <AiFlowModal
-        open={aiFlowOpen}
-        onOpenChange={setAiFlowOpen}
-        selectedPlatforms={selectedPlatforms}
-        onApply={({ caption, hashtags, media }) => {
-          setSharedCaption(`${caption}${hashtags.length ? "\n\n" + hashtags.join(" ") : ""}`);
-          if (media) setSharedMedia(media);
-          setAiFlowOpen(false);
-          toast.success("AI content applied to composer");
-        }}
-      />
     </div>
   );
 }
