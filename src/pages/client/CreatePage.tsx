@@ -314,12 +314,6 @@ export default function CreatePage() {
               {/* Toolbar */}
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <div className="flex items-center gap-1">
-                  <button onClick={() => triggerUpload("shared")} className="p-2 rounded-md hover:bg-accent transition-colors text-muted-foreground" title="Add image">
-                    <ImageIcon className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setHashtagsOpen(true)} className="p-2 rounded-md hover:bg-accent transition-colors text-muted-foreground" title="Hashtags">
-                    <Hash className="w-4 h-4" />
-                  </button>
                   <button onClick={() => setAiOpen(true)} className="p-2 rounded-md hover:bg-accent transition-colors text-primary" title="AI Assist">
                     <Sparkles className="w-4 h-4" />
                   </button>
