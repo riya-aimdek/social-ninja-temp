@@ -186,44 +186,37 @@ export default function CreatePage() {
 
   return (
     <div className="space-y-5 animate-fade-in pb-8 pt-4">
-      {/* ============ Mode chooser bar ============ */}
-      <div className="bg-card rounded-xl shadow-card overflow-hidden border border-border">
-        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-          {/* Manual — current/active mode */}
-          <div className="flex items-center gap-3 p-4 bg-primary/[0.04]">
-            <div className="w-10 h-10 rounded-lg bg-foreground/90 flex items-center justify-center shrink-0">
-              <Settings2 className="w-5 h-5 text-background" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold leading-tight">Manual Compose</h2>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/15 text-primary uppercase tracking-wide">Active</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">Write captions, attach media and schedule yourself.</p>
-            </div>
-          </div>
-          {/* AI — opens guided flow */}
-          <button
-            onClick={() => navigate("/client/create/ai")}
-            className="flex items-center gap-3 p-4 hover:bg-accent/40 transition-colors text-left group"
-          >
-            <div className="w-10 h-10 rounded-lg gradient-coral flex items-center justify-center shadow-coral shrink-0 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold leading-tight">Create with AI</h2>
-                <span className="text-[10px] font-medium text-muted-foreground">4 steps</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">Topic & tone → Caption → Visuals → Hashtags.</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-          </button>
+      {/* ============ Page header: title + mode switcher + actions ============ */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold leading-tight">Create Post</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Compose manually or let AI guide you through it.
+          </p>
         </div>
-        <div className="px-4 py-2 border-t border-border bg-muted/20 flex items-center justify-end">
+
+        <div className="flex items-center gap-2">
+          {/* Segmented mode switcher */}
+          <div className="inline-flex items-center p-1 rounded-lg bg-muted border border-border">
+            <button
+              type="button"
+              aria-pressed="true"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-card text-foreground shadow-sm"
+            >
+              <Settings2 className="w-3.5 h-3.5" /> Manual
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/client/create/ai")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Assistant
+            </button>
+          </div>
+
           <button
             onClick={() => toast.success("Draft saved")}
-            className="px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-md text-xs font-medium border border-border bg-card text-foreground hover:bg-accent transition-colors flex items-center gap-1.5"
           >
             <Save className="w-3.5 h-3.5" /> Save Draft
           </button>
