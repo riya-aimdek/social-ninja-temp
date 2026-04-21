@@ -283,10 +283,7 @@ export default function CreatePage() {
               </button>
             </div>
 
-            {/* Selected scope chip */}
-            <div className="px-4 pt-3">
-              <SelectedAccountsBar accounts={selectedAccounts} onOpen={() => setAccountPickerOpen(true)} />
-            </div>
+
 
             {/* Editor */}
             <div className="p-4 space-y-3">
