@@ -87,9 +87,6 @@ export default function CreatePage() {
   const [previewMode, setPreviewMode] = useState<"tabs" | "grid">("tabs");
   const [activePreview, setActivePreview] = useState<PlatformKey>("instagram");
 
-  /* ---- AI full flow (multi-step) ---- */
-  const [aiFlowOpen, setAiFlowOpen] = useState(false);
-
   /* ---- derived ---- */
   const selectedAccounts = useMemo(
     () => MOCK_ACCOUNTS.filter((a) => selectedAccountIds.includes(a.id)),
