@@ -733,20 +733,12 @@ function ConnectedAccountsPanel({
     return m;
   }, [accounts]);
 
-  return (
-    <div className={cn(!embedded && "bg-card rounded-xl shadow-card p-4", "space-y-3")}>
-      {!embedded && (
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <Globe2 className="w-4 h-4 text-primary" /> Accounts
-            <span className="text-[11px] font-normal text-muted-foreground">({selectedIds.length} selected)</span>
-          </h3>
-          {selectedIds.length > 0 && (
-            <button onClick={onClearAll} className="text-[11px] font-medium text-muted-foreground hover:text-destructive">Clear</button>
-          )}
-        </div>
-      )}
+  // Auto-collapse once user has selected accounts (unless embedded in dialog)
+  const [open, setOpen] = useState(embedded ? true : selectedIds.length === 0);
+  const selectedAccounts = accounts.filter((a) => selectedIds.includes(a.id));
 
+  const Body = (
+    <>
       <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
         {(Object.keys(grouped) as PlatformKey[]).map((p) => {
           if (!grouped[p].length) return null;
@@ -804,9 +796,77 @@ function ConnectedAccountsPanel({
       </div>
 
       {!embedded && (
-        <button className="w-full py-2 rounded-lg border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1.5">
-          <Plus className="w-3.5 h-3.5" /> Connect new account
-        </button>
+        <div className="flex items-center gap-2 pt-2">
+          <button className="flex-1 py-2 rounded-lg border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1.5">
+            <Plus className="w-3.5 h-3.5" /> Connect new
+          </button>
+          {selectedIds.length > 0 && (
+            <button
+              onClick={() => setOpen(false)}
+              className="px-3 py-2 rounded-lg gradient-coral text-primary-foreground text-xs font-semibold hover:opacity-90 transition-all flex items-center gap-1.5"
+            >
+              <Check className="w-3.5 h-3.5" /> Done
+            </button>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  if (embedded) return <div className="space-y-3">{Body}</div>;
+
+  return (
+    <div className="bg-card rounded-xl shadow-card overflow-hidden">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-4 py-3 hover:bg-accent/40 transition-colors text-left"
+      >
+        <Globe2 className="w-4 h-4 text-primary flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold">Accounts</span>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {selectedIds.length}/{accounts.length}
+            </span>
+          </div>
+          {!open && selectedAccounts.length > 0 && (
+            <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+              {selectedAccounts.slice(0, 4).map((a) => {
+                const meta = PLATFORMS[a.platform]; const Icon = meta.icon;
+                return (
+                  <span key={a.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-accent text-[10px] font-medium">
+                    <span className={cn("w-3 h-3 rounded-sm flex items-center justify-center text-white", meta.color)}>
+                      <Icon className="w-2 h-2" />
+                    </span>
+                    <span className="truncate max-w-[80px]">{a.handle}</span>
+                  </span>
+                );
+              })}
+              {selectedAccounts.length > 4 && (
+                <span className="text-[10px] text-muted-foreground">+{selectedAccounts.length - 4}</span>
+              )}
+            </div>
+          )}
+          {!open && selectedAccounts.length === 0 && (
+            <p className="text-[11px] text-muted-foreground mt-0.5">No accounts selected — tap to choose</p>
+          )}
+        </div>
+        {selectedIds.length > 0 && open && (
+          <span
+            role="button"
+            onClick={(e) => { e.stopPropagation(); onClearAll(); }}
+            className="text-[11px] font-medium text-muted-foreground hover:text-destructive px-1"
+          >
+            Clear
+          </span>
+        )}
+        <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform flex-shrink-0", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          {Body}
+        </div>
       )}
     </div>
   );
