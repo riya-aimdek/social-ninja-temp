@@ -189,28 +189,46 @@ const AgencyUserManagePage = () => {
 
             <div className="mb-6">
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
-              <div className="grid grid-cols-2 gap-3">
-                {roleCards.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => handleRoleSelect(r.id)}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      selectedRole === r.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:border-muted-foreground'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
-                      {selectedRole === r.id ? (
-                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="h-3 w-3 text-white" /></div>
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-border" />
+              <div className="grid grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1 -mr-1">
+                {roleCards.map(r => {
+                  const active = selectedRole === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => handleRoleSelect(r.id)}
+                      className={`p-4 rounded-xl border text-left transition-all ${
+                        active
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'border-border hover:border-muted-foreground'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <span className={`text-sm font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
+                        {active ? (
+                          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0"><Check className="h-3 w-3 text-white" /></div>
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-border shrink-0" />
+                        )}
+                      </div>
+                      {r.tags && r.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-1.5">
+                          {r.tags.map((t) => (
+                            <span
+                              key={t}
+                              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                                t === 'New' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              {t === 'New' && <Sparkles className="h-2.5 w-2.5" />}
+                              {t}
+                            </span>
+                          ))}
+                        </div>
                       )}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
-                  </button>
-                ))}
+                      <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
