@@ -367,11 +367,11 @@ const AgencySocialAccounts = () => {
 
                   <div className="px-5 flex items-center justify-between text-xs">
                     {a.status === "connected" ? (
-                      <Badge variant="secondary" className="bg-green-50 text-green-700 hover:bg-green-50 border-0 gap-1 font-medium">
+                      <Badge variant="secondary" className="badge-active gap-1 font-medium border-0">
                         <CheckCircle2 className="h-3 w-3" /> Connected
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="bg-amber-50 text-amber-700 hover:bg-amber-50 border-0 gap-1 font-medium">
+                      <Badge variant="secondary" className="badge-warning gap-1 font-medium border-0">
                         <AlertCircle className="h-3 w-3" /> Reconnect needed
                       </Badge>
                     )}
