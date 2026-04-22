@@ -74,59 +74,47 @@ const mockClients: Client[] = [
     name: "acme prop",
     projects: [{ id: "project-1", name: "project-1" }],
   },
+  {
+    id: "c3",
+    name: "Northwind Co",
+    projects: [
+      { id: "nw-launch", name: "Spring Launch" },
+      { id: "nw-always", name: "Always-On" },
+    ],
+  },
+  {
+    id: "c4",
+    name: "Globex Retail",
+    projects: [
+      { id: "gx-blackfri", name: "Black Friday" },
+      { id: "gx-loyalty", name: "Loyalty Program" },
+      { id: "gx-brand", name: "Brand Awareness" },
+    ],
+  },
 ];
 
-const initialAccounts: SocialAccount[] = [
-  {
-    id: "a1",
-    name: "AI Page trial",
-    handle: "@AI Page trial",
-    platform: "Facebook",
-    status: "connected",
-    assignments: [
-      { clientId: "c1", projectIds: ["p1-c2", "p2-c2"] },
-      { clientId: "c2", projectIds: ["project-1"] },
-    ],
-  },
-  {
-    id: "a2",
-    name: "born._to_code_",
-    handle: "@born._to_code_",
-    platform: "Instagram",
-    status: "connected",
-    assignments: [
-      { clientId: "c1", projectIds: ["p1-c2", "p2-c2"] },
-      { clientId: "c2", projectIds: ["project-1"] },
-    ],
-  },
-  {
-    id: "a3",
-    name: "Just JS",
-    handle: "@Just JS",
-    platform: "Facebook",
-    status: "connected",
-    assignments: [
-      { clientId: "c1", projectIds: ["p1-c2", "p2-c2"] },
-      { clientId: "c2", projectIds: ["project-1"] },
-    ],
-  },
-  {
-    id: "a4",
-    name: "Test hack",
-    handle: "@Test hack",
-    platform: "Facebook",
-    status: "connected",
-    assignments: [],
-  },
-  {
-    id: "a5",
-    name: "Trials AI",
-    handle: "@Trials AI",
-    platform: "Facebook",
-    status: "reconnect",
-    assignments: [{ clientId: "c2", projectIds: ["project-1"] }],
-  },
+const seedAccounts: Omit<SocialAccount, "id">[] = [
+  { name: "AI Page trial", handle: "@aipagetrial", platform: "Facebook", status: "connected", assignments: [{ clientId: "c1", projectIds: ["p1-c2", "p2-c2"] }, { clientId: "c2", projectIds: ["project-1"] }] },
+  { name: "born._to_code_", handle: "@born._to_code_", platform: "Instagram", status: "connected", assignments: [{ clientId: "c1", projectIds: ["p1-c2", "p2-c2"] }, { clientId: "c2", projectIds: ["project-1"] }] },
+  { name: "Just JS", handle: "@justjs", platform: "Facebook", status: "connected", assignments: [{ clientId: "c1", projectIds: ["p1-c2"] }] },
+  { name: "Test hack", handle: "@testhack", platform: "Facebook", status: "connected", assignments: [] },
+  { name: "Trials AI", handle: "@trialsai", platform: "Facebook", status: "reconnect", assignments: [{ clientId: "c2", projectIds: ["project-1"] }] },
+  { name: "Northwind Official", handle: "@northwind", platform: "Instagram", status: "connected", assignments: [{ clientId: "c3", projectIds: ["nw-launch", "nw-always"] }] },
+  { name: "Northwind LinkedIn", handle: "northwind-co", platform: "LinkedIn", status: "connected", assignments: [{ clientId: "c3", projectIds: ["nw-always"] }] },
+  { name: "Globex Retail", handle: "@globex", platform: "Facebook", status: "connected", assignments: [{ clientId: "c4", projectIds: ["gx-blackfri", "gx-loyalty", "gx-brand"] }] },
+  { name: "Globex IG", handle: "@globex.shop", platform: "Instagram", status: "connected", assignments: [{ clientId: "c4", projectIds: ["gx-blackfri", "gx-brand"] }] },
+  { name: "Globex on X", handle: "@globex_x", platform: "Twitter", status: "reconnect", assignments: [{ clientId: "c4", projectIds: ["gx-brand"] }] },
+  { name: "Globex Tube", handle: "GlobexTV", platform: "YouTube", status: "connected", assignments: [{ clientId: "c4", projectIds: ["gx-brand"] }] },
+  { name: "Acme Pinterest", handle: "@acme.pin", platform: "Pinterest", status: "connected", assignments: [{ clientId: "c2", projectIds: ["project-1"] }] },
+  { name: "Acme LinkedIn", handle: "acme-prop", platform: "LinkedIn", status: "connected", assignments: [] },
+  { name: "Sanskruti Studio", handle: "@sanskruti.studio", platform: "Instagram", status: "connected", assignments: [{ clientId: "c1", projectIds: ["p2-c2"] }] },
+  { name: "Sanskruti FB", handle: "SanskrutiPage", platform: "Facebook", status: "connected", assignments: [] },
+  { name: "Brand Studio X", handle: "@brand_studio_x", platform: "Twitter", status: "connected", assignments: [{ clientId: "c3", projectIds: ["nw-launch"] }] },
+  { name: "Holiday Drop", handle: "@holidaydrop", platform: "Instagram", status: "reconnect", assignments: [] },
+  { name: "Press Page", handle: "PressPage", platform: "Facebook", status: "connected", assignments: [{ clientId: "c4", projectIds: ["gx-loyalty"] }] },
 ];
+
+const initialAccounts: SocialAccount[] = seedAccounts.map((a, i) => ({ ...a, id: `acc-${i + 1}` }));
 
 // ───────────────────────── Platform meta ─────────────────────────
 const platformMeta: Record<
