@@ -635,6 +635,8 @@ const AgencySocialAccounts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkConnectDialog open={bulkOpen} onOpenChange={setBulkOpen} />
     </AgencyLayout>
   );
 };
