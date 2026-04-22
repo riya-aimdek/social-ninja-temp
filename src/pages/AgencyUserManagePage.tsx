@@ -2,32 +2,27 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Pencil, Trash2, Check, X, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, X, ChevronDown, Sparkles } from "lucide-react";
+import { rolesForScope, defaultPermissionsFor, PERMISSIONS, getRole } from "@/data/roles";
 
-const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
-
-const defaultPermissions: Record<string, string[]> = {
-  'business-admin': ['Engage', 'Listen', 'Boost', 'Analyze'],
-  'content-creator': ['Engage'],
-  'approver': ['Analyze'],
-  'social-media-manager': ['Engage', 'Listen', 'Analyze'],
-  'viewer': ['Analyze'],
-};
+const permissionList = [...PERMISSIONS] as string[];
 
 const permissionColors: Record<string, { active: string; inactive: string }> = {
-  Engage: { active: 'bg-green-50 text-green-700 border-green-200', inactive: 'bg-muted text-muted-foreground border-border' },
-  Listen: { active: 'bg-green-50 text-green-700 border-green-200', inactive: 'bg-muted text-muted-foreground border-border' },
-  Boost: { active: 'bg-red-50 text-red-600 border-red-200', inactive: 'bg-muted text-muted-foreground border-border' },
-  Analyze: { active: 'bg-green-50 text-green-700 border-green-200', inactive: 'bg-muted text-muted-foreground border-border' },
+  Engage: { active: "bg-green-50 text-green-700 border-green-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Listen: { active: "bg-green-50 text-green-700 border-green-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Boost: { active: "bg-red-50 text-red-600 border-red-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Analyze: { active: "bg-green-50 text-green-700 border-green-200", inactive: "bg-muted text-muted-foreground border-border" },
+  ORM: { active: "bg-violet-50 text-violet-700 border-violet-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Approve: { active: "bg-amber-50 text-amber-700 border-amber-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Publish: { active: "bg-blue-50 text-blue-700 border-blue-200", inactive: "bg-muted text-muted-foreground border-border" },
 };
 
-const roleCards = [
-  { id: 'business-admin', name: 'Client Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, invites team members." },
-  { id: 'content-creator', name: 'Content Creator', desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-  { id: 'approver', name: 'Approver', desc: 'Usually a contact at the client company. Can log in to review and approve posts.' },
-  { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for that specific project.' },
-  { id: 'viewer', name: 'Viewer', desc: 'Read-only access to view content and reports. Cannot create, edit, or publish anything.' },
-];
+const roleCards = rolesForScope("client").map((r) => ({
+  id: r.id,
+  name: r.name,
+  desc: r.desc,
+  tags: r.tags,
+}));
 
 const mockClients = [
   { id: '1', name: 'client-1', initials: 'C', color: 'bg-primary' },
