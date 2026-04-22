@@ -120,6 +120,10 @@ const AgencyOnboarding = () => {
       {/* RIGHT — light card */}
       <div className="md:w-1/2 flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-orange-50/40 via-background to-rose-50/30">
         <div className="w-full max-w-md bg-card rounded-2xl shadow-card p-8 md:p-10 animate-fade-in">
+          {current === "scan" && (
+            <AIWebsiteScanStep onSkip={skip} onContinue={handleScanComplete} />
+          )}
+
           {current === "agency" && (
             <>
               <div className="text-center mb-6">
