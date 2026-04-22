@@ -111,33 +111,25 @@ const AgencyClientBilling = () => {
     <AgencyLayout title="Client Billing">
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Client Billing</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Track deliverables, work versions shared with clients, and time logged per account.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={tracking ? "destructive" : "outline"}
-              onClick={() => setTracking(!tracking)}
-              className="gap-1.5"
-            >
-              {tracking ? (
-                <>
-                  <PauseCircle className="h-4 w-4" /> Stop tracking · 00:12:34
-                </>
-              ) : (
-                <>
-                  <PlayCircle className="h-4 w-4" /> Start time tracker
-                </>
-              )}
-            </Button>
-            <Button className="gap-1.5 shadow-coral">
-              <Plus className="h-4 w-4" /> New deliverable
-            </Button>
-          </div>
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+          <Button
+            variant={tracking ? "destructive" : "outline"}
+            onClick={() => setTracking(!tracking)}
+            className="gap-1.5"
+          >
+            {tracking ? (
+              <>
+                <PauseCircle className="h-4 w-4" /> Stop tracking · 00:12:34
+              </>
+            ) : (
+              <>
+                <PlayCircle className="h-4 w-4" /> Start time tracker
+              </>
+            )}
+          </Button>
+          <Button className="gap-1.5 shadow-coral">
+            <Plus className="h-4 w-4" /> New deliverable
+          </Button>
         </div>
 
         {/* Stat cards */}

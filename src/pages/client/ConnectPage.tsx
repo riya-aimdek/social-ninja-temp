@@ -14,10 +14,6 @@ const platformMeta: Record<string, { icon: typeof Facebook; color: string; bg: s
 export default function ConnectPage() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Connect Accounts</h1>
-        <p className="text-sm text-muted-foreground mt-1">Link your social media profiles to start managing them from one place.</p>
-      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {socialAccounts.map((p) => {

@@ -105,12 +105,6 @@ export default function PromotePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-          <Megaphone className="w-6 h-6 text-primary" /> Promote
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">Boost organic posts, run paid campaigns, and manage ad partnerships.</p>
-      </div>
 
       <Tabs defaultValue="boost">
         <TabsList>

@@ -68,9 +68,6 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-        {title && <title.icon className="w-6 h-6 text-primary" />} {title?.label || "Settings"}
-      </h1>
 
       <div>
         {activeTab === "profile" && (

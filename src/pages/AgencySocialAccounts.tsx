@@ -272,21 +272,13 @@ const AgencySocialAccounts = () => {
   return (
     <AgencyLayout title="Social Accounts">
       <div className="space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Social Accounts</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Connect once, assign anywhere. Manage all social accounts your agency uses across clients and projects.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-2">
-              <Sparkles className="h-4 w-4 text-primary" /> Bulk connect via master email
-            </Button>
-            <Button className="gap-2 shadow-coral">
-              <Plus className="h-4 w-4" /> Connect Account
-            </Button>
-          </div>
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-2">
+            <Sparkles className="h-4 w-4 text-primary" /> Bulk connect via master email
+          </Button>
+          <Button className="gap-2 shadow-coral">
+            <Plus className="h-4 w-4" /> Connect Account
+          </Button>
         </div>
 
         <div className="bg-card rounded-xl shadow-card p-3 flex flex-col md:flex-row md:items-center gap-3">
