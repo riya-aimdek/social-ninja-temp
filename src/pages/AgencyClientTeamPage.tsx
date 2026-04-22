@@ -2,33 +2,29 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
+import RoleBadge from "@/components/RoleBadge";
 import { Button } from "@/components/ui/button";
-import { Search, X, Plus, Pencil, Trash2, Check, ChevronDown } from "lucide-react";
+import { Search, X, Plus, Pencil, Trash2, Check, ChevronDown, Sparkles } from "lucide-react";
+import { rolesForScope, defaultPermissionsFor, PERMISSIONS, getRole } from "@/data/roles";
 
-const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
-
-const defaultPermissions: Record<string, string[]> = {
-  'business-admin': ['Engage', 'Listen', 'Boost', 'Analyze'],
-  'content-creator': ['Engage'],
-  'approver': ['Analyze'],
-  'social-media-manager': ['Engage', 'Listen', 'Boost', 'Analyze'],
-  'viewer': ['Analyze'],
-};
+const permissionList = [...PERMISSIONS] as string[];
 
 const permissionColors: Record<string, string> = {
-  Engage: 'bg-green-50 text-green-700 border-green-200',
-  Listen: 'bg-green-50 text-green-700 border-green-200',
-  Boost: 'bg-red-50 text-red-600 border-red-200',
-  Analyze: 'bg-green-50 text-green-700 border-green-200',
+  Engage: "bg-green-50 text-green-700 border-green-200",
+  Listen: "bg-green-50 text-green-700 border-green-200",
+  Boost: "bg-red-50 text-red-600 border-red-200",
+  Analyze: "bg-green-50 text-green-700 border-green-200",
+  ORM: "bg-violet-50 text-violet-700 border-violet-200",
+  Approve: "bg-amber-50 text-amber-700 border-amber-200",
+  Publish: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
-const roleCards = [
-  { id: 'business-admin', name: 'Client Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, invites client team members, and manages project teams." },
-  { id: 'content-creator', name: 'Content Creator', desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-  { id: 'approver', name: 'Approver', desc: 'Usually a contact at the client company. Can log in to see only their specific project to review and approve posts.' },
-  { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for that specific project.' },
-  { id: 'viewer', name: 'Viewer', desc: 'Read-only access to view content and reports. Cannot create, edit, or publish anything.' },
-];
+const roleCards = rolesForScope("client").map((r) => ({
+  id: r.id,
+  name: r.name,
+  desc: r.desc,
+  tags: r.tags,
+}));
 
 const mockAgencyUsers = [
   { id: '1', name: 'user-1', email: 'user1@yopmail.com' },
