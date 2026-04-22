@@ -73,7 +73,7 @@ const AgencyUserManagePage = () => {
 
   const handleRoleSelect = (roleId: string) => {
     setSelectedRole(roleId);
-    setSelectedPermissions([...(defaultPermissions[roleId] || [])]);
+    setSelectedPermissions([...defaultPermissionsFor(roleId)]);
   };
 
   const togglePermission = (perm: string) => {
@@ -82,7 +82,7 @@ const AgencyUserManagePage = () => {
     );
   };
 
-  const isDefault = (perm: string) => (defaultPermissions[selectedRole] || []).includes(perm);
+  const isDefault = (perm: string) => defaultPermissionsFor(selectedRole).includes(perm);
   const isExtra = (perm: string) => selectedPermissions.includes(perm) && !isDefault(perm);
 
   const filteredClients = mockClients.filter(c =>
