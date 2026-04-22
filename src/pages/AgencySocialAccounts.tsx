@@ -160,14 +160,23 @@ const AgencySocialAccounts = () => {
     });
   }, [accounts, search, platformFilter, statusFilter]);
 
-  const allVisibleSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
-  const someVisibleSelected = filtered.some((a) => selected.has(a.id));
+  useEffect(() => { setPage(1); }, [search, platformFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage],
+  );
+
+  const allVisibleSelected = paged.length > 0 && paged.every((a) => selected.has(a.id));
+  const someVisibleSelected = paged.some((a) => selected.has(a.id));
 
   const toggleAll = () => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (allVisibleSelected) filtered.forEach((a) => next.delete(a.id));
-      else filtered.forEach((a) => next.add(a.id));
+      if (allVisibleSelected) paged.forEach((a) => next.delete(a.id));
+      else paged.forEach((a) => next.add(a.id));
       return next;
     });
   };
