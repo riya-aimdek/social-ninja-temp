@@ -2,32 +2,28 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Pencil, Trash2, Check, X, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, X, ChevronDown, Sparkles } from "lucide-react";
+import RoleBadge from "@/components/RoleBadge";
+import { rolesForScope, defaultPermissionsFor, PERMISSIONS, getRole } from "@/data/roles";
 
-const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
-
-const defaultPermissions: Record<string, string[]> = {
-  'business-admin': ['Engage', 'Listen', 'Boost', 'Analyze'],
-  'content-creator': ['Engage'],
-  'approver': ['Analyze'],
-  'social-media-manager': ['Engage', 'Listen', 'Analyze'],
-  'viewer': ['Analyze'],
-};
+const permissionList = [...PERMISSIONS] as string[];
 
 const permissionColors: Record<string, { active: string; inactive: string }> = {
-  Engage: { active: 'bg-green-50 text-green-700 border-green-200', inactive: 'bg-muted text-muted-foreground border-border' },
-  Listen: { active: 'bg-green-50 text-green-700 border-green-200', inactive: 'bg-muted text-muted-foreground border-border' },
-  Boost: { active: 'bg-red-50 text-red-600 border-red-200', inactive: 'bg-muted text-muted-foreground border-border' },
-  Analyze: { active: 'bg-green-50 text-green-700 border-green-200', inactive: 'bg-muted text-muted-foreground border-border' },
+  Engage: { active: "bg-green-50 text-green-700 border-green-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Listen: { active: "bg-green-50 text-green-700 border-green-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Boost: { active: "bg-red-50 text-red-600 border-red-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Analyze: { active: "bg-green-50 text-green-700 border-green-200", inactive: "bg-muted text-muted-foreground border-border" },
+  ORM: { active: "bg-violet-50 text-violet-700 border-violet-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Approve: { active: "bg-amber-50 text-amber-700 border-amber-200", inactive: "bg-muted text-muted-foreground border-border" },
+  Publish: { active: "bg-blue-50 text-blue-700 border-blue-200", inactive: "bg-muted text-muted-foreground border-border" },
 };
 
-const roleCards = [
-  { id: 'business-admin', name: 'Client Admin', desc: "Manages one client's projects. Creates projects, adds social accounts, invites team members." },
-  { id: 'content-creator', name: 'Content Creator', desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-  { id: 'approver', name: 'Approver', desc: 'Usually a contact at the client company. Can log in to review and approve posts.' },
-  { id: 'social-media-manager', name: 'Social Media Manager', desc: 'Can draft, schedule, and publish posts, and view analytics for that specific project.' },
-  { id: 'viewer', name: 'Viewer', desc: 'Read-only access to view content and reports. Cannot create, edit, or publish anything.' },
-];
+const roleCards = rolesForScope("client").map((r) => ({
+  id: r.id,
+  name: r.name,
+  desc: r.desc,
+  tags: r.tags,
+}));
 
 const mockClients = [
   { id: '1', name: 'client-1', initials: 'C', color: 'bg-primary' },
@@ -78,7 +74,7 @@ const AgencyUserManagePage = () => {
 
   const handleRoleSelect = (roleId: string) => {
     setSelectedRole(roleId);
-    setSelectedPermissions([...(defaultPermissions[roleId] || [])]);
+    setSelectedPermissions([...defaultPermissionsFor(roleId)]);
   };
 
   const togglePermission = (perm: string) => {
@@ -87,7 +83,7 @@ const AgencyUserManagePage = () => {
     );
   };
 
-  const isDefault = (perm: string) => (defaultPermissions[selectedRole] || []).includes(perm);
+  const isDefault = (perm: string) => defaultPermissionsFor(selectedRole).includes(perm);
   const isExtra = (perm: string) => selectedPermissions.includes(perm) && !isDefault(perm);
 
   const filteredClients = mockClients.filter(c =>
@@ -155,7 +151,7 @@ const AgencyUserManagePage = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded border border-green-200 bg-green-50 text-green-700">{c.roleName}</span>
+                    <RoleBadge role={c.roleId} />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -194,28 +190,46 @@ const AgencyUserManagePage = () => {
 
             <div className="mb-6">
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
-              <div className="grid grid-cols-2 gap-3">
-                {roleCards.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => handleRoleSelect(r.id)}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      selectedRole === r.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:border-muted-foreground'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
-                      {selectedRole === r.id ? (
-                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="h-3 w-3 text-white" /></div>
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-border" />
+              <div className="grid grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1 -mr-1">
+                {roleCards.map(r => {
+                  const active = selectedRole === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => handleRoleSelect(r.id)}
+                      className={`p-4 rounded-xl border text-left transition-all ${
+                        active
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'border-border hover:border-muted-foreground'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <span className={`text-sm font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
+                        {active ? (
+                          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0"><Check className="h-3 w-3 text-white" /></div>
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-border shrink-0" />
+                        )}
+                      </div>
+                      {r.tags && r.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-1.5">
+                          {r.tags.map((t) => (
+                            <span
+                              key={t}
+                              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                                t === 'New' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              {t === 'New' && <Sparkles className="h-2.5 w-2.5" />}
+                              {t}
+                            </span>
+                          ))}
+                        </div>
                       )}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
-                  </button>
-                ))}
+                      <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -311,28 +325,46 @@ const AgencyUserManagePage = () => {
             {/* Role Cards */}
             <div className="mb-6">
               <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
-              <div className="grid grid-cols-2 gap-3">
-                {roleCards.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => handleRoleSelect(r.id)}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      selectedRole === r.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:border-muted-foreground'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
-                      {selectedRole === r.id ? (
-                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="h-3 w-3 text-white" /></div>
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-border" />
+              <div className="grid grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1 -mr-1">
+                {roleCards.map(r => {
+                  const active = selectedRole === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => handleRoleSelect(r.id)}
+                      className={`p-4 rounded-xl border text-left transition-all ${
+                        active
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'border-border hover:border-muted-foreground'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <span className={`text-sm font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
+                        {active ? (
+                          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0"><Check className="h-3 w-3 text-white" /></div>
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-border shrink-0" />
+                        )}
+                      </div>
+                      {r.tags && r.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-1.5">
+                          {r.tags.map((t) => (
+                            <span
+                              key={t}
+                              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                                t === 'New' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              {t === 'New' && <Sparkles className="h-2.5 w-2.5" />}
+                              {t}
+                            </span>
+                          ))}
+                        </div>
                       )}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
-                  </button>
-                ))}
+                      <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
