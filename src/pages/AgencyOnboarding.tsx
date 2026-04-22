@@ -3,22 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { Upload, ArrowRight, ArrowLeft, Building2, ClipboardCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
+import AIWebsiteScanStep, { type ScanResult } from "@/components/onboarding/AIWebsiteScanStep";
 
-type StepKey = "agency" | "client" | "team" | "done";
+type StepKey = "scan" | "agency" | "client" | "team" | "done";
 
 const stepMeta: Record<Exclude<StepKey, "done">, { eyebrow: string; title: string; subtitle: string }> = {
+  scan: {
+    eyebrow: "STEP 01 OF 05",
+    title: "Skip the\nsetup grind.",
+    subtitle: "Drop your website and let AI fetch your agency name, logo, and brand details — so you can get to work faster.",
+  },
   agency: {
-    eyebrow: "STEP 01 OF 04",
+    eyebrow: "STEP 02 OF 05",
     title: "Set up your\nagency.",
     subtitle: "This is your agency's home base — where you'll manage every client, project, and social account in one place.",
   },
   client: {
-    eyebrow: "STEP 02 OF 04",
+    eyebrow: "STEP 03 OF 05",
     title: "Add your first\nclient.",
     subtitle: "Each client gets a fully isolated workspace for their brand, projects, and connected social accounts.",
   },
   team: {
-    eyebrow: "STEP 03 OF 04",
+    eyebrow: "STEP 04 OF 05",
     title: "Build your team.",
     subtitle: "Invite teammates and assign roles so everyone has the right level of access across your clients.",
   },
@@ -39,8 +45,8 @@ const roles = [
 
 const AgencyOnboarding = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0); // 0..3
-  const stepKeys: StepKey[] = ["agency", "client", "team", "done"];
+  const [step, setStep] = useState(0); // 0..4
+  const stepKeys: StepKey[] = ["scan", "agency", "client", "team", "done"];
   const current = stepKeys[step];
 
   // form state
@@ -56,12 +62,20 @@ const AgencyOnboarding = () => {
   // skipped tracking for done summary
   const [skipped, setSkipped] = useState<Record<string, boolean>>({});
 
-  const goNext = () => setStep((s) => Math.min(s + 1, 3));
+  const goNext = () => setStep((s) => Math.min(s + 1, 4));
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
   const skip = () => {
+    if (current === "scan") setSkipped((p) => ({ ...p, scan: true }));
     if (current === "agency") setSkipped((p) => ({ ...p, agency: !agencyName.trim() }));
     if (current === "client") setSkipped((p) => ({ ...p, client: !clientName.trim() }));
     if (current === "team") setSkipped((p) => ({ ...p, team: !memberEmail.trim() }));
+    goNext();
+  };
+
+  const handleScanComplete = (result: ScanResult) => {
+    setAgencyName(result.companyName);
+    setAgencyDesc(result.description);
+    setSkipped((p) => ({ ...p, scan: false }));
     goNext();
   };
 
@@ -70,7 +84,7 @@ const AgencyOnboarding = () => {
     (current === "client" && !clientName.trim());
 
   const leftCopy = current === "done"
-    ? { eyebrow: "STEP 04 OF 04", title: "Ready to go 🚀", subtitle: "Your agency workspace is live. Time to plan, publish, and grow your clients' brands." }
+    ? { eyebrow: "STEP 05 OF 05", title: "Ready to go 🚀", subtitle: "Your agency workspace is live. Time to plan, publish, and grow your clients' brands." }
     : stepMeta[current as Exclude<StepKey, "done">];
 
   return (
@@ -106,6 +120,10 @@ const AgencyOnboarding = () => {
       {/* RIGHT — light card */}
       <div className="md:w-1/2 flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-orange-50/40 via-background to-rose-50/30">
         <div className="w-full max-w-md bg-card rounded-2xl shadow-card p-8 md:p-10 animate-fade-in">
+          {current === "scan" && (
+            <AIWebsiteScanStep onSkip={skip} onContinue={handleScanComplete} />
+          )}
+
           {current === "agency" && (
             <>
               <div className="text-center mb-6">
@@ -277,7 +295,7 @@ const AgencyOnboarding = () => {
           )}
 
           {/* Footer nav */}
-          {current !== "done" && (
+          {current !== "done" && current !== "scan" && (
             <div className="flex items-center justify-between mt-8">
               {step > 0 ? (
                 <button onClick={goBack} className="text-muted-foreground hover:text-foreground transition-colors p-2">
