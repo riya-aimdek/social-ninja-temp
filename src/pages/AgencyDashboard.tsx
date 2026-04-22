@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Building2, Users, Globe, Clock, TrendingUp, TrendingDown, ArrowRight, MoreHorizontal } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
+import ClientLogo from "@/components/ClientLogo";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 
 const sparkClients = [
@@ -110,7 +111,7 @@ const AgencyDashboard = () => {
                 <tr key={c.name} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-lg ${c.color} flex items-center justify-center text-xs font-bold text-white`}>{c.initials}</div>
+                      <ClientLogo name={c.name} color={c.color} size="sm" rounded="lg" />
                       <div>
                         <span className="text-sm font-medium text-foreground">{c.name}</span>
                         <p className="text-[11px] text-muted-foreground">{c.created}</p>
