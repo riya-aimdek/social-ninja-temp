@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import AgencyLayout from "@/components/layout/AgencyLayout";
+import BulkConnectDialog from "@/components/agency/BulkConnectDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Search,
+  Sparkles,
   Facebook,
   Instagram,
   Linkedin,
@@ -156,6 +158,7 @@ const AgencySocialAccounts = () => {
   const [manageAccount, setManageAccount] = useState<SocialAccount | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [removeAccount, setRemoveAccount] = useState<SocialAccount | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return accounts.filter((a) => {
@@ -276,9 +279,14 @@ const AgencySocialAccounts = () => {
               Connect once, assign anywhere. Manage all social accounts your agency uses across clients and projects.
             </p>
           </div>
-          <Button className="gap-2 shadow-coral">
-            <Plus className="h-4 w-4" /> Connect Account
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-2">
+              <Sparkles className="h-4 w-4 text-primary" /> Bulk connect via master email
+            </Button>
+            <Button className="gap-2 shadow-coral">
+              <Plus className="h-4 w-4" /> Connect Account
+            </Button>
+          </div>
         </div>
 
         <div className="bg-card rounded-xl shadow-card p-3 flex flex-col md:flex-row md:items-center gap-3">
