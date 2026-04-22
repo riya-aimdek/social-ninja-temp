@@ -140,37 +140,33 @@ export default function AnalyzePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Analyze</h1>
-          <p className="text-sm text-muted-foreground mt-1">Performance, competitor benchmarks, and scheduled reports.</p>
+      <div className="flex items-center justify-end flex-wrap gap-3">
+        <select
+          value={dateRange}
+          onChange={(e) => setDateRange(e.target.value)}
+          className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+        >
+          {dateRanges.map((r) => <option key={r}>{r}</option>)}
+        </select>
+        <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card p-1">
+          {platformsList.map((p) => (
+            <button
+              key={p}
+              onClick={() => setActivePlatform(p)}
+              className={cn(
+                "px-3.5 py-1.5 text-xs font-medium rounded-full transition-colors",
+                activePlatform === p
+                  ? "bg-foreground text-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {p}
+            </button>
+          ))}
         </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
-          >
-            {dateRanges.map((r) => <option key={r}>{r}</option>)}
-          </select>
-          <div className="flex rounded-lg border border-border overflow-hidden">
-            {platformsList.map((p) => (
-              <button
-                key={p}
-                onClick={() => setActivePlatform(p)}
-                className={cn(
-                  "px-3 py-1.5 text-xs font-medium transition-colors",
-                  activePlatform === p ? "bg-foreground text-card" : "bg-card text-foreground hover:bg-accent",
-                )}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-          <Button size="sm" variant="outline" onClick={() => toast.success("Export started — check Downloads")}>
-            <FileDown className="w-3.5 h-3.5" /> Export
-          </Button>
-        </div>
+        <Button size="sm" variant="outline" onClick={() => toast.success("Export started — check Downloads")}>
+          <FileDown className="w-3.5 h-3.5" /> Export
+        </Button>
       </div>
 
       <Tabs defaultValue="performance">
