@@ -40,7 +40,16 @@ import {
   ArrowLeft,
   Check,
   Building2,
+  MoreHorizontal,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 // ───────────────────────── Types & mock data ─────────────────────────
