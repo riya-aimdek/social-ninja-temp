@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,9 +35,11 @@ import {
   Trash2,
   Unplug,
   ChevronRight,
+  ChevronLeft,
   X,
   ArrowLeft,
   Check,
+  Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -139,6 +141,8 @@ const AgencySocialAccounts = () => {
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 12;
 
   const [manageAccount, setManageAccount] = useState<SocialAccount | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
