@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Pencil, Trash2, Check, X, ChevronDown, Sparkles } from "lucide-react";
+import RoleBadge from "@/components/RoleBadge";
 import { rolesForScope, defaultPermissionsFor, PERMISSIONS, getRole } from "@/data/roles";
 
 const permissionList = [...PERMISSIONS] as string[];
@@ -150,7 +151,7 @@ const AgencyUserManagePage = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded border border-green-200 bg-green-50 text-green-700">{c.roleName}</span>
+                    <RoleBadge role={c.roleId} />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
