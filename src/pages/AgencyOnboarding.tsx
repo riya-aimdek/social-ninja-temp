@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Upload, ArrowRight, ArrowLeft, Building2, ClipboardCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
+import AIWebsiteScanStep, { type ScanResult } from "@/components/onboarding/AIWebsiteScanStep";
 
-type StepKey = "agency" | "client" | "team" | "done";
+type StepKey = "scan" | "agency" | "client" | "team" | "done";
 
 const stepMeta: Record<Exclude<StepKey, "done">, { eyebrow: string; title: string; subtitle: string }> = {
   agency: {
