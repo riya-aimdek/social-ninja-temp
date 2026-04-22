@@ -167,11 +167,7 @@ export default function EngagePage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Engage / ORM</h1>
-          <p className="text-sm text-muted-foreground mt-1">Triage conversations like a support queue. Built for ORM teams.</p>
-        </div>
+      <div className="flex items-center justify-end gap-3 flex-wrap">
         <div className="flex rounded-lg border border-border overflow-hidden bg-card">
           <button
             onClick={() => setView("board")}

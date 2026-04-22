@@ -17,13 +17,7 @@ const insights = [
 export default function LocationsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-            <MapPin className="w-6 h-6 text-primary" /> Locations
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your business locations and local presence.</p>
-        </div>
+      <div className="flex items-center justify-end">
         <button className="px-4 py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2">
           <Plus className="w-4 h-4" /> Add Location
         </button>

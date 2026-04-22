@@ -72,12 +72,6 @@ export default function ListenPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-          <Ear className="w-6 h-6 text-primary" /> Listen
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">Monitor brand mentions, sentiment, and trigger alerts on what matters.</p>
-      </div>
 
       {/* Live alerts banner */}
       <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
