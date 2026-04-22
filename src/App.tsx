@@ -47,6 +47,7 @@ import LocationsPage from "./pages/client/LocationsPage";
 import ClientSettingsPage from "./pages/client/SettingsPage";
 
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
+import PublicApprovalPage from "./pages/PublicApprovalPage";
 import OrgSwitcher from "./pages/OrgSwitcher";
 import OrgSelector from "./pages/OrgSelector";
 import NotFound from "./pages/NotFound";
@@ -69,6 +70,9 @@ const App = () => (
           <Route path="/register/agency" element={<AgencyRegistration />} />
           <Route path="/register/client" element={<StandaloneOrgRegistration />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
+
+          {/* Public approval link (no auth) */}
+          <Route path="/approve/:token" element={<PublicApprovalPage />} />
 
           {/* Super Admin */}
           <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
