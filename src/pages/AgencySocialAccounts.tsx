@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,9 +35,11 @@ import {
   Trash2,
   Unplug,
   ChevronRight,
+  ChevronLeft,
   X,
   ArrowLeft,
   Check,
+  Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -74,59 +76,47 @@ const mockClients: Client[] = [
     name: "acme prop",
     projects: [{ id: "project-1", name: "project-1" }],
   },
+  {
+    id: "c3",
+    name: "Northwind Co",
+    projects: [
+      { id: "nw-launch", name: "Spring Launch" },
+      { id: "nw-always", name: "Always-On" },
+    ],
+  },
+  {
+    id: "c4",
+    name: "Globex Retail",
+    projects: [
+      { id: "gx-blackfri", name: "Black Friday" },
+      { id: "gx-loyalty", name: "Loyalty Program" },
+      { id: "gx-brand", name: "Brand Awareness" },
+    ],
+  },
 ];
 
-const initialAccounts: SocialAccount[] = [
-  {
-    id: "a1",
-    name: "AI Page trial",
-    handle: "@AI Page trial",
-    platform: "Facebook",
-    status: "connected",
-    assignments: [
-      { clientId: "c1", projectIds: ["p1-c2", "p2-c2"] },
-      { clientId: "c2", projectIds: ["project-1"] },
-    ],
-  },
-  {
-    id: "a2",
-    name: "born._to_code_",
-    handle: "@born._to_code_",
-    platform: "Instagram",
-    status: "connected",
-    assignments: [
-      { clientId: "c1", projectIds: ["p1-c2", "p2-c2"] },
-      { clientId: "c2", projectIds: ["project-1"] },
-    ],
-  },
-  {
-    id: "a3",
-    name: "Just JS",
-    handle: "@Just JS",
-    platform: "Facebook",
-    status: "connected",
-    assignments: [
-      { clientId: "c1", projectIds: ["p1-c2", "p2-c2"] },
-      { clientId: "c2", projectIds: ["project-1"] },
-    ],
-  },
-  {
-    id: "a4",
-    name: "Test hack",
-    handle: "@Test hack",
-    platform: "Facebook",
-    status: "connected",
-    assignments: [],
-  },
-  {
-    id: "a5",
-    name: "Trials AI",
-    handle: "@Trials AI",
-    platform: "Facebook",
-    status: "reconnect",
-    assignments: [{ clientId: "c2", projectIds: ["project-1"] }],
-  },
+const seedAccounts: Omit<SocialAccount, "id">[] = [
+  { name: "AI Page trial", handle: "@aipagetrial", platform: "Facebook", status: "connected", assignments: [{ clientId: "c1", projectIds: ["p1-c2", "p2-c2"] }, { clientId: "c2", projectIds: ["project-1"] }] },
+  { name: "born._to_code_", handle: "@born._to_code_", platform: "Instagram", status: "connected", assignments: [{ clientId: "c1", projectIds: ["p1-c2", "p2-c2"] }, { clientId: "c2", projectIds: ["project-1"] }] },
+  { name: "Just JS", handle: "@justjs", platform: "Facebook", status: "connected", assignments: [{ clientId: "c1", projectIds: ["p1-c2"] }] },
+  { name: "Test hack", handle: "@testhack", platform: "Facebook", status: "connected", assignments: [] },
+  { name: "Trials AI", handle: "@trialsai", platform: "Facebook", status: "reconnect", assignments: [{ clientId: "c2", projectIds: ["project-1"] }] },
+  { name: "Northwind Official", handle: "@northwind", platform: "Instagram", status: "connected", assignments: [{ clientId: "c3", projectIds: ["nw-launch", "nw-always"] }] },
+  { name: "Northwind LinkedIn", handle: "northwind-co", platform: "LinkedIn", status: "connected", assignments: [{ clientId: "c3", projectIds: ["nw-always"] }] },
+  { name: "Globex Retail", handle: "@globex", platform: "Facebook", status: "connected", assignments: [{ clientId: "c4", projectIds: ["gx-blackfri", "gx-loyalty", "gx-brand"] }] },
+  { name: "Globex IG", handle: "@globex.shop", platform: "Instagram", status: "connected", assignments: [{ clientId: "c4", projectIds: ["gx-blackfri", "gx-brand"] }] },
+  { name: "Globex on X", handle: "@globex_x", platform: "Twitter", status: "reconnect", assignments: [{ clientId: "c4", projectIds: ["gx-brand"] }] },
+  { name: "Globex Tube", handle: "GlobexTV", platform: "YouTube", status: "connected", assignments: [{ clientId: "c4", projectIds: ["gx-brand"] }] },
+  { name: "Acme Pinterest", handle: "@acme.pin", platform: "Pinterest", status: "connected", assignments: [{ clientId: "c2", projectIds: ["project-1"] }] },
+  { name: "Acme LinkedIn", handle: "acme-prop", platform: "LinkedIn", status: "connected", assignments: [] },
+  { name: "Sanskruti Studio", handle: "@sanskruti.studio", platform: "Instagram", status: "connected", assignments: [{ clientId: "c1", projectIds: ["p2-c2"] }] },
+  { name: "Sanskruti FB", handle: "SanskrutiPage", platform: "Facebook", status: "connected", assignments: [] },
+  { name: "Brand Studio X", handle: "@brand_studio_x", platform: "Twitter", status: "connected", assignments: [{ clientId: "c3", projectIds: ["nw-launch"] }] },
+  { name: "Holiday Drop", handle: "@holidaydrop", platform: "Instagram", status: "reconnect", assignments: [] },
+  { name: "Press Page", handle: "PressPage", platform: "Facebook", status: "connected", assignments: [{ clientId: "c4", projectIds: ["gx-loyalty"] }] },
 ];
+
+const initialAccounts: SocialAccount[] = seedAccounts.map((a, i) => ({ ...a, id: `acc-${i + 1}` }));
 
 // ───────────────────────── Platform meta ─────────────────────────
 const platformMeta: Record<
@@ -151,6 +141,8 @@ const AgencySocialAccounts = () => {
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 12;
 
   const [manageAccount, setManageAccount] = useState<SocialAccount | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -168,14 +160,23 @@ const AgencySocialAccounts = () => {
     });
   }, [accounts, search, platformFilter, statusFilter]);
 
-  const allVisibleSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
-  const someVisibleSelected = filtered.some((a) => selected.has(a.id));
+  useEffect(() => { setPage(1); }, [search, platformFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage],
+  );
+
+  const allVisibleSelected = paged.length > 0 && paged.every((a) => selected.has(a.id));
+  const someVisibleSelected = paged.some((a) => selected.has(a.id));
 
   const toggleAll = () => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (allVisibleSelected) filtered.forEach((a) => next.delete(a.id));
-      else filtered.forEach((a) => next.add(a.id));
+      if (allVisibleSelected) paged.forEach((a) => next.delete(a.id));
+      else paged.forEach((a) => next.add(a.id));
       return next;
     });
   };
@@ -276,7 +277,8 @@ const AgencySocialAccounts = () => {
             <Checkbox
               checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
               onCheckedChange={toggleAll}
-              aria-label="Select all"
+              aria-label="Select all on this page"
+              className="h-[18px] w-[18px] rounded-[4px]"
             />
             <span className="text-xs font-medium text-muted-foreground select-none">
               {selected.size > 0 ? `${selected.size} selected` : "Select all"}
@@ -326,23 +328,44 @@ const AgencySocialAccounts = () => {
             <p className="text-xs text-muted-foreground mt-1">Try clearing filters or connect a new account.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map((a) => {
-              const meta = platformMeta[a.platform];
-              const PIcon = meta.Icon;
-              const isSelected = selected.has(a.id);
-              const assignmentCount = countAssignments(a);
-              return (
-                <div
-                  key={a.id}
-                  className={`group relative bg-card rounded-xl border transition-all duration-200 ${
-                    isSelected
-                      ? "border-primary ring-2 ring-primary/20 shadow-coral"
-                      : "border-border shadow-card hover:shadow-lg hover:-translate-y-0.5"
-                  }`}
-                >
-                  <div className="p-5 pb-3 flex items-start justify-between">
-                    <div className="flex items-start gap-3 min-w-0">
+          <>
+            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+              <span>
+                Showing <span className="font-medium text-foreground">{(currentPage - 1) * PAGE_SIZE + 1}</span>–
+                <span className="font-medium text-foreground">{Math.min(currentPage * PAGE_SIZE, filtered.length)}</span> of{" "}
+                <span className="font-medium text-foreground">{filtered.length}</span> accounts
+              </span>
+              {selected.size > 0 && (
+                <button onClick={clearSelection} className="text-primary hover:underline font-medium">
+                  Clear selection
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {paged.map((a) => {
+                const meta = platformMeta[a.platform];
+                const PIcon = meta.Icon;
+                const isSelected = selected.has(a.id);
+                const assignmentCount = countAssignments(a);
+                const clientCount = a.assignments.length;
+                return (
+                  <div
+                    key={a.id}
+                    className={`relative bg-card rounded-xl border flex flex-col transition-all duration-200 ${
+                      isSelected
+                        ? "border-primary ring-2 ring-primary/20"
+                        : "border-border shadow-card hover:shadow-md hover:border-border/80"
+                    }`}
+                  >
+                    {/* Header */}
+                    <div className="p-4 flex items-start gap-3">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleOne(a.id)}
+                        aria-label={`Select ${a.name}`}
+                        className="h-[18px] w-[18px] rounded-[4px] mt-1 shrink-0"
+                      />
                       <div className="relative shrink-0">
                         <div className={`w-11 h-11 rounded-full ${meta.ring} flex items-center justify-center text-sm font-semibold text-foreground`}>
                           {a.name.charAt(0).toUpperCase()}
@@ -351,73 +374,171 @@ const AgencySocialAccounts = () => {
                           <PIcon className={`h-3 w-3 ${meta.iconColor}`} />
                         </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{a.name}</p>
-                        <p className={`text-[11px] font-medium ${meta.iconColor}`}>{meta.label}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{a.handle}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-foreground truncate">{a.name}</p>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          <span className={`font-medium ${meta.iconColor}`}>{meta.label}</span>
+                          <span className="mx-1">·</span>
+                          {a.handle}
+                        </p>
+                        <div className="mt-1.5">
+                          {a.status === "connected" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium badge-active px-1.5 py-0.5 rounded-full">
+                              <CheckCircle2 className="h-2.5 w-2.5" /> Connected
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium badge-scheduled px-1.5 py-0.5 rounded-full">
+                              <AlertCircle className="h-2.5 w-2.5" /> Reconnect needed
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => toggleOne(a.id)}
-                      aria-label={`Select ${a.name}`}
-                      className="mt-1"
-                    />
-                  </div>
 
-                  <div className="px-5 flex items-center justify-between text-xs">
-                    {a.status === "connected" ? (
-                      <Badge variant="secondary" className="badge-active gap-1 font-medium border-0">
-                        <CheckCircle2 className="h-3 w-3" /> Connected
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="badge-scheduled gap-1 font-medium border-0">
-                        <AlertCircle className="h-3 w-3" /> Reconnect needed
-                      </Badge>
-                    )}
-                    <button
-                      onClick={() => setManageAccount(a)}
-                      className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <FolderKanban className="h-3.5 w-3.5" />
-                      <span className="font-medium">
-                        {assignmentCount} {assignmentCount === 1 ? "project" : "projects"}
+                    {/* Assignments section — always visible */}
+                    <div className="px-4 pb-3 flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                          Assigned to
+                        </p>
+                        <span className="text-[10px] text-muted-foreground">
+                          {clientCount} {clientCount === 1 ? "client" : "clients"} · {assignmentCount} {assignmentCount === 1 ? "project" : "projects"}
+                        </span>
+                      </div>
+                      {a.assignments.length === 0 ? (
+                        <button
+                          onClick={() => { setSelected(new Set([a.id])); setAssignOpen(true); }}
+                          className="w-full text-left text-xs text-muted-foreground bg-muted/40 hover:bg-muted hover:text-foreground rounded-lg px-3 py-2 border border-dashed border-border transition-colors"
+                        >
+                          + Not assigned — assign to a project
+                        </button>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {a.assignments.slice(0, 2).map((as) => {
+                            const client = mockClients.find((c) => c.id === as.clientId);
+                            if (!client) return null;
+                            const visible = as.projectIds.slice(0, 2);
+                            const remaining = as.projectIds.length - visible.length;
+                            return (
+                              <div key={as.clientId} className="bg-muted/40 rounded-lg px-2.5 py-1.5">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  <span className="text-[11px] font-semibold text-foreground truncate">{client.name}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {visible.map((pid) => {
+                                    const proj = client.projects.find((p) => p.id === pid);
+                                    return (
+                                      <span key={pid} className="inline-flex items-center gap-1 text-[10px] font-medium bg-background border border-border text-foreground px-1.5 py-0.5 rounded">
+                                        <FolderKanban className="h-2.5 w-2.5 text-muted-foreground" />
+                                        {proj?.name || pid}
+                                      </span>
+                                    );
+                                  })}
+                                  {remaining > 0 && (
+                                    <span className="text-[10px] font-medium text-muted-foreground px-1.5 py-0.5">+{remaining} more</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {a.assignments.length > 2 && (
+                            <button
+                              onClick={() => setManageAccount(a)}
+                              className="text-[11px] font-medium text-primary hover:underline px-1"
+                            >
+                              View {a.assignments.length - 2} more {a.assignments.length - 2 === 1 ? "client" : "clients"} →
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions — always visible */}
+                    <div className="px-2 py-2 border-t border-border flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 h-8 text-xs gap-1.5 text-foreground hover:bg-muted"
+                        onClick={() => setManageAccount(a)}
+                      >
+                        <Settings2 className="h-3.5 w-3.5" /> Manage
+                      </Button>
+                      <div className="h-5 w-px bg-border" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted"
+                        onClick={() => handleDisconnect(a)}
+                      >
+                        <Unplug className="h-3.5 w-3.5" /> Disconnect
+                      </Button>
+                      <div className="h-5 w-px bg-border" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 h-8 text-xs gap-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setRemoveAccount(a)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Remove
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-2">
+                <p className="text-xs text-muted-foreground">
+                  Page <span className="font-medium text-foreground">{currentPage}</span> of{" "}
+                  <span className="font-medium text-foreground">{totalPages}</span>
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1"
+                    disabled={currentPage === 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                    .map((p, idx, arr) => (
+                      <span key={p} className="flex items-center">
+                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                          <span className="px-1 text-xs text-muted-foreground">…</span>
+                        )}
+                        <button
+                          onClick={() => setPage(p)}
+                          className={`h-8 min-w-8 px-2 rounded-md text-xs font-medium transition-colors ${
+                            p === currentPage
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`}
+                        >
+                          {p}
+                        </button>
                       </span>
-                    </button>
-                  </div>
-
-                  <div className="mt-4 px-3 py-2 border-t border-border flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                      onClick={() => setManageAccount(a)}
-                    >
-                      <Settings2 className="h-3.5 w-3.5" /> Manage
-                    </Button>
-                    <div className="h-5 w-px bg-border" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                      onClick={() => handleDisconnect(a)}
-                    >
-                      <Unplug className="h-3.5 w-3.5" /> Disconnect
-                    </Button>
-                    <div className="h-5 w-px bg-border" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 h-8 text-xs gap-1.5 text-muted-foreground hover:text-destructive"
-                      onClick={() => setRemoveAccount(a)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" /> Remove
-                    </Button>
-                  </div>
+                    ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -557,7 +678,7 @@ function ManageAssignmentsDialog({
                           </div>
                           <button
                             onClick={() => onRemove(account.id, as.clientId, pid)}
-                            className="text-xs font-medium text-destructive hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-xs font-medium text-destructive hover:underline shrink-0"
                           >
                             Remove
                           </button>
