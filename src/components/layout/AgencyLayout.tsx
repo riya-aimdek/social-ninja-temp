@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Globe, Users, ChevronDown, ChevronUp,
   Bell, Check, LogOut, Search, FolderOpen, Sparkles, CalendarDays,
-  MessageSquare, BarChart3, Megaphone, Ear, Settings, Palette,
+  MessageSquare, BarChart3, Megaphone, Ear, Settings, Palette, Link2 as LinkIcon,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
@@ -11,6 +11,7 @@ const agencyNavItems = [
   { title: "Dashboard", path: "/agency/dashboard", icon: LayoutDashboard },
   { title: "Clients", path: "/agency/clients", icon: Globe },
   { title: "Users", path: "/agency/team", icon: Users },
+  { title: "Social Accounts", path: "/agency/social-accounts", icon: LinkIcon },
 ];
 
 const clientNavItems = [

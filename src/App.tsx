@@ -26,6 +26,7 @@ import AgencyClientTeamPage from "./pages/AgencyClientTeamPage";
 import AgencyUserManagePage from "./pages/AgencyUserManagePage";
 import BillingPage from "./pages/BillingPage";
 import AgencySettings from "./pages/AgencySettings";
+import AgencySocialAccounts from "./pages/AgencySocialAccounts";
 import StandaloneOrgRegistration from "./pages/StandaloneOrgRegistration";
 
 import ClientLayout from "./components/layout/ClientLayout";
@@ -86,6 +87,7 @@ const App = () => (
           <Route path="/agency/clients/:id/team" element={<AgencyClientTeamPage />} />
           <Route path="/agency/team" element={<TeamMembersPage />} />
           <Route path="/agency/team/:userId/manage" element={<AgencyUserManagePage />} />
+          <Route path="/agency/social-accounts" element={<AgencySocialAccounts />} />
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
           <Route path="/agency/profile" element={<ProfileSettingsPage role="agency" />} />
