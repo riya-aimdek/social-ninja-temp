@@ -208,7 +208,7 @@ const AgencyClientTeamPage = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-foreground border border-border rounded px-2 py-0.5">{u.role}</span>
+                    <RoleBadge role={u.roleId} />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
