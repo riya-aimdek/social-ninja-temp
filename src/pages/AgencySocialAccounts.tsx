@@ -441,69 +441,74 @@ const AgencySocialAccounts = () => {
                       </div>
                     </div>
 
-                    <div className="px-3 pb-3 pt-0">
+                    <div className="px-3 pb-3 border-t border-border/60 mt-1 pt-2.5">
                       {chips.length === 0 ? (
                         <button
                           onClick={(e) => { e.stopPropagation(); setSelected(new Set([a.id])); setAssignOpen(true); }}
-                          className="w-full flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted rounded-md px-2 py-1.5 border border-dashed border-border transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted rounded-md px-2 py-1.5 border border-dashed border-border transition-colors"
                         >
-                          <Plus className="h-3 w-3" /> Not assigned — assign to a project
+                          <Plus className="h-3 w-3" /> Assign to a project
                         </button>
                       ) : (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
-                            {clientCount}c · {assignmentCount}p
-                          </span>
-                          <span className="h-3 w-px bg-border" />
-                          {visibleChips.map((c) => (
-                            <span
-                              key={c.key}
-                              title={`${c.client} → ${c.project}`}
-                              className="inline-flex items-center gap-1 text-[10px] font-medium bg-muted text-foreground px-1.5 py-0.5 rounded max-w-[140px]"
-                            >
-                              <Building2 className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-                              <span className="truncate">{c.client}</span>
-                              <ChevronRight className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-                              <span className="truncate text-muted-foreground">{c.project}</span>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Assigned to
                             </span>
-                          ))}
-                          {hiddenChips.length > 0 && (
-                            <Popover>
-                              <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <button className="text-[10px] font-medium text-primary hover:underline px-1 py-0.5">
-                                  +{hiddenChips.length} more
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                align="end"
-                                className="w-64 p-2"
-                                onClick={(e) => e.stopPropagation()}
+                            <span className="text-[10px] text-muted-foreground">
+                              {clientCount} {clientCount === 1 ? "client" : "clients"} · {assignmentCount} {assignmentCount === 1 ? "project" : "projects"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {visibleChips.map((c) => (
+                              <span
+                                key={c.key}
+                                title={`${c.client} → ${c.project}`}
+                                className="inline-flex items-center gap-1 text-[10px] font-medium bg-muted/70 text-foreground px-1.5 py-0.5 rounded max-w-[160px]"
                               >
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-2 pt-1 pb-2">
-                                  All assignments ({chips.length})
-                                </p>
-                                <div className="space-y-1 max-h-64 overflow-y-auto">
-                                  {chips.map((c) => (
-                                    <div
-                                      key={c.key}
-                                      className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded hover:bg-muted"
-                                    >
-                                      <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
-                                      <span className="font-medium text-foreground truncate">{c.client}</span>
-                                      <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                                      <span className="text-muted-foreground truncate">{c.project}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                                <button
-                                  onClick={() => setManageAccount(a)}
-                                  className="w-full text-center text-[11px] font-medium text-primary hover:underline mt-2 pt-2 border-t border-border"
+                                <span className="truncate">{c.client}</span>
+                                <ChevronRight className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                                <span className="truncate text-muted-foreground">{c.project}</span>
+                              </span>
+                            ))}
+                            {hiddenChips.length > 0 && (
+                              <Popover>
+                                <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <button className="text-[10px] font-medium text-primary hover:underline px-1 py-0.5">
+                                    +{hiddenChips.length} more
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  align="end"
+                                  className="w-64 p-2"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  Manage assignments →
-                                </button>
-                              </PopoverContent>
-                            </Popover>
-                          )}
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-2 pt-1 pb-2">
+                                    All assignments ({chips.length})
+                                  </p>
+                                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                                    {chips.map((c) => (
+                                      <div
+                                        key={c.key}
+                                        className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded hover:bg-muted"
+                                      >
+                                        <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                                        <span className="font-medium text-foreground truncate">{c.client}</span>
+                                        <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                                        <span className="text-muted-foreground truncate">{c.project}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <button
+                                    onClick={() => setManageAccount(a)}
+                                    className="w-full text-center text-[11px] font-medium text-primary hover:underline mt-2 pt-2 border-t border-border"
+                                  >
+                                    Manage assignments →
+                                  </button>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
