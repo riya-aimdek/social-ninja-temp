@@ -295,7 +295,7 @@ const AgencyOnboarding = () => {
           )}
 
           {/* Footer nav */}
-          {current !== "done" && (
+          {current !== "done" && current !== "scan" && (
             <div className="flex items-center justify-between mt-8">
               {step > 0 ? (
                 <button onClick={goBack} className="text-muted-foreground hover:text-foreground transition-colors p-2">
