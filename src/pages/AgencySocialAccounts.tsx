@@ -678,7 +678,7 @@ function ManageAssignmentsDialog({
                           </div>
                           <button
                             onClick={() => onRemove(account.id, as.clientId, pid)}
-                            className="text-xs font-medium text-destructive hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-xs font-medium text-destructive hover:underline shrink-0"
                           >
                             Remove
                           </button>
