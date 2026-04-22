@@ -351,148 +351,166 @@ const AgencySocialAccounts = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {paged.map((a) => {
                 const meta = platformMeta[a.platform];
                 const PIcon = meta.Icon;
                 const isSelected = selected.has(a.id);
                 const assignmentCount = countAssignments(a);
                 const clientCount = a.assignments.length;
+
+                const chips: { key: string; client: string; project: string }[] = [];
+                for (const as of a.assignments) {
+                  const client = mockClients.find((c) => c.id === as.clientId);
+                  if (!client) continue;
+                  for (const pid of as.projectIds) {
+                    const proj = client.projects.find((p) => p.id === pid);
+                    chips.push({
+                      key: `${as.clientId}-${pid}`,
+                      client: client.name,
+                      project: proj?.name || pid,
+                    });
+                  }
+                }
+                const visibleChips = chips.slice(0, 2);
+                const hiddenChips = chips.slice(2);
+
                 return (
                   <div
                     key={a.id}
-                    className={`relative bg-card rounded-xl border flex flex-col transition-all duration-200 ${
+                    onClick={() => toggleOne(a.id)}
+                    className={`group relative bg-card rounded-xl border transition-all duration-150 cursor-pointer ${
                       isSelected
-                        ? "border-primary ring-2 ring-primary/20"
-                        : "border-border shadow-card hover:shadow-md hover:border-border/80"
+                        ? "border-primary ring-2 ring-primary/20 shadow-sm"
+                        : "border-border hover:border-border-hover hover:shadow-sm"
                     }`}
                   >
-                    {/* Header */}
-                    <div className="p-4 flex items-start gap-3">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleOne(a.id)}
-                        aria-label={`Select ${a.name}`}
-                        className="h-[18px] w-[18px] rounded-[4px] mt-1 shrink-0"
-                      />
+                    <div className="p-3 flex items-center gap-3">
                       <div className="relative shrink-0">
-                        <div className={`w-11 h-11 rounded-full ${meta.ring} flex items-center justify-center text-sm font-semibold text-foreground`}>
+                        <div className={`w-10 h-10 rounded-lg ${meta.ring} flex items-center justify-center text-sm font-semibold text-foreground`}>
                           {a.name.charAt(0).toUpperCase()}
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-card border-2 border-card shadow-sm flex items-center justify-center">
-                          <PIcon className={`h-3 w-3 ${meta.iconColor}`} />
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-card border border-border shadow-sm flex items-center justify-center">
+                          <PIcon className={`h-2.5 w-2.5 ${meta.iconColor}`} />
                         </div>
                       </div>
+
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-foreground truncate">{a.name}</p>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          <span className={`font-medium ${meta.iconColor}`}>{meta.label}</span>
-                          <span className="mx-1">·</span>
-                          {a.handle}
-                        </p>
-                        <div className="mt-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-semibold text-foreground truncate leading-tight">{a.name}</p>
                           {a.status === "connected" ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium badge-active px-1.5 py-0.5 rounded-full">
-                              <CheckCircle2 className="h-2.5 w-2.5" /> Connected
-                            </span>
+                            <span title="Connected" className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium badge-scheduled px-1.5 py-0.5 rounded-full">
-                              <AlertCircle className="h-2.5 w-2.5" /> Reconnect needed
-                            </span>
+                            <span title="Reconnect needed" className="w-1.5 h-1.5 rounded-full bg-warning shrink-0 animate-pulse" />
                           )}
                         </div>
+                        <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                          <span className={`font-medium ${meta.iconColor}`}>{meta.label}</span>
+                          <span className="mx-1 opacity-50">·</span>
+                          {a.handle}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem onClick={() => setManageAccount(a)}>
+                              <Settings2 className="h-3.5 w-3.5 mr-2" /> Manage assignments
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setSelected(new Set([a.id])); setAssignOpen(true); }}>
+                              <FolderKanban className="h-3.5 w-3.5 mr-2" /> Assign to project
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDisconnect(a)}>
+                              <Unplug className="h-3.5 w-3.5 mr-2" /> Disconnect
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setRemoveAccount(a)}
+                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 mr-2" /> Remove account
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleOne(a.id)}
+                          aria-label={`Select ${a.name}`}
+                          className="h-[18px] w-[18px] rounded-[4px]"
+                        />
                       </div>
                     </div>
 
-                    {/* Assignments section — always visible */}
-                    <div className="px-4 pb-3 flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                          Assigned to
-                        </p>
-                        <span className="text-[10px] text-muted-foreground">
-                          {clientCount} {clientCount === 1 ? "client" : "clients"} · {assignmentCount} {assignmentCount === 1 ? "project" : "projects"}
-                        </span>
-                      </div>
-                      {a.assignments.length === 0 ? (
+                    <div className="px-3 pb-3 pt-0">
+                      {chips.length === 0 ? (
                         <button
-                          onClick={() => { setSelected(new Set([a.id])); setAssignOpen(true); }}
-                          className="w-full text-left text-xs text-muted-foreground bg-muted/40 hover:bg-muted hover:text-foreground rounded-lg px-3 py-2 border border-dashed border-border transition-colors"
+                          onClick={(e) => { e.stopPropagation(); setSelected(new Set([a.id])); setAssignOpen(true); }}
+                          className="w-full flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted rounded-md px-2 py-1.5 border border-dashed border-border transition-colors"
                         >
-                          + Not assigned — assign to a project
+                          <Plus className="h-3 w-3" /> Not assigned — assign to a project
                         </button>
                       ) : (
-                        <div className="space-y-1.5">
-                          {a.assignments.slice(0, 2).map((as) => {
-                            const client = mockClients.find((c) => c.id === as.clientId);
-                            if (!client) return null;
-                            const visible = as.projectIds.slice(0, 2);
-                            const remaining = as.projectIds.length - visible.length;
-                            return (
-                              <div key={as.clientId} className="bg-muted/40 rounded-lg px-2.5 py-1.5">
-                                <div className="flex items-center gap-1.5 mb-1">
-                                  <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
-                                  <span className="text-[11px] font-semibold text-foreground truncate">{client.name}</span>
-                                </div>
-                                <div className="flex flex-wrap gap-1">
-                                  {visible.map((pid) => {
-                                    const proj = client.projects.find((p) => p.id === pid);
-                                    return (
-                                      <span key={pid} className="inline-flex items-center gap-1 text-[10px] font-medium bg-background border border-border text-foreground px-1.5 py-0.5 rounded">
-                                        <FolderKanban className="h-2.5 w-2.5 text-muted-foreground" />
-                                        {proj?.name || pid}
-                                      </span>
-                                    );
-                                  })}
-                                  {remaining > 0 && (
-                                    <span className="text-[10px] font-medium text-muted-foreground px-1.5 py-0.5">+{remaining} more</span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                          {a.assignments.length > 2 && (
-                            <button
-                              onClick={() => setManageAccount(a)}
-                              className="text-[11px] font-medium text-primary hover:underline px-1"
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
+                            {clientCount}c · {assignmentCount}p
+                          </span>
+                          <span className="h-3 w-px bg-border" />
+                          {visibleChips.map((c) => (
+                            <span
+                              key={c.key}
+                              title={`${c.client} → ${c.project}`}
+                              className="inline-flex items-center gap-1 text-[10px] font-medium bg-muted text-foreground px-1.5 py-0.5 rounded max-w-[140px]"
                             >
-                              View {a.assignments.length - 2} more {a.assignments.length - 2 === 1 ? "client" : "clients"} →
-                            </button>
+                              <Building2 className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                              <span className="truncate">{c.client}</span>
+                              <ChevronRight className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                              <span className="truncate text-muted-foreground">{c.project}</span>
+                            </span>
+                          ))}
+                          {hiddenChips.length > 0 && (
+                            <Popover>
+                              <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <button className="text-[10px] font-medium text-primary hover:underline px-1 py-0.5">
+                                  +{hiddenChips.length} more
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                align="end"
+                                className="w-64 p-2"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-2 pt-1 pb-2">
+                                  All assignments ({chips.length})
+                                </p>
+                                <div className="space-y-1 max-h-64 overflow-y-auto">
+                                  {chips.map((c) => (
+                                    <div
+                                      key={c.key}
+                                      className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded hover:bg-muted"
+                                    >
+                                      <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                                      <span className="font-medium text-foreground truncate">{c.client}</span>
+                                      <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                                      <span className="text-muted-foreground truncate">{c.project}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <button
+                                  onClick={() => setManageAccount(a)}
+                                  className="w-full text-center text-[11px] font-medium text-primary hover:underline mt-2 pt-2 border-t border-border"
+                                >
+                                  Manage assignments →
+                                </button>
+                              </PopoverContent>
+                            </Popover>
                           )}
                         </div>
                       )}
-                    </div>
-
-                    {/* Actions — always visible */}
-                    <div className="px-2 py-2 border-t border-border flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 h-8 text-xs gap-1.5 text-foreground hover:bg-muted"
-                        onClick={() => setManageAccount(a)}
-                      >
-                        <Settings2 className="h-3.5 w-3.5" /> Manage
-                      </Button>
-                      <div className="h-5 w-px bg-border" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted"
-                        onClick={() => handleDisconnect(a)}
-                      >
-                        <Unplug className="h-3.5 w-3.5" /> Disconnect
-                      </Button>
-                      <div className="h-5 w-px bg-border" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 h-8 text-xs gap-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => setRemoveAccount(a)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" /> Remove
-                      </Button>
                     </div>
                   </div>
                 );
