@@ -338,18 +338,13 @@ const AgencySocialAccounts = () => {
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-              <span>
-                Showing <span className="font-medium text-foreground">{(currentPage - 1) * PAGE_SIZE + 1}</span>–
-                <span className="font-medium text-foreground">{Math.min(currentPage * PAGE_SIZE, filtered.length)}</span> of{" "}
-                <span className="font-medium text-foreground">{filtered.length}</span> accounts
-              </span>
-              {selected.size > 0 && (
-                <button onClick={clearSelection} className="text-primary hover:underline font-medium">
+            {selected.size > 0 && (
+              <div className="flex items-center justify-end px-1">
+                <button onClick={clearSelection} className="text-xs text-primary hover:underline font-medium">
                   Clear selection
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {paged.map((a) => {
