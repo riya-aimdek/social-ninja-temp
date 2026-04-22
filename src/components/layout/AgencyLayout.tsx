@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Globe, Users, ChevronDown, ChevronUp,
   Bell, Check, LogOut, Search, FolderOpen, Sparkles, CalendarDays,
   MessageSquare, BarChart3, Megaphone, Ear, Settings, Palette, Link2 as LinkIcon,
+  Receipt,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
@@ -12,6 +13,7 @@ const agencyNavItems = [
   { title: "Clients", path: "/agency/clients", icon: Globe },
   { title: "Users", path: "/agency/team", icon: Users },
   { title: "Social Accounts", path: "/agency/social-accounts", icon: LinkIcon },
+  { title: "Client Billing", path: "/agency/client-billing", icon: Receipt },
 ];
 
 const clientNavItems = [
