@@ -371,7 +371,7 @@ const AgencySocialAccounts = () => {
                         <CheckCircle2 className="h-3 w-3" /> Connected
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="badge-warning gap-1 font-medium border-0">
+                      <Badge variant="secondary" className="badge-scheduled gap-1 font-medium border-0">
                         <AlertCircle className="h-3 w-3" /> Reconnect needed
                       </Badge>
                     )}
