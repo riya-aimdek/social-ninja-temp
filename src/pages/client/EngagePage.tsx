@@ -2064,7 +2064,13 @@ function VariantsView({
                 <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
               </div>
               <Switch checked={t.enabled} onCheckedChange={() => toggle(t.id)} className="flex-shrink-0" />
-
+              <button
+                onClick={() => deleteCategory(t.id)}
+                title="Delete category"
+                className="flex-shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-error hover:bg-error/10 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </div>
 
             <div className="space-y-2">
