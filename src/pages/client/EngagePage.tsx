@@ -412,9 +412,11 @@ function ReplyQueueView({
     <div className="grid grid-cols-12 gap-4 h-[calc(100vh-380px)] min-h-[520px]">
       {/* Left: queue */}
       <div className="col-span-5 bg-card rounded-xl border border-border overflow-y-auto">
-        <div className="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between">
+        <div className="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between sticky top-0 bg-card z-10">
           <span className="text-xs font-semibold text-foreground">Awaiting review</span>
-          <span className="text-[10px] text-muted-foreground">{queue.length} comments</span>
+          <span className="text-[10px] text-muted-foreground">
+            <span className="font-bold text-foreground">{cap(queue.length + 14)}</span> comments
+          </span>
         </div>
         {queue.map((c) => {
           const sm = sentimentMeta[c.sentiment];
