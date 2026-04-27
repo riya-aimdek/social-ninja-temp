@@ -1524,7 +1524,12 @@ function PostThread({
   addReply: (parentId: string, text: string) => void;
 }) {
   const [filter, setFilter] = useState<ThreadFilter>("all");
-  const { items, isNewById } = useMemo(() => buildDenseThread(p), [p]);
+  const [visibleCount, setVisibleCount] = useState(20);
+  // Only build the dense thread once the post is opened — saves work on first paint
+  const { items, isNewById } = useMemo(
+    () => (open ? buildDenseThread(p) : { items: p.comments.filter((c) => !c.isSpam), isNewById: new Set<string>() }),
+    [p, open],
+  );
 
   const counts = useMemo(() => {
     const newCnt = items.filter((c) => isNewById.has(c.id)).length;
