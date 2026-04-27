@@ -740,7 +740,7 @@ function BoardView({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {STAGES.map((stage) => {
-          const items = filtered.filter((c) => c.stage === stage.id);
+          const items = comments.filter((c) => c.stage === stage.id);
           const isDropTarget = dropTarget === stage.id;
           return (
             <div
