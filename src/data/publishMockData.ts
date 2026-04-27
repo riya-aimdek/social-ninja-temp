@@ -59,6 +59,7 @@ export const MOCK_POSTS: PostDraft[] = [
     media: [{ type: "image", url: img("spring1") }, { type: "image", url: img("spring2") }],
     scheduledFor: iso(2, 14, 0),
     status: "pending_approval",
+    publishMode: "immediate",
     createdBy: "Priya Sharma",
     createdAt: iso(-1, 9, 30),
     approvalToken: "tok_spring_2026_a1",
