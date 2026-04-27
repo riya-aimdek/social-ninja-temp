@@ -809,7 +809,7 @@ export default function EngagePage() {
         </div>
       )}
 
-      {/* ─── Inbox toolbar (search + sort + filter + category tabs) ─── */}
+      {/* ─── Inbox toolbar (search + sort + filters + categories) ─── */}
       <div className="bg-card rounded-xl border border-border p-3 space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[240px]">
@@ -819,8 +819,17 @@ export default function EngagePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search engagements by user, message, or keyword..."
-              className="w-full pl-9 pr-3 h-9 rounded-lg border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+              className="w-full pl-9 pr-9 h-9 rounded-lg border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -840,9 +849,9 @@ export default function EngagePage() {
           </DropdownMenu>
           <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setFiltersOpen(true)}>
             <Filter className="w-3.5 h-3.5" /> Filters
-            {(statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0)) > 0 && (
+            {activeFilterCount > 0 && (
               <span className="ml-0.5 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">
-                {statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0)}
+                {activeFilterCount}
               </span>
             )}
           </Button>
@@ -859,11 +868,11 @@ export default function EngagePage() {
           ] as const).map((c) => {
             const active = categoryTab === c.id;
             const count =
-              c.id === "all" ? allComments.length :
-              c.id === "comments" ? allComments.length :
-              c.id === "mentions" ? allComments.filter((x) => x.text.includes("@")).length :
+              c.id === "all" ? platformMatched.length :
+              c.id === "comments" ? platformMatched.length :
+              c.id === "mentions" ? platformMatched.filter((x) => x.text.includes("@")).length :
               c.id === "dms" ? 0 :
-              c.id === "reviews" ? allComments.filter((x) => x.post.platform === "GBP").length : 0;
+              c.id === "reviews" ? platformMatched.filter((x) => x.post.platform === "GBP").length : 0;
             return (
               <button
                 key={c.id}
@@ -887,6 +896,38 @@ export default function EngagePage() {
             );
           })}
         </div>
+
+        {/* Active filter chips + result count */}
+        {hasAnyFilter && (
+          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-border">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mr-1">
+              {fmt(allComments.length)} result{allComments.length === 1 ? "" : "s"}
+            </span>
+            {[...statusFilter].map((s) => (
+              <button key={`s-${s}`} onClick={() => { const n = new Set(statusFilter); n.delete(s); setStatusFilter(n); }}
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
+                {s === "in_progress" ? "In Progress" : s === "open" ? "Open" : "Completed"}
+                <X className="w-3 h-3" />
+              </button>
+            ))}
+            {[...tagFilter].map((t) => (
+              <button key={`t-${t}`} onClick={() => { const n = new Set(tagFilter); n.delete(t); setTagFilter(n); }}
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
+                {t} <X className="w-3 h-3" />
+              </button>
+            ))}
+            {dateRange !== "all" && (
+              <button onClick={() => setDateRange("all")}
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
+                {dateRange === "today" ? "Today" : dateRange === "7d" ? "Last 7 days" : "Last 30 days"} <X className="w-3 h-3" />
+              </button>
+            )}
+            <button onClick={clearAllFilters}
+              className="ml-auto text-[11px] text-primary hover:underline font-medium">
+              Clear all
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filters modal (old-UI style) */}
