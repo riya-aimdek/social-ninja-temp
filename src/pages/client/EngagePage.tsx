@@ -4,11 +4,14 @@ import {
   Facebook, Instagram, Linkedin, Twitter, Send, Sparkles, Filter, Search,
   ArrowRight, MoreVertical, MapPin, Shield, Shuffle, Trash2, Plus,
   ThumbsUp, ThumbsDown, Edit3, RefreshCw, Smile, Meh, Frown, ListTree,
-  Bot, Users, Zap, X, Check,
+  Bot, Users, Zap, X, Check, AtSign, Mail, Star, ArrowDownUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -509,12 +512,6 @@ const REPLY_TEMPLATES: ReplyTemplate[] = [
   },
 ];
 
-const ORM_USERS = [
-  { name: "Priya S.", load: 12, color: "bg-info" },
-  { name: "Mike T.", load: 7, color: "bg-success" },
-  { name: "Sarah C.", load: 18, color: "bg-warning" },
-  { name: "You", load: 4, color: "bg-primary" },
-];
 
 /* ──────────────────────────────────────────────────────────────
    Page
@@ -538,6 +535,19 @@ export default function EngagePage() {
   const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  // Old-UI compatible filters: search + category tabs + sort + filter modal
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryTab, setCategoryTab] = useState<"all" | "comments" | "mentions" | "dms" | "reviews">("all");
+  const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<Set<"open" | "in_progress" | "completed">>(new Set());
+  const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
+  const [dateRange, setDateRange] = useState<"all" | "today" | "7d" | "30d">("all");
+  const TAGS = [
+    "Unclassified", "Question", "Complaint", "Price Request", "Product Inquiry",
+    "Order Status", "Discount Request", "Return/Exchange", "Negative Comment", "Potential Lead",
+  ];
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -719,7 +729,7 @@ export default function EngagePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
+      <div className="flex items-center gap-1 border-b border-border flex-wrap">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -752,6 +762,172 @@ export default function EngagePage() {
           </button>
         </div>
       )}
+
+      {/* ─── Inbox toolbar (search + sort + filter + category tabs) ─── */}
+      <div className="bg-card rounded-xl border border-border p-3 space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search engagements by user, message, or keyword..."
+              className="w-full pl-9 pr-3 h-9 rounded-lg border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                <ArrowDownUp className="w-3.5 h-3.5" />
+                {sortOrder === "recent" ? "Recent first" : "Oldest first"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => setSortOrder("recent")} className="text-xs gap-2">
+                {sortOrder === "recent" && <Check className="w-3 h-3" />} Recent first
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOrder("oldest")} className="text-xs gap-2">
+                {sortOrder === "oldest" && <Check className="w-3 h-3" />} Oldest first
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setFiltersOpen(true)}>
+            <Filter className="w-3.5 h-3.5" /> Filters
+            {(statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0)) > 0 && (
+              <span className="ml-0.5 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">
+                {statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0)}
+              </span>
+            )}
+          </Button>
+        </div>
+
+        {/* Category tabs */}
+        <div className="flex items-center gap-1 flex-wrap">
+          {([
+            { id: "all", label: "All", Icon: Inbox },
+            { id: "comments", label: "Comments", Icon: MessageSquare },
+            { id: "mentions", label: "Mentions", Icon: AtSign },
+            { id: "dms", label: "DMs", Icon: Mail },
+            { id: "reviews", label: "Reviews", Icon: Star },
+          ] as const).map((c) => {
+            const active = categoryTab === c.id;
+            const count =
+              c.id === "all" ? allComments.length :
+              c.id === "comments" ? allComments.length :
+              c.id === "mentions" ? allComments.filter((x) => x.text.includes("@")).length :
+              c.id === "dms" ? 0 :
+              c.id === "reviews" ? allComments.filter((x) => x.post.platform === "GBP").length : 0;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setCategoryTab(c.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  active
+                    ? "bg-foreground text-background"
+                    : "bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted",
+                )}
+              >
+                <c.Icon className="w-3.5 h-3.5" />
+                {c.label}
+                <span className={cn(
+                  "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
+                  active ? "bg-background/20" : "bg-card text-muted-foreground",
+                )}>
+                  {fmt(count)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Filters modal (old-UI style) */}
+      <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Filters</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-2">Status</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(["open", "in_progress", "completed"] as const).map((s) => {
+                  const active = statusFilter.has(s);
+                  const label = s === "in_progress" ? "In Progress" : s === "open" ? "Open" : "Completed";
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        const next = new Set(statusFilter);
+                        next.has(s) ? next.delete(s) : next.add(s);
+                        setStatusFilter(next);
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                        active ? "bg-foreground text-background border-foreground" : "bg-card text-foreground border-border hover:border-foreground/40",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-2">Tags</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {TAGS.map((t) => {
+                  const active = tagFilter.has(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        const next = new Set(tagFilter);
+                        next.has(t) ? next.delete(t) : next.add(t);
+                        setTagFilter(next);
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                        active ? "bg-foreground text-background border-foreground" : "bg-card text-foreground border-border hover:border-foreground/40",
+                      )}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-2">Date Range</p>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value as typeof dateRange)}
+                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setStatusFilter(new Set()); setTagFilter(new Set()); setDateRange("all"); }}
+            >
+              Clear All
+            </Button>
+            <Button size="sm" onClick={() => setFiltersOpen(false)}>Apply Filters</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
@@ -1016,34 +1192,6 @@ function BoardView({
 
   return (
     <div className="space-y-4">
-      {/* Workload */}
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-start gap-2 mb-3">
-          <Users className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
-          <div className="flex-1">
-            <h3 className="text-xs font-semibold text-foreground">Team workload</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Active comments currently assigned to each ORM team member. Use this to rebalance — drag cards below to reassign or move stages.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {ORM_USERS.map((u) => (
-            <div key={u.name} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/40">
-              <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-card", u.color)}>
-                {u.name.split(" ").map((n) => n[0]).join("")}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-foreground truncate">{u.name}</p>
-                <p className="text-[10px] text-muted-foreground">{u.load} active</p>
-              </div>
-              <div className="w-12 h-1.5 rounded-full bg-border overflow-hidden">
-                <div className={cn("h-full", u.color)} style={{ width: `${Math.min(u.load * 5, 100)}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Drag hint */}
       <div className="flex items-center justify-end">
@@ -1147,14 +1295,7 @@ function BoardView({
                         <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
                           <sm.Icon className="w-2.5 h-2.5" /> {sm.label}
                         </span>
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          {c.assignee && (
-                            <span className="w-4 h-4 rounded-full bg-accent flex items-center justify-center text-[8px] font-bold text-foreground">
-                              {c.assignee.split(" ").map((n) => n[0]).join("")}
-                            </span>
-                          )}
-                          <span className={cn("tabular-nums", c.sla.breached && "text-error font-semibold")}>{c.sla.dueIn}</span>
-                        </div>
+                        <span className={cn("tabular-nums text-muted-foreground", c.sla.breached && "text-error font-semibold")}>{c.sla.dueIn}</span>
                       </div>
                     </div>
                   );
@@ -1235,7 +1376,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
       sentiment: s.sentiment,
       likes: ((i * 5) % 18),
       stage,
-      assignee: stage === "in_review" ? "Priya S." : stage === "replied" ? "Mike T." : undefined,
+      assignee: undefined,
       priority: "low",
       sla: { dueIn: stage === "replied" ? "—" : `${1 + (i % 6)}h ${(i * 7) % 60}m`, breached: false },
     };
