@@ -509,12 +509,6 @@ const REPLY_TEMPLATES: ReplyTemplate[] = [
   },
 ];
 
-const ORM_USERS = [
-  { name: "Priya S.", load: 12, color: "bg-info" },
-  { name: "Mike T.", load: 7, color: "bg-success" },
-  { name: "Sarah C.", load: 18, color: "bg-warning" },
-  { name: "You", load: 4, color: "bg-primary" },
-];
 
 /* ──────────────────────────────────────────────────────────────
    Page
@@ -719,7 +713,7 @@ export default function EngagePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
+      <div className="flex items-center gap-1 border-b border-border flex-wrap">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -1016,34 +1010,6 @@ function BoardView({
 
   return (
     <div className="space-y-4">
-      {/* Workload */}
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-start gap-2 mb-3">
-          <Users className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
-          <div className="flex-1">
-            <h3 className="text-xs font-semibold text-foreground">Team workload</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Active comments currently assigned to each ORM team member. Use this to rebalance — drag cards below to reassign or move stages.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {ORM_USERS.map((u) => (
-            <div key={u.name} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/40">
-              <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-card", u.color)}>
-                {u.name.split(" ").map((n) => n[0]).join("")}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-foreground truncate">{u.name}</p>
-                <p className="text-[10px] text-muted-foreground">{u.load} active</p>
-              </div>
-              <div className="w-12 h-1.5 rounded-full bg-border overflow-hidden">
-                <div className={cn("h-full", u.color)} style={{ width: `${Math.min(u.load * 5, 100)}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Drag hint */}
       <div className="flex items-center justify-end">
@@ -1147,14 +1113,7 @@ function BoardView({
                         <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
                           <sm.Icon className="w-2.5 h-2.5" /> {sm.label}
                         </span>
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          {c.assignee && (
-                            <span className="w-4 h-4 rounded-full bg-accent flex items-center justify-center text-[8px] font-bold text-foreground">
-                              {c.assignee.split(" ").map((n) => n[0]).join("")}
-                            </span>
-                          )}
-                          <span className={cn("tabular-nums", c.sla.breached && "text-error font-semibold")}>{c.sla.dueIn}</span>
-                        </div>
+                        <span className={cn("tabular-nums text-muted-foreground", c.sla.breached && "text-error font-semibold")}>{c.sla.dueIn}</span>
                       </div>
                     </div>
                   );
@@ -1235,7 +1194,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
       sentiment: s.sentiment,
       likes: ((i * 5) % 18),
       stage,
-      assignee: stage === "in_review" ? "Priya S." : stage === "replied" ? "Mike T." : undefined,
+      assignee: undefined,
       priority: "low",
       sla: { dueIn: stage === "replied" ? "—" : `${1 + (i % 6)}h ${(i * 7) % 60}m`, breached: false },
     };
