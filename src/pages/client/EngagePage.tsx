@@ -809,56 +809,10 @@ export default function EngagePage() {
         </div>
       )}
 
-      {/* ─── Inbox toolbar (search + sort + filters + categories) ─── */}
-      <div className="bg-card rounded-xl border border-border p-3 space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search engagements by user, message, or keyword..."
-              className="w-full pl-9 pr-9 h-9 rounded-lg border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label="Clear search"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 gap-1.5">
-                <ArrowDownUp className="w-3.5 h-3.5" />
-                {sortOrder === "recent" ? "Recent first" : "Oldest first"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => setSortOrder("recent")} className="text-xs gap-2">
-                {sortOrder === "recent" && <Check className="w-3 h-3" />} Recent first
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOrder("oldest")} className="text-xs gap-2">
-                {sortOrder === "oldest" && <Check className="w-3 h-3" />} Oldest first
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setFiltersOpen(true)}>
-            <Filter className="w-3.5 h-3.5" /> Filters
-            {activeFilterCount > 0 && (
-              <span className="ml-0.5 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
-        </div>
-
-        {/* Category tabs */}
-        <div className="flex items-center gap-1 flex-wrap">
+      {/* ─── Inbox toolbar (single-line: categories + search + sort + filters) ─── */}
+      <div className="bg-card rounded-xl border border-border p-2">
+        <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
+          {/* Category pills */}
           {([
             { id: "all", label: "All", Icon: Inbox },
             { id: "comments", label: "Comments", Icon: MessageSquare },
@@ -878,28 +832,81 @@ export default function EngagePage() {
                 key={c.id}
                 onClick={() => setCategoryTab(c.id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-xs font-medium transition-colors shrink-0",
                   active
                     ? "bg-foreground text-background"
-                    : "bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted",
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
                 )}
               >
                 <c.Icon className="w-3.5 h-3.5" />
                 {c.label}
                 <span className={cn(
                   "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
-                  active ? "bg-background/20" : "bg-card text-muted-foreground",
+                  active ? "bg-background/20" : "bg-muted text-muted-foreground",
                 )}>
                   {fmt(count)}
                 </span>
               </button>
             );
           })}
+
+          {/* Divider */}
+          <div className="h-6 w-px bg-border mx-1 shrink-0" />
+
+          {/* Compact search */}
+          <div className="relative flex-1 min-w-[160px]">
+            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search…"
+              className="w-full pl-8 pr-7 h-9 rounded-lg bg-muted/40 border border-transparent focus:border-input focus:bg-background text-xs outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Sort */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-9 px-2 gap-1.5 shrink-0" title="Sort order">
+                <ArrowDownUp className="w-3.5 h-3.5" />
+                <span className="hidden md:inline text-xs">{sortOrder === "recent" ? "Recent" : "Oldest"}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => setSortOrder("recent")} className="text-xs gap-2">
+                {sortOrder === "recent" && <Check className="w-3 h-3" />} Recent first
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOrder("oldest")} className="text-xs gap-2">
+                {sortOrder === "oldest" && <Check className="w-3 h-3" />} Oldest first
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Filters */}
+          <Button variant="ghost" size="sm" className="h-9 px-2 gap-1.5 shrink-0" onClick={() => setFiltersOpen(true)}>
+            <Filter className="w-3.5 h-3.5" />
+            <span className="hidden md:inline text-xs">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="ml-0.5 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
         </div>
 
         {/* Active filter chips + result count */}
         {hasAnyFilter && (
-          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-border">
+          <div className="flex items-center gap-1.5 flex-wrap mt-2 pt-2 border-t border-border">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mr-1">
               {fmt(allComments.length)} result{allComments.length === 1 ? "" : "s"}
             </span>
