@@ -763,6 +763,172 @@ export default function EngagePage() {
         </div>
       )}
 
+      {/* ─── Inbox toolbar (search + sort + filter + category tabs) ─── */}
+      <div className="bg-card rounded-xl border border-border p-3 space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search engagements by user, message, or keyword..."
+              className="w-full pl-9 pr-3 h-9 rounded-lg border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                <ArrowDownUp className="w-3.5 h-3.5" />
+                {sortOrder === "recent" ? "Recent first" : "Oldest first"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => setSortOrder("recent")} className="text-xs gap-2">
+                {sortOrder === "recent" && <Check className="w-3 h-3" />} Recent first
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOrder("oldest")} className="text-xs gap-2">
+                {sortOrder === "oldest" && <Check className="w-3 h-3" />} Oldest first
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setFiltersOpen(true)}>
+            <Filter className="w-3.5 h-3.5" /> Filters
+            {(statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0)) > 0 && (
+              <span className="ml-0.5 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">
+                {statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0)}
+              </span>
+            )}
+          </Button>
+        </div>
+
+        {/* Category tabs */}
+        <div className="flex items-center gap-1 flex-wrap">
+          {([
+            { id: "all", label: "All", Icon: Inbox },
+            { id: "comments", label: "Comments", Icon: MessageSquare },
+            { id: "mentions", label: "Mentions", Icon: AtSign },
+            { id: "dms", label: "DMs", Icon: Mail },
+            { id: "reviews", label: "Reviews", Icon: Star },
+          ] as const).map((c) => {
+            const active = categoryTab === c.id;
+            const count =
+              c.id === "all" ? allComments.length :
+              c.id === "comments" ? allComments.length :
+              c.id === "mentions" ? allComments.filter((x) => x.text.includes("@")).length :
+              c.id === "dms" ? 0 :
+              c.id === "reviews" ? allComments.filter((x) => x.post.platform === "GBP").length : 0;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setCategoryTab(c.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  active
+                    ? "bg-foreground text-background"
+                    : "bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted",
+                )}
+              >
+                <c.Icon className="w-3.5 h-3.5" />
+                {c.label}
+                <span className={cn(
+                  "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
+                  active ? "bg-background/20" : "bg-card text-muted-foreground",
+                )}>
+                  {fmt(count)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Filters modal (old-UI style) */}
+      <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Filters</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-2">Status</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(["open", "in_progress", "completed"] as const).map((s) => {
+                  const active = statusFilter.has(s);
+                  const label = s === "in_progress" ? "In Progress" : s === "open" ? "Open" : "Completed";
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        const next = new Set(statusFilter);
+                        next.has(s) ? next.delete(s) : next.add(s);
+                        setStatusFilter(next);
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                        active ? "bg-foreground text-background border-foreground" : "bg-card text-foreground border-border hover:border-foreground/40",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-2">Tags</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {TAGS.map((t) => {
+                  const active = tagFilter.has(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        const next = new Set(tagFilter);
+                        next.has(t) ? next.delete(t) : next.add(t);
+                        setTagFilter(next);
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                        active ? "bg-foreground text-background border-foreground" : "bg-card text-foreground border-border hover:border-foreground/40",
+                      )}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-2">Date Range</p>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value as typeof dateRange)}
+                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setStatusFilter(new Set()); setTagFilter(new Set()); setDateRange("all"); }}
+            >
+              Clear All
+            </Button>
+            <Button size="sm" onClick={() => setFiltersOpen(false)}>Apply Filters</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
       {tab === "threads" && <ThreadsView posts={filteredPosts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} addReply={addReply} />}
