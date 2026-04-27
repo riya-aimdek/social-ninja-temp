@@ -59,6 +59,69 @@ export default function PublicApprovalPage() {
   const status = STATUS_META[post.status];
   const platform = post.platforms[activePlatform];
 
+  // Approver login gate — must sign in before reviewing
+  if (!isAuthed) {
+    const reviewerHint = post.reviewers?.[0];
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="bg-card border-b border-border px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <SocialNinjaLogo />
+            <div className="hidden sm:block h-6 w-px bg-border" />
+            <span className="hidden sm:block text-xs text-muted-foreground">Reviewer sign-in</span>
+          </div>
+          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+            <Home className="w-3.5 h-3.5" /> Home
+          </Link>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center px-4 py-10">
+          <div className="w-full max-w-md bg-card border border-border rounded-xl p-6 sm:p-8">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <Lock className="w-5 h-5" />
+            </div>
+            <h1 className="text-lg font-semibold text-foreground">Sign in to review</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              For security, please sign in before approving content for{" "}
+              <span className="text-foreground font-medium">{post.clientName}</span>.
+            </p>
+
+            <form onSubmit={handleLogin} className="mt-5 space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs">Work email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder={reviewerHint || "you@company.com"}
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                <LogIn className="w-4 h-4" /> Sign in & continue
+              </Button>
+              <p className="text-[11px] text-muted-foreground text-center">
+                This post has already passed internal review and is now ready for your final approval.
+              </p>
+            </form>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const handleApprove = () => {
     setDecision("approved");
     toast.success("Approved! The agency has been notified.");
