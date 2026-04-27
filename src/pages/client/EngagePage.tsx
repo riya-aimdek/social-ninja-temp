@@ -4,11 +4,14 @@ import {
   Facebook, Instagram, Linkedin, Twitter, Send, Sparkles, Filter, Search,
   ArrowRight, MoreVertical, MapPin, Shield, Shuffle, Trash2, Plus,
   ThumbsUp, ThumbsDown, Edit3, RefreshCw, Smile, Meh, Frown, ListTree,
-  Bot, Users, Zap, X, Check,
+  Bot, Users, Zap, X, Check, AtSign, Mail, Star, ArrowDownUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
