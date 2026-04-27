@@ -196,7 +196,7 @@ const POSTS: Post[] = [
     id: "P-198", platform: "Facebook",
     title: "New product launch — Spring Collection ‘26",
     thumbnail: "🌸", publishedAt: "1d ago",
-    commentCount: 34, newCount: 4,
+    commentCount: 96, newCount: 15,
     comments: [
       {
         id: "C-30", author: "Megan Liu", avatar: "ML",
