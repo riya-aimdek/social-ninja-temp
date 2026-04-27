@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
-/** Cap a number for compact display (e.g. 10+) */
-const cap = (n: number, max = 10) => (n > max ? `${max}+` : `${n}`);
+/** Format a count with thousand-separators — show exact value, never truncate */
+const fmt = (n: number) => n.toLocaleString();
 
 /* ──────────────────────────────────────────────────────────────
    Types
@@ -420,21 +420,26 @@ export default function EngagePage() {
     spam: spamComments.length + 27,
   }), [allComments, spamComments]);
 
-  /* mutate helpers */
+  /* mutate helpers — recursive so nested replies at any depth update correctly */
+  const patchTree = (list: Comment[], id: string, patch: Partial<Comment>): Comment[] =>
+    list.map((c) => {
+      if (c.id === id) return { ...c, ...patch };
+      if (c.replies?.length) return { ...c, replies: patchTree(c.replies, id, patch) };
+      return c;
+    });
+
   const updateComment = (id: string, patch: Partial<Comment>) => {
-    setPosts((prev) =>
-      prev.map((p) => ({
-        ...p,
-        comments: p.comments.map((c) => {
-          if (c.id === id) return { ...c, ...patch };
-          if (c.replies) return { ...c, replies: c.replies.map((r) => r.id === id ? { ...r, ...patch } : r) };
-          return c;
-        }),
-      })),
-    );
+    setPosts((prev) => prev.map((p) => ({ ...p, comments: patchTree(p.comments, id, patch) })));
   };
 
-  /** Append a reply to a top-level or nested comment */
+  /** Append a reply to any node in the tree (any depth) */
+  const appendReply = (list: Comment[], parentId: string, reply: Comment): Comment[] =>
+    list.map((c) => {
+      if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
+      if (c.replies?.length) return { ...c, replies: appendReply(c.replies, parentId, reply) };
+      return c;
+    });
+
   const addReply = (parentId: string, text: string) => {
     const reply: Comment = {
       id: `R-${Date.now()}`,
@@ -448,21 +453,7 @@ export default function EngagePage() {
       priority: "low",
       sla: { dueIn: "—", breached: false },
     };
-    setPosts((prev) =>
-      prev.map((p) => ({
-        ...p,
-        comments: p.comments.map((c) => {
-          if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
-          if (c.replies?.some((r) => r.id === parentId)) {
-            return {
-              ...c,
-              replies: c.replies.map((r) => r.id === parentId ? { ...r, replies: [...(r.replies ?? []), reply] } : r),
-            };
-          }
-          return c;
-        }),
-      })),
-    );
+    setPosts((prev) => prev.map((p) => ({ ...p, comments: appendReply(p.comments, parentId, reply) })));
     toast.success("Reply posted");
   };
 
@@ -516,7 +507,7 @@ export default function EngagePage() {
                   "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
                   active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground",
                 )}>
-                  {cap(count, 99)}
+                  {fmt(count)}
                 </span>
               </button>
             );
@@ -548,10 +539,10 @@ export default function EngagePage() {
           >
             <t.Icon className="w-3.5 h-3.5" /> {t.label}
             {t.id === "spam" && summary.spam > 0 && (
-              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{cap(summary.spam)}</span>
+              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{fmt(summary.spam)}</span>
             )}
             {t.id === "queue" && summary.pending > 0 && (
-              <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{cap(summary.pending)}</span>
+              <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{fmt(summary.pending)}</span>
             )}
           </button>
         ))}
@@ -588,28 +579,56 @@ function ReplyQueueView({
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
 }) {
-  const queue = comments.filter((c) => c.stage === "pending" || c.stage === "in_review");
+  const queue = useMemo(
+    () => comments.filter((c) => c.stage === "pending" || c.stage === "in_review"),
+    [comments],
+  );
   const [activeId, setActiveId] = useState<string | null>(queue[0]?.id ?? null);
+
+  // Re-sync active card when the queue changes (e.g. platform filter / spam / approve)
   const active = queue.find((c) => c.id === activeId) ?? queue[0];
+  const effectiveActiveId = active?.id ?? null;
+
   const [draft, setDraft] = useState(active?.aiDraft ?? "");
+  const [lastDraftFor, setLastDraftFor] = useState<string | null>(effectiveActiveId);
+  if (effectiveActiveId !== lastDraftFor) {
+    // Active card swapped out from under us — refresh draft to match.
+    setLastDraftFor(effectiveActiveId);
+    setDraft(active?.aiDraft ?? "");
+  }
 
   const switchTo = (id: string) => {
     setActiveId(id);
-    setDraft(comments.find((c) => c.id === id)?.aiDraft ?? "");
+    const next = comments.find((c) => c.id === id);
+    setDraft(next?.aiDraft ?? "");
+    setLastDraftFor(id);
+  };
+
+  const advance = () => {
+    const next = queue.find((c) => c.id !== active?.id);
+    if (next) switchTo(next.id);
+    else setActiveId(null);
   };
 
   const approve = () => {
     if (!active) return;
     updateComment(active.id, { stage: "replied" });
     toast.success("Reply approved & sent");
-    const next = queue.find((c) => c.id !== active.id);
-    if (next) switchTo(next.id);
+    advance();
   };
 
   const escalate = () => {
     if (!active) return;
     updateComment(active.id, { stage: "escalated" });
     toast.warning("Escalated to senior ORM");
+    advance();
+  };
+
+  const markSpam = () => {
+    if (!active) return;
+    updateComment(active.id, { isSpam: true });
+    toast.success("Marked as spam");
+    advance();
   };
 
   const regenerate = () => {
@@ -627,10 +646,10 @@ function ReplyQueueView({
     <div className="grid grid-cols-12 gap-4 h-[calc(100vh-380px)] min-h-[520px]">
       {/* Left: queue */}
       <div className="col-span-5 bg-card rounded-xl border border-border overflow-y-auto">
-        <div className="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between sticky top-0 bg-card z-10">
+        <div className="px-4 py-2.5 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
           <span className="text-xs font-semibold text-foreground">Awaiting review</span>
           <span className="text-[10px] text-muted-foreground">
-            <span className="font-bold text-foreground tabular-nums">{queue.length}</span> comments
+            <span className="font-bold text-foreground tabular-nums">{fmt(queue.length)}</span> comments
           </span>
         </div>
         {queue.map((c) => {
@@ -757,7 +776,7 @@ function ReplyQueueView({
               <Button variant="outline" size="sm" onClick={escalate} className="gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5 text-error" /> Escalate
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => updateComment(active.id, { isSpam: true })} className="gap-1.5 text-muted-foreground">
+              <Button variant="ghost" size="sm" onClick={markSpam} className="gap-1.5 text-muted-foreground">
                 <Trash2 className="w-3.5 h-3.5" /> Mark spam
               </Button>
               <div className="ml-auto flex items-center gap-2">
@@ -855,7 +874,7 @@ function BoardView({
               <div className="flex items-center gap-2 mb-3">
                 <span className={cn("w-2 h-2 rounded-full", stage.dot)} />
                 <h3 className="text-xs font-semibold text-foreground">{stage.label}</h3>
-                <span className="text-[10px] text-muted-foreground bg-card px-1.5 py-0.5 rounded">{cap(items.length, 99)}</span>
+                <span className="text-[10px] text-muted-foreground bg-card px-1.5 py-0.5 rounded">{fmt(items.length)}</span>
               </div>
               <div className="space-y-2">
                 {items.map((c) => {
@@ -960,8 +979,8 @@ function ThreadsView({
                   <MessageSquare className="w-3.5 h-3.5" /> <span className="font-semibold text-foreground tabular-nums">{p.commentCount}</span>
                 </span>
                 {p.newCount > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold">
-                    {cap(p.newCount)} new
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold tabular-nums">
+                    {fmt(p.newCount)} new
                   </span>
                 )}
               </div>
@@ -1089,10 +1108,7 @@ function SentimentReviewView({
   updateComment: (id: string, patch: Partial<Comment>) => void;
 }) {
   const [filter, setFilter] = useState<"all" | Sentiment>("all");
-  const [platform, setPlatform] = useState<"all" | Platform>("all");
-  const filtered = comments.filter(
-    (c) => (filter === "all" || c.sentiment === filter) && (platform === "all" || c.post.platform === platform),
-  );
+  const filtered = comments.filter((c) => filter === "all" || c.sentiment === filter);
 
   const correct = (id: string, s: Sentiment) => {
     updateComment(id, { sentiment: s });
@@ -1110,26 +1126,21 @@ function SentimentReviewView({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-1 text-xs">
-          <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-          {(["all", "positive", "neutral", "negative"] as const).map((s) => (
-            <button key={s} onClick={() => setFilter(s)}
-              className={cn(
-                "px-2.5 py-1 rounded-full border text-xs font-medium capitalize transition-colors",
-                filter === s ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border hover:text-foreground",
-              )}>
-              {s}
-            </button>
-          ))}
-        </div>
-        <select value={platform} onChange={(e) => setPlatform(e.target.value as typeof platform)}
-          className="text-xs px-2.5 py-1 rounded-lg border border-border bg-card outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All platforms</option>
-          {(["Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"] as Platform[]).map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">Sentiment</span>
+        {(["all", "positive", "neutral", "negative"] as const).map((s) => (
+          <button key={s} onClick={() => setFilter(s)}
+            className={cn(
+              "px-2.5 py-1 rounded-full border text-xs font-medium capitalize transition-colors",
+              filter === s ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border hover:text-foreground",
+            )}>
+            {s === "all" ? "All" : s}
+          </button>
+        ))}
+        <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
+          Showing <span className="font-semibold text-foreground">{fmt(filtered.length)}</span> of {fmt(comments.length)}
+        </span>
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
