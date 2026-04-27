@@ -306,6 +306,38 @@ export default function EngagePage() {
     );
   };
 
+  /** Append a reply to a top-level or nested comment */
+  const addReply = (parentId: string, text: string) => {
+    const reply: Comment = {
+      id: `R-${Date.now()}`,
+      author: "You",
+      avatar: "YO",
+      text,
+      at: "just now",
+      sentiment: "positive",
+      likes: 0,
+      stage: "replied",
+      priority: "low",
+      sla: { dueIn: "—", breached: false },
+    };
+    setPosts((prev) =>
+      prev.map((p) => ({
+        ...p,
+        comments: p.comments.map((c) => {
+          if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
+          if (c.replies?.some((r) => r.id === parentId)) {
+            return {
+              ...c,
+              replies: c.replies.map((r) => r.id === parentId ? { ...r, replies: [...(r.replies ?? []), reply] } : r),
+            };
+          }
+          return c;
+        }),
+      })),
+    );
+    toast.success("Reply posted");
+  };
+
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Summary */}
