@@ -73,7 +73,8 @@ export default function ClientLayout() {
   };
 
   // Breadcrumb
-  const currentNav = navItems.find(n => location.pathname === n.path || location.pathname.startsWith(n.path + "/"));
+  const allNavItems = [...clientNavItems, ...projectNavItems];
+  const currentNav = allNavItems.find(n => location.pathname === n.path || location.pathname.startsWith(n.path + "/"));
   const breadcrumbLabel = currentNav?.label || "Dashboard";
 
   return (
