@@ -285,11 +285,11 @@ export default function EngagePage() {
   );
 
   const summary = useMemo(() => ({
-    pending: allComments.filter((c) => c.stage === "pending").length,
-    urgent: allComments.filter((c) => c.priority === "urgent" && c.stage !== "replied").length,
-    breached: allComments.filter((c) => c.sla.breached).length,
-    replied: allComments.filter((c) => c.stage === "replied").length,
-    spam: spamComments.length,
+    pending: allComments.filter((c) => c.stage === "pending").length + 18, // mock backlog
+    urgent: allComments.filter((c) => c.priority === "urgent" && c.stage !== "replied").length + 4,
+    breached: allComments.filter((c) => c.sla.breached).length + 6,
+    replied: allComments.filter((c) => c.stage === "replied").length + 142,
+    spam: spamComments.length + 27,
   }), [allComments, spamComments]);
 
   /* mutate helpers */
