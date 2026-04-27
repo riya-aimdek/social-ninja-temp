@@ -282,7 +282,7 @@ export default function EngagePage() {
   };
 
   // Flatten non-spam comments for queue/board/sentiment views
-  const allComments = useMemo(() => {
+  const allCommentsRaw = useMemo(() => {
     const out: (Comment & { post: Post })[] = [];
     posts.forEach((p) => p.comments.forEach((c) => {
       if (!c.isSpam) out.push({ ...c, post: p });
@@ -291,10 +291,30 @@ export default function EngagePage() {
     return out;
   }, [posts]);
 
-  const spamComments = useMemo(
+  const spamCommentsRaw = useMemo(
     () => posts.flatMap((p) => p.comments.filter((c) => c.isSpam).map((c) => ({ ...c, post: p }))),
     [posts],
   );
+
+  const matchPlatform = <T extends { post: Post }>(arr: T[]) =>
+    platformFilter === "all" ? arr : arr.filter((c) => c.post.platform === platformFilter);
+
+  const allComments = useMemo(() => matchPlatform(allCommentsRaw), [allCommentsRaw, platformFilter]);
+  const spamComments = useMemo(() => matchPlatform(spamCommentsRaw), [spamCommentsRaw, platformFilter]);
+  const filteredPosts = useMemo(
+    () => platformFilter === "all" ? posts : posts.filter((p) => p.platform === platformFilter),
+    [posts, platformFilter],
+  );
+
+  /** Unfiltered platform counts — drives the filter pills */
+  const platformCounts = useMemo(() => {
+    const counts: Record<"all" | Platform, number> = {
+      all: allCommentsRaw.length,
+      Instagram: 0, Facebook: 0, LinkedIn: 0, Twitter: 0, GBP: 0,
+    };
+    allCommentsRaw.forEach((c) => { counts[c.post.platform]++; });
+    return counts;
+  }, [allCommentsRaw]);
 
   const summary = useMemo(() => ({
     pending: allComments.filter((c) => c.stage === "pending").length + 14,
