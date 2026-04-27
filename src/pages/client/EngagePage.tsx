@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
-/** Cap a number for compact display (e.g. 10+) */
-const cap = (n: number, max = 10) => (n > max ? `${max}+` : `${n}`);
+/** Format a count with thousand-separators — show exact value, never truncate */
+const fmt = (n: number) => n.toLocaleString();
 
 /* ──────────────────────────────────────────────────────────────
    Types
