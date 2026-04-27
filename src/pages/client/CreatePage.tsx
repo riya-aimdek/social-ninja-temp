@@ -285,24 +285,40 @@ export default function CreatePage() {
                 className="w-full min-h-[180px] resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent leading-relaxed"
               />
 
-              {/* Character meters */}
+              {/* Character meters — inline chips */}
               {selectedPlatforms.length > 0 && (
-                <div className="space-y-1.5 pt-1 border-t border-border">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-2 border-t border-border">
                   {selectedPlatforms.map((p) => {
                     const meta = PLATFORMS[p];
                     const text = getCaptionFor(p);
                     const len = text.length;
                     const pct = Math.min((len / meta.charLimit) * 100, 100);
                     const over = len > meta.charLimit;
+                    const near = !over && pct >= 85;
                     const Icon = meta.icon;
                     return (
-                      <div key={p} className="flex items-center gap-2 text-[11px]">
+                      <div
+                        key={p}
+                        className="group flex items-center gap-1.5 text-[11px]"
+                        title={`${meta.name}: ${len.toLocaleString()} / ${meta.charLimit.toLocaleString()} characters`}
+                      >
                         <Icon className="w-3 h-3 text-muted-foreground" />
-                        <span className="w-20 text-muted-foreground">{meta.name}</span>
-                        <div className="flex-1 h-1 rounded-full bg-accent overflow-hidden">
-                          <div className={cn("h-full rounded-full transition-all", over ? "bg-destructive" : "gradient-coral")} style={{ width: `${pct}%` }} />
+                        <span className="text-muted-foreground">{meta.name}</span>
+                        <div className="w-12 h-1 rounded-full bg-accent overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all",
+                              over ? "bg-destructive" : near ? "bg-amber-500" : "gradient-coral"
+                            )}
+                            style={{ width: `${pct}%` }}
+                          />
                         </div>
-                        <span className={cn("tabular-nums w-20 text-right", over ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "tabular-nums",
+                            over ? "text-destructive font-semibold" : near ? "text-amber-600" : "text-muted-foreground"
+                          )}
+                        >
                           {len.toLocaleString()}/{meta.charLimit.toLocaleString()}
                         </span>
                       </div>
