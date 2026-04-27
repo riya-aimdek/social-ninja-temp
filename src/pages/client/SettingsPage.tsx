@@ -62,6 +62,19 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Approval automation rules
+  const [autoPublish, setAutoPublish] = useState(false);
+  const [autoPublishHours, setAutoPublishHours] = useState(24);
+  const [autoPublishFallback, setAutoPublishFallback] = useState<"publish" | "skip" | "reschedule">("publish");
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderFirst, setReminderFirst] = useState(4);
+  const [reminderRepeat, setReminderRepeat] = useState(12);
+  const [reminderChannels, setReminderChannels] = useState({ email: true, inApp: true, sms: false });
+  const [escalationEnabled, setEscalationEnabled] = useState(false);
+  const [requireMultiApprover, setRequireMultiApprover] = useState(false);
+  const [allowSelfApprove, setAllowSelfApprove] = useState(true);
+  const [weekendsCount, setWeekendsCount] = useState(false);
+
   const title = tabs.find(t => t.id === activeTab);
 
   // Use shared data for billing stats
