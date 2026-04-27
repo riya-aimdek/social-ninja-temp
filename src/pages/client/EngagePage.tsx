@@ -1108,10 +1108,7 @@ function SentimentReviewView({
   updateComment: (id: string, patch: Partial<Comment>) => void;
 }) {
   const [filter, setFilter] = useState<"all" | Sentiment>("all");
-  const [platform, setPlatform] = useState<"all" | Platform>("all");
-  const filtered = comments.filter(
-    (c) => (filter === "all" || c.sentiment === filter) && (platform === "all" || c.post.platform === platform),
-  );
+  const filtered = comments.filter((c) => filter === "all" || c.sentiment === filter);
 
   const correct = (id: string, s: Sentiment) => {
     updateComment(id, { sentiment: s });
@@ -1129,26 +1126,21 @@ function SentimentReviewView({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-1 text-xs">
-          <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-          {(["all", "positive", "neutral", "negative"] as const).map((s) => (
-            <button key={s} onClick={() => setFilter(s)}
-              className={cn(
-                "px-2.5 py-1 rounded-full border text-xs font-medium capitalize transition-colors",
-                filter === s ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border hover:text-foreground",
-              )}>
-              {s}
-            </button>
-          ))}
-        </div>
-        <select value={platform} onChange={(e) => setPlatform(e.target.value as typeof platform)}
-          className="text-xs px-2.5 py-1 rounded-lg border border-border bg-card outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All platforms</option>
-          {(["Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"] as Platform[]).map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">Sentiment</span>
+        {(["all", "positive", "neutral", "negative"] as const).map((s) => (
+          <button key={s} onClick={() => setFilter(s)}
+            className={cn(
+              "px-2.5 py-1 rounded-full border text-xs font-medium capitalize transition-colors",
+              filter === s ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border hover:text-foreground",
+            )}>
+            {s === "all" ? "All" : s}
+          </button>
+        ))}
+        <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
+          Showing <span className="font-semibold text-foreground">{fmt(filtered.length)}</span> of {fmt(comments.length)}
+        </span>
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
