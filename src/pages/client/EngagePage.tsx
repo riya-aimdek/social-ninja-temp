@@ -690,12 +690,8 @@ function BoardView({
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
 }) {
-  const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<Stage | null>(null);
-
-  const PLATFORMS: ("all" | Platform)[] = ["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"];
-  const filtered = platformFilter === "all" ? comments : comments.filter((c) => c.post.platform === platformFilter);
 
   const handleDrop = (stage: Stage) => {
     if (draggingId) {
