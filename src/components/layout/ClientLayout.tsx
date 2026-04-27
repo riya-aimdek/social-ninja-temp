@@ -230,7 +230,7 @@ export default function ClientLayout() {
 
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto px-8 pb-8">
+        <main className="flex-1 overflow-y-auto px-8 pt-6 pb-8">
           <Outlet />
         </main>
       </div>
