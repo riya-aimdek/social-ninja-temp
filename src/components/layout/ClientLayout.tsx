@@ -221,13 +221,6 @@ export default function ClientLayout() {
               <Bell className="w-[18px] h-[18px] text-muted-foreground" />
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
             </button>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-foreground font-medium">{selectedClient.name}</span>
-              <span className="text-xs text-muted-foreground">Business</span>
-              <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-bold cursor-pointer">
-                {selectedClient.initial}
-              </div>
-            </div>
             <button className="p-2 rounded-lg hover:bg-accent transition-colors" title="Logout">
               <LogOut className="w-4 h-4 text-muted-foreground" />
             </button>
