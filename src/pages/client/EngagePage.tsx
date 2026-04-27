@@ -1010,7 +1010,7 @@ function ThreadsView({
         <p className="text-xs text-muted-foreground">
           Showing <span className="font-semibold text-foreground tabular-nums">{fmt(posts.length)}</span> posts ·{" "}
           <span className="font-semibold text-foreground tabular-nums">
-            {fmt(posts.reduce((sum, p) => sum + p.comments.filter((c) => !c.isSpam).length, 0))}
+            {fmt(posts.reduce((sum, p) => sum + Math.max(p.comments.filter((c) => !c.isSpam).length, p.newCount), 0))}
           </span>{" "}
           comments to review
         </p>
