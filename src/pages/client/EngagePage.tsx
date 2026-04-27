@@ -917,6 +917,7 @@ export default function EngagePage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Filters modal (old-UI style) */}
       <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
