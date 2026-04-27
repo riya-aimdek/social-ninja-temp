@@ -979,7 +979,7 @@ function ThreadsView({
                   <MessageSquare className="w-3.5 h-3.5" /> <span className="font-semibold text-foreground tabular-nums">{p.commentCount}</span>
                 </span>
                 {p.newCount > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold tabular-nums">
                     {fmt(p.newCount)} new
                   </span>
                 )}
