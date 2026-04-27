@@ -730,84 +730,64 @@ export default function EngagePage() {
         ))}
       </div>
 
-      {/* Global toolbar: platform filter + refresh */}
-      <div className="bg-card rounded-xl border border-border p-3 flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Platform</span>
+      {/* Tabs row with platform filter + refresh */}
+      <div className="flex items-end gap-3 border-b border-border flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "px-4 py-2.5 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px whitespace-nowrap transition-colors",
+                tab === t.id
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <t.Icon className="w-3.5 h-3.5" /> {t.label}
+              {t.id === "spam" && summary.spam > 0 && (
+                <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{fmt(summary.spam)}</span>
+              )}
+              {t.id === "queue" && summary.pending > 0 && (
+                <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{fmt(summary.pending)}</span>
+              )}
+            </button>
+          ))}
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {(["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"] as const).map((p) => {
-            const active = platformFilter === p;
-            const count = platformCounts[p];
-            return (
-              <button
-                key={p}
-                onClick={() => setPlatformFilter(p)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors",
-                  active
-                    ? "bg-foreground text-background border-foreground shadow-sm"
-                    : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-foreground/30",
+        <div className="flex items-center gap-2 pb-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+                {platformFilter !== "all" ? (
+                  <PlatformIcon name={platformFilter as Platform} className="w-3.5 h-3.5" />
+                ) : (
+                  <Filter className="w-3.5 h-3.5" />
                 )}
-              >
-                {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
-                {p === "all" ? "All platforms" : p}
-                <span className={cn(
-                  "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
-                  active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground",
-                )}>
-                  {fmt(count)}
+                {platformFilter === "all" ? "All platforms" : platformFilter}
+                <span className="text-[10px] tabular-nums px-1.5 rounded-full bg-muted text-muted-foreground font-semibold">
+                  {fmt(platformCounts[platformFilter])}
                 </span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="ml-auto flex items-center gap-3">
-          <span className="text-[10px] text-muted-foreground hidden sm:inline">
-            Updated {lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-          </span>
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing} className="gap-1.5 h-8">
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {(["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"] as const).map((p) => (
+                <DropdownMenuItem key={p} onClick={() => setPlatformFilter(p)} className="text-xs gap-2">
+                  {platformFilter === p && <Check className="w-3 h-3" />}
+                  {p !== "all" && <PlatformIcon name={p as Platform} className="w-3.5 h-3.5" />}
+                  <span className="flex-1">{p === "all" ? "All platforms" : p}</span>
+                  <span className="text-[10px] tabular-nums text-muted-foreground">{fmt(platformCounts[p])}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing} className="h-8 gap-1.5 text-xs" title={`Updated ${lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}>
             <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
-            Refresh
+            <span className="hidden md:inline">Refresh</span>
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-border flex-wrap">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "px-4 py-2.5 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px whitespace-nowrap transition-colors",
-              tab === t.id
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <t.Icon className="w-3.5 h-3.5" /> {t.label}
-            {t.id === "spam" && summary.spam > 0 && (
-              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{fmt(summary.spam)}</span>
-            )}
-            {t.id === "queue" && summary.pending > 0 && (
-              <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{fmt(summary.pending)}</span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Active filter banner */}
-      {platformFilter !== "all" && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 border border-border">
-          <PlatformIcon name={platformFilter as Platform} className="w-3.5 h-3.5" />
-          Filtered by <span className="font-semibold text-foreground">{platformFilter}</span> · {platformCounts[platformFilter]} comments
-          <button onClick={() => setPlatformFilter("all")} className="ml-auto text-primary hover:underline inline-flex items-center gap-1">
-            <X className="w-3 h-3" /> Clear filter
-          </button>
-        </div>
-      )}
 
       {/* ─── Inbox toolbar (single-line: categories + search + sort + filters) ─── */}
       <div className="bg-card rounded-xl border border-border p-2">
