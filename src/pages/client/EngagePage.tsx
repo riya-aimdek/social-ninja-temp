@@ -992,12 +992,40 @@ function ThreadsView({
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
 }) {
-  const [openId, setOpenId] = useState<string | null>(posts[0]?.id ?? null);
+  // Default: every post expanded so users see all threads at once
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(posts.map((p) => p.id)));
+
+  const toggle = (id: string) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const allOpen = posts.length > 0 && posts.every((p) => openIds.has(p.id));
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Showing <span className="font-semibold text-foreground tabular-nums">{fmt(posts.length)}</span> posts ·{" "}
+          <span className="font-semibold text-foreground tabular-nums">
+            {fmt(posts.reduce((sum, p) => sum + p.comments.filter((c) => !c.isSpam).length, 0))}
+          </span>{" "}
+          comments to review
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setOpenIds(allOpen ? new Set() : new Set(posts.map((p) => p.id)))}
+          className="h-7 text-[11px] gap-1.5"
+        >
+          {allOpen ? "Collapse all" : "Expand all"}
+        </Button>
+      </div>
+
       {posts.map((p) => {
-        const open = openId === p.id;
+        const open = openIds.has(p.id);
         const visibleComments = p.comments.filter((c) => !c.isSpam);
         return (
           <div key={p.id} className="bg-card rounded-xl border border-border overflow-hidden">
