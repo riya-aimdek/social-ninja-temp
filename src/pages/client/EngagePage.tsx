@@ -603,28 +603,51 @@ export default function EngagePage() {
     setPosts((prev) => prev.map((p) => ({ ...p, comments: patchTree(p.comments, id, patch) })));
   };
 
-  /** Append a reply to any node in the tree (any depth) */
-  const appendReply = (list: Comment[], parentId: string, reply: Comment): Comment[] =>
-    list.map((c) => {
-      if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
-      if (c.replies?.length) return { ...c, replies: appendReply(c.replies, parentId, reply) };
-      return c;
-    });
+  /**
+   * Instagram-style threading — replies always attach to the TOP-LEVEL parent.
+   * If the user replies to a nested reply, we resolve the top-level ancestor
+   * and prefix the text with @author so context is preserved.
+   */
+  const findTopLevelParent = (
+    list: Comment[],
+    id: string,
+  ): { top: Comment; target: Comment } | null => {
+    for (const c of list) {
+      if (c.id === id) return { top: c, target: c };
+      if (c.replies?.length) {
+        const hit = c.replies.find((r) => r.id === id);
+        if (hit) return { top: c, target: hit };
+      }
+    }
+    return null;
+  };
 
   const addReply = (parentId: string, text: string) => {
-    const reply: Comment = {
-      id: `R-${Date.now()}`,
-      author: "You",
-      avatar: "YO",
-      text,
-      at: "just now",
-      sentiment: "positive",
-      likes: 0,
-      stage: "replied",
-      priority: "low",
-      sla: { dueIn: "—", breached: false },
-    };
-    setPosts((prev) => prev.map((p) => ({ ...p, comments: appendReply(p.comments, parentId, reply) })));
+    setPosts((prev) =>
+      prev.map((p) => {
+        const found = findTopLevelParent(p.comments, parentId);
+        if (!found) return p;
+        const isNested = found.top.id !== found.target.id;
+        const reply: Comment = {
+          id: `R-${Date.now()}`,
+          author: "You",
+          avatar: "YO",
+          text: isNested ? `@${found.target.author} ${text}` : text,
+          at: "just now",
+          sentiment: "positive",
+          likes: 0,
+          stage: "replied",
+          priority: "low",
+          sla: { dueIn: "—", breached: false },
+        };
+        return {
+          ...p,
+          comments: p.comments.map((c) =>
+            c.id === found.top.id ? { ...c, replies: [...(c.replies ?? []), reply] } : c,
+          ),
+        };
+      }),
+    );
     toast.success("Reply posted");
   };
 
