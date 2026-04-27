@@ -697,10 +697,11 @@ function BoardView({
    ────────────────────────────────────────────────────────────── */
 
 function ThreadsView({
-  posts, updateComment,
+  posts, updateComment, addReply,
 }: {
   posts: Post[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(posts[0]?.id ?? null);
 
@@ -743,7 +744,7 @@ function ThreadsView({
             {open && (
               <div className="border-t border-border p-4 space-y-3 bg-muted/20">
                 {visibleComments.map((c) => (
-                  <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} />
+                  <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} addReply={addReply} />
                 ))}
               </div>
             )}
@@ -755,12 +756,24 @@ function ThreadsView({
 }
 
 function CommentNode({
-  comment, depth, updateComment,
+  comment, depth, updateComment, addReply,
 }: {
   comment: Comment; depth: number;
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
 }) {
   const sm = sentimentMeta[comment.sentiment];
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyText, setReplyText] = useState(comment.aiDraft ?? "");
+
+  const submit = () => {
+    const text = replyText.trim();
+    if (!text) return;
+    addReply(comment.id, text);
+    setReplyText("");
+    setReplyOpen(false);
+  };
+
   return (
     <div style={{ marginLeft: depth * 28 }} className="relative">
       {depth > 0 && <div className="absolute -left-4 top-0 bottom-0 w-px bg-border" />}
@@ -783,20 +796,56 @@ function CommentNode({
             <p className="text-sm text-foreground mt-1">{comment.text}</p>
             <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
               <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{comment.likes}</span>
-              <button className="inline-flex items-center gap-1 hover:text-foreground"><ArrowRight className="w-3 h-3" />Reply</button>
-              {comment.aiDraft && comment.stage === "pending" && (
-                <button onClick={() => updateComment(comment.id, { stage: "replied" })}
-                  className="inline-flex items-center gap-1 text-primary hover:underline">
+              <button onClick={() => setReplyOpen((o) => !o)} className="inline-flex items-center gap-1 hover:text-foreground">
+                <ArrowRight className="w-3 h-3" />{replyOpen ? "Cancel" : "Reply"}
+              </button>
+              {comment.aiDraft && !replyOpen && (
+                <button
+                  onClick={() => { setReplyText(comment.aiDraft!); setReplyOpen(true); }}
+                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                >
                   <Bot className="w-3 h-3" />Use AI draft
                 </button>
               )}
             </div>
+
+            {replyOpen && (
+              <div className="mt-3 space-y-2">
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                    YO
+                  </div>
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder={`Reply to ${comment.author}…`}
+                    rows={2}
+                    autoFocus
+                    className="flex-1 px-3 py-2 rounded-lg border border-input text-sm bg-background outline-none focus:ring-2 focus:ring-ring resize-none"
+                  />
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                  {comment.aiDraft && (
+                    <button
+                      onClick={() => setReplyText(comment.aiDraft!)}
+                      className="text-[11px] text-primary inline-flex items-center gap-1 hover:underline"
+                    >
+                      <Sparkles className="w-3 h-3" />Insert AI draft
+                    </button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => { setReplyOpen(false); setReplyText(""); }}>Cancel</Button>
+                  <Button size="sm" onClick={submit} disabled={!replyText.trim()} className="gap-1.5">
+                    <Send className="w-3 h-3" /> Reply
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
       {comment.replies && comment.replies.length > 0 && (
         <div className="mt-2 space-y-2 ml-4">
-          {comment.replies.map((r) => <CommentNode key={r.id} comment={r} depth={depth + 1} updateComment={updateComment} />)}
+          {comment.replies.map((r) => <CommentNode key={r.id} comment={r} depth={depth + 1} updateComment={updateComment} addReply={addReply} />)}
         </div>
       )}
     </div>
