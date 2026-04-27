@@ -1018,9 +1018,14 @@ function BoardView({
     <div className="space-y-4">
       {/* Workload */}
       <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Users className="w-3.5 h-3.5 text-muted-foreground" />
-          <h3 className="text-xs font-semibold text-foreground">ORM Workload</h3>
+        <div className="flex items-start gap-2 mb-3">
+          <Users className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-xs font-semibold text-foreground">Team workload</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Active comments currently assigned to each ORM team member. Use this to rebalance — drag cards below to reassign or move stages.
+            </p>
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {ORM_USERS.map((u) => (
