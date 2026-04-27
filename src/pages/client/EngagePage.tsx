@@ -1448,8 +1448,8 @@ function CommentNode({
   };
 
   return (
-    <div style={{ marginLeft: depth * 28 }} className="relative">
-      {depth > 0 && <div className="absolute -left-4 top-0 bottom-0 w-px bg-border" />}
+    <div className="relative">
+
       <div className="bg-card border border-border rounded-lg p-3">
         <div className="flex items-start gap-2.5">
           <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-foreground flex-shrink-0">
