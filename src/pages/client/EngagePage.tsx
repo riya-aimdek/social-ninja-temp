@@ -8,7 +8,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+
+/** Cap a number for compact display (e.g. 10+) */
+const cap = (n: number, max = 10) => (n > max ? `${max}+` : `${n}`);
 
 /* ──────────────────────────────────────────────────────────────
    Types
@@ -117,7 +121,7 @@ const POSTS: Post[] = [
     id: "P-201", platform: "Instagram",
     title: "🎉 Celebrating 5 years of building together!",
     thumbnail: "🎂", publishedAt: "2h ago",
-    commentCount: 47, newCount: 12,
+    commentCount: 247, newCount: 32,
     comments: [
       {
         id: "C-1", author: "Sarah Johnson", avatar: "SJ",
@@ -152,7 +156,7 @@ const POSTS: Post[] = [
     id: "P-200", platform: "GBP",
     title: "Downtown location — new hours announcement",
     thumbnail: "📍", publishedAt: "5h ago",
-    commentCount: 23, newCount: 8,
+    commentCount: 128, newCount: 24,
     comments: [
       {
         id: "C-10", author: "David Kim", avatar: "DK",
@@ -176,7 +180,7 @@ const POSTS: Post[] = [
     id: "P-199", platform: "LinkedIn",
     title: "We're hiring: Senior Product Designer",
     thumbnail: "💼", publishedAt: "1d ago",
-    commentCount: 89, newCount: 21,
+    commentCount: 312, newCount: 47,
     comments: [
       {
         id: "C-20", author: "Alex Rivera", avatar: "AR",
@@ -192,7 +196,7 @@ const POSTS: Post[] = [
     id: "P-198", platform: "Facebook",
     title: "New product launch — Spring Collection ‘26",
     thumbnail: "🌸", publishedAt: "1d ago",
-    commentCount: 34, newCount: 4,
+    commentCount: 96, newCount: 15,
     comments: [
       {
         id: "C-30", author: "Megan Liu", avatar: "ML",
@@ -281,11 +285,11 @@ export default function EngagePage() {
   );
 
   const summary = useMemo(() => ({
-    pending: allComments.filter((c) => c.stage === "pending").length,
-    urgent: allComments.filter((c) => c.priority === "urgent" && c.stage !== "replied").length,
-    breached: allComments.filter((c) => c.sla.breached).length,
-    replied: allComments.filter((c) => c.stage === "replied").length,
-    spam: spamComments.length,
+    pending: allComments.filter((c) => c.stage === "pending").length + 14,
+    urgent: allComments.filter((c) => c.priority === "urgent" && c.stage !== "replied").length + 3,
+    breached: allComments.filter((c) => c.sla.breached).length + 5,
+    replied: allComments.filter((c) => c.stage === "replied").length + 142,
+    spam: spamComments.length + 27,
   }), [allComments, spamComments]);
 
   /* mutate helpers */
@@ -300,6 +304,38 @@ export default function EngagePage() {
         }),
       })),
     );
+  };
+
+  /** Append a reply to a top-level or nested comment */
+  const addReply = (parentId: string, text: string) => {
+    const reply: Comment = {
+      id: `R-${Date.now()}`,
+      author: "You",
+      avatar: "YO",
+      text,
+      at: "just now",
+      sentiment: "positive",
+      likes: 0,
+      stage: "replied",
+      priority: "low",
+      sla: { dueIn: "—", breached: false },
+    };
+    setPosts((prev) =>
+      prev.map((p) => ({
+        ...p,
+        comments: p.comments.map((c) => {
+          if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
+          if (c.replies?.some((r) => r.id === parentId)) {
+            return {
+              ...c,
+              replies: c.replies.map((r) => r.id === parentId ? { ...r, replies: [...(r.replies ?? []), reply] } : r),
+            };
+          }
+          return c;
+        }),
+      })),
+    );
+    toast.success("Reply posted");
   };
 
   return (
@@ -340,7 +376,10 @@ export default function EngagePage() {
           >
             <t.Icon className="w-3.5 h-3.5" /> {t.label}
             {t.id === "spam" && summary.spam > 0 && (
-              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{summary.spam}</span>
+              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{cap(summary.spam)}</span>
+            )}
+            {t.id === "queue" && summary.pending > 0 && (
+              <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{cap(summary.pending)}</span>
             )}
           </button>
         ))}
@@ -348,7 +387,7 @@ export default function EngagePage() {
 
       {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
-      {tab === "threads" && <ThreadsView posts={posts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} />}
+      {tab === "threads" && <ThreadsView posts={posts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} />}
       {tab === "spam" && <SpamView spam={spamComments} unspam={(id) => updateComment(id, { isSpam: false })} />}
       {tab === "variants" && <VariantsView templates={templates} setTemplates={setTemplates} />}
@@ -405,9 +444,11 @@ function ReplyQueueView({
     <div className="grid grid-cols-12 gap-4 h-[calc(100vh-380px)] min-h-[520px]">
       {/* Left: queue */}
       <div className="col-span-5 bg-card rounded-xl border border-border overflow-y-auto">
-        <div className="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between">
+        <div className="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between sticky top-0 bg-card z-10">
           <span className="text-xs font-semibold text-foreground">Awaiting review</span>
-          <span className="text-[10px] text-muted-foreground">{queue.length} comments</span>
+          <span className="text-[10px] text-muted-foreground">
+            <span className="font-bold text-foreground">{cap(queue.length + 14)}</span> comments
+          </span>
         </div>
         {queue.map((c) => {
           const sm = sentimentMeta[c.sentiment];
@@ -656,10 +697,11 @@ function BoardView({
    ────────────────────────────────────────────────────────────── */
 
 function ThreadsView({
-  posts, updateComment,
+  posts, updateComment, addReply,
 }: {
   posts: Post[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(posts[0]?.id ?? null);
 
@@ -693,7 +735,7 @@ function ThreadsView({
                 </span>
                 {p.newCount > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold">
-                    {p.newCount} new
+                    {cap(p.newCount)} new
                   </span>
                 )}
               </div>
@@ -702,7 +744,7 @@ function ThreadsView({
             {open && (
               <div className="border-t border-border p-4 space-y-3 bg-muted/20">
                 {visibleComments.map((c) => (
-                  <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} />
+                  <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} addReply={addReply} />
                 ))}
               </div>
             )}
@@ -714,12 +756,24 @@ function ThreadsView({
 }
 
 function CommentNode({
-  comment, depth, updateComment,
+  comment, depth, updateComment, addReply,
 }: {
   comment: Comment; depth: number;
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
 }) {
   const sm = sentimentMeta[comment.sentiment];
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyText, setReplyText] = useState(comment.aiDraft ?? "");
+
+  const submit = () => {
+    const text = replyText.trim();
+    if (!text) return;
+    addReply(comment.id, text);
+    setReplyText("");
+    setReplyOpen(false);
+  };
+
   return (
     <div style={{ marginLeft: depth * 28 }} className="relative">
       {depth > 0 && <div className="absolute -left-4 top-0 bottom-0 w-px bg-border" />}
@@ -742,20 +796,56 @@ function CommentNode({
             <p className="text-sm text-foreground mt-1">{comment.text}</p>
             <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
               <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{comment.likes}</span>
-              <button className="inline-flex items-center gap-1 hover:text-foreground"><ArrowRight className="w-3 h-3" />Reply</button>
-              {comment.aiDraft && comment.stage === "pending" && (
-                <button onClick={() => updateComment(comment.id, { stage: "replied" })}
-                  className="inline-flex items-center gap-1 text-primary hover:underline">
+              <button onClick={() => setReplyOpen((o) => !o)} className="inline-flex items-center gap-1 hover:text-foreground">
+                <ArrowRight className="w-3 h-3" />{replyOpen ? "Cancel" : "Reply"}
+              </button>
+              {comment.aiDraft && !replyOpen && (
+                <button
+                  onClick={() => { setReplyText(comment.aiDraft!); setReplyOpen(true); }}
+                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                >
                   <Bot className="w-3 h-3" />Use AI draft
                 </button>
               )}
             </div>
+
+            {replyOpen && (
+              <div className="mt-3 space-y-2">
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                    YO
+                  </div>
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder={`Reply to ${comment.author}…`}
+                    rows={2}
+                    autoFocus
+                    className="flex-1 px-3 py-2 rounded-lg border border-input text-sm bg-background outline-none focus:ring-2 focus:ring-ring resize-none"
+                  />
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                  {comment.aiDraft && (
+                    <button
+                      onClick={() => setReplyText(comment.aiDraft!)}
+                      className="text-[11px] text-primary inline-flex items-center gap-1 hover:underline"
+                    >
+                      <Sparkles className="w-3 h-3" />Insert AI draft
+                    </button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => { setReplyOpen(false); setReplyText(""); }}>Cancel</Button>
+                  <Button size="sm" onClick={submit} disabled={!replyText.trim()} className="gap-1.5">
+                    <Send className="w-3 h-3" /> Reply
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
       {comment.replies && comment.replies.length > 0 && (
         <div className="mt-2 space-y-2 ml-4">
-          {comment.replies.map((r) => <CommentNode key={r.id} comment={r} depth={depth + 1} updateComment={updateComment} />)}
+          {comment.replies.map((r) => <CommentNode key={r.id} comment={r} depth={depth + 1} updateComment={updateComment} addReply={addReply} />)}
         </div>
       )}
     </div>
@@ -984,16 +1074,8 @@ function VariantsView({
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
               </div>
-              <button onClick={() => toggle(t.id)}
-                className={cn(
-                  "relative w-9 h-5 rounded-full transition-colors flex-shrink-0",
-                  t.enabled ? "bg-primary" : "bg-muted",
-                )}>
-                <span className={cn(
-                  "absolute top-0.5 w-4 h-4 rounded-full bg-card shadow transition-transform",
-                  t.enabled ? "translate-x-4" : "translate-x-0.5",
-                )} />
-              </button>
+              <Switch checked={t.enabled} onCheckedChange={() => toggle(t.id)} className="flex-shrink-0" />
+
             </div>
 
             <div className="space-y-2">
