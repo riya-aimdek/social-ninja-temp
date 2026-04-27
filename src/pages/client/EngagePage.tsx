@@ -533,6 +533,19 @@ export default function EngagePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
+  // Old-UI compatible filters: search + category tabs + sort + filter modal
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryTab, setCategoryTab] = useState<"all" | "comments" | "mentions" | "dms" | "reviews">("all");
+  const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<Set<"open" | "in_progress" | "completed">>(new Set());
+  const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
+  const [dateRange, setDateRange] = useState<"all" | "today" | "7d" | "30d">("all");
+  const TAGS = [
+    "Unclassified", "Question", "Complaint", "Price Request", "Product Inquiry",
+    "Order Status", "Discount Request", "Return/Exchange", "Negative Comment", "Potential Lead",
+  ];
+
   const handleRefresh = () => {
     setRefreshing(true);
     setTimeout(() => {
