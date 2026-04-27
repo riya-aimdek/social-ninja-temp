@@ -1026,7 +1026,36 @@ function ThreadsView({
 
       {posts.map((p) => {
         const open = openIds.has(p.id);
-        const visibleComments = p.comments.filter((c) => !c.isSpam);
+        const realComments = p.comments.filter((c) => !c.isSpam);
+        // Pad with synthetic comments so the visible thread reflects the post's newCount badge
+        const target = Math.max(realComments.length, p.newCount);
+        const fillerNeeded = Math.max(0, target - realComments.length);
+        const fillerSamples: { author: string; avatar: string; text: string; sentiment: Sentiment }[] = [
+          { author: "Aria Patel", avatar: "AP", text: "Love this 🙌 keep it up!", sentiment: "positive" },
+          { author: "Noah Kim", avatar: "NK", text: "Just shared with my team — super helpful.", sentiment: "positive" },
+          { author: "Lia Romano", avatar: "LR", text: "Quick q — does this apply to enterprise plans too?", sentiment: "neutral" },
+          { author: "Ben Carter", avatar: "BC", text: "Been waiting for this update for ages 🎉", sentiment: "positive" },
+          { author: "Sana Iqbal", avatar: "SI", text: "How does this compare to last year's release?", sentiment: "neutral" },
+          { author: "Owen Reyes", avatar: "OR", text: "Following for the giveaway 🤞", sentiment: "neutral" },
+          { author: "Mira Chen", avatar: "MC", text: "Honestly the best update so far this year.", sentiment: "positive" },
+          { author: "Jacob Hill", avatar: "JH", text: "Tagging the team — we should try this.", sentiment: "positive" },
+          { author: "Eva Mendes", avatar: "EM", text: "When will EU customers see this rolled out?", sentiment: "neutral" },
+          { author: "Tariq Yusuf", avatar: "TY", text: "Could the docs link be added to the post?", sentiment: "neutral" },
+          { author: "Hana Kobayashi", avatar: "HK", text: "Beautiful work — visuals are 🔥", sentiment: "positive" },
+          { author: "Diego Salas", avatar: "DS", text: "Took me 5 mins to set up. Smooth.", sentiment: "positive" },
+        ];
+        const filler: Comment[] = Array.from({ length: fillerNeeded }, (_, i) => {
+          const s = fillerSamples[i % fillerSamples.length];
+          return {
+            id: `${p.id}-F-${i}`,
+            author: s.author, avatar: s.avatar, text: s.text,
+            at: `${i + 1}h`, sentiment: s.sentiment, likes: ((i * 3) % 12),
+            stage: "pending" as Stage, priority: "low" as Priority,
+            sla: { dueIn: `${1 + (i % 5)}h ${10 + i}m`, breached: false },
+          };
+        });
+        const visibleComments = [...realComments, ...filler];
+
         return (
           <div key={p.id} className="bg-card rounded-xl border border-border overflow-hidden">
             <button
@@ -1059,10 +1088,21 @@ function ThreadsView({
             </button>
 
             {open && (
-              <div className="border-t border-border p-4 space-y-3 bg-muted/20">
-                {visibleComments.map((c) => (
-                  <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} addReply={addReply} />
-                ))}
+              <div className="border-t border-border bg-muted/20">
+                <div className="px-4 py-2 flex items-center justify-between text-[11px] text-muted-foreground border-b border-border bg-card/40">
+                  <span>
+                    Showing <span className="font-semibold text-foreground tabular-nums">{fmt(visibleComments.length)}</span> of{" "}
+                    <span className="tabular-nums">{fmt(p.commentCount)}</span> comments
+                  </span>
+                  <span className="tabular-nums">
+                    <span className="text-primary font-semibold">{fmt(p.newCount)}</span> new since last visit
+                  </span>
+                </div>
+                <div className="p-4 space-y-3 max-h-[520px] overflow-y-auto">
+                  {visibleComments.map((c) => (
+                    <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} addReply={addReply} />
+                  ))}
+                </div>
               </div>
             )}
           </div>
