@@ -121,7 +121,7 @@ const POSTS: Post[] = [
     id: "P-201", platform: "Instagram",
     title: "🎉 Celebrating 5 years of building together!",
     thumbnail: "🎂", publishedAt: "2h ago",
-    commentCount: 47, newCount: 12,
+    commentCount: 247, newCount: 32,
     comments: [
       {
         id: "C-1", author: "Sarah Johnson", avatar: "SJ",
