@@ -622,6 +622,29 @@ export default function EngagePage() {
     [posts, platformFilter],
   );
 
+  // Apply search + status + tag filters to Spam
+  const filteredSpam = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    let out = spamComments;
+    if (q) out = out.filter((c) => c.author.toLowerCase().includes(q) || c.text.toLowerCase().includes(q));
+    if (statusFilter.size > 0) out = out.filter((c) => statusFilter.has(stageToStatus(c.stage)));
+    if (tagFilter.size > 0) out = out.filter((c) => c.trigger && tagFilter.has(triggerToTag[c.trigger]));
+    return out;
+  }, [spamComments, searchQuery, statusFilter, tagFilter]);
+
+  // Apply search + filters to Threads — keep only posts whose comments match
+  const filteredThreadPosts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const matchedIds = new Set(allComments.map((c) => c.post.id));
+    return filteredPosts.filter((p) => {
+      if (!p.comments.some((c) => !c.isSpam)) return false;
+      if (!q && statusFilter.size === 0 && tagFilter.size === 0 && categoryTab === "all") return true;
+      // Match post if its title contains query OR any of its comments matched the inbox filters
+      if (q && p.title.toLowerCase().includes(q)) return true;
+      return matchedIds.has(p.id);
+    });
+  }, [filteredPosts, allComments, searchQuery, statusFilter, tagFilter, categoryTab]);
+
   const activeFilterCount = statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0);
   const hasAnyFilter = activeFilterCount > 0 || searchQuery.trim().length > 0 || categoryTab !== "all";
   const clearAllFilters = () => {
@@ -789,7 +812,8 @@ export default function EngagePage() {
       </div>
 
 
-      {/* ─── Inbox toolbar (single-line: categories + search + sort + filters) ─── */}
+      {/* ─── Inbox toolbar — hidden on Variants (template manager, not comments) ─── */}
+      {tab !== "variants" && (
       <div className="bg-card rounded-xl border border-border p-2">
         <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
           {/* Category pills */}
@@ -916,6 +940,7 @@ export default function EngagePage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Filters modal (old-UI style) */}
       <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
@@ -1005,9 +1030,9 @@ export default function EngagePage() {
 
       {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
-      {tab === "threads" && <ThreadsView posts={filteredPosts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} addReply={addReply} />}
+      {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} />}
-      {tab === "spam" && <SpamView spam={spamComments} unspam={(id) => updateComment(id, { isSpam: false })} />}
+      {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} />}
       {tab === "variants" && <VariantsView templates={templates} setTemplates={setTemplates} />}
     </div>
   );
