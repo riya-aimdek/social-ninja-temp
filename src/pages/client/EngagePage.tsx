@@ -588,28 +588,56 @@ function ReplyQueueView({
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
 }) {
-  const queue = comments.filter((c) => c.stage === "pending" || c.stage === "in_review");
+  const queue = useMemo(
+    () => comments.filter((c) => c.stage === "pending" || c.stage === "in_review"),
+    [comments],
+  );
   const [activeId, setActiveId] = useState<string | null>(queue[0]?.id ?? null);
+
+  // Re-sync active card when the queue changes (e.g. platform filter / spam / approve)
   const active = queue.find((c) => c.id === activeId) ?? queue[0];
+  const effectiveActiveId = active?.id ?? null;
+
   const [draft, setDraft] = useState(active?.aiDraft ?? "");
+  const [lastDraftFor, setLastDraftFor] = useState<string | null>(effectiveActiveId);
+  if (effectiveActiveId !== lastDraftFor) {
+    // Active card swapped out from under us — refresh draft to match.
+    setLastDraftFor(effectiveActiveId);
+    setDraft(active?.aiDraft ?? "");
+  }
 
   const switchTo = (id: string) => {
     setActiveId(id);
-    setDraft(comments.find((c) => c.id === id)?.aiDraft ?? "");
+    const next = comments.find((c) => c.id === id);
+    setDraft(next?.aiDraft ?? "");
+    setLastDraftFor(id);
+  };
+
+  const advance = () => {
+    const next = queue.find((c) => c.id !== active?.id);
+    if (next) switchTo(next.id);
+    else setActiveId(null);
   };
 
   const approve = () => {
     if (!active) return;
     updateComment(active.id, { stage: "replied" });
     toast.success("Reply approved & sent");
-    const next = queue.find((c) => c.id !== active.id);
-    if (next) switchTo(next.id);
+    advance();
   };
 
   const escalate = () => {
     if (!active) return;
     updateComment(active.id, { stage: "escalated" });
     toast.warning("Escalated to senior ORM");
+    advance();
+  };
+
+  const markSpam = () => {
+    if (!active) return;
+    updateComment(active.id, { isSpam: true });
+    toast.success("Marked as spam");
+    advance();
   };
 
   const regenerate = () => {
