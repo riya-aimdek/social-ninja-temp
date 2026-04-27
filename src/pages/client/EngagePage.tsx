@@ -1152,6 +1152,69 @@ function BoardView({
    View 3 — Comment threads grouped by post (with counts)
    ────────────────────────────────────────────────────────────── */
 
+type ThreadFilter = "all" | "new" | "awaiting" | "replied";
+
+const FILLER_SAMPLES: { author: string; avatar: string; text: string; sentiment: Sentiment }[] = [
+  { author: "Aria Patel", avatar: "AP", text: "Love this 🙌 keep it up!", sentiment: "positive" },
+  { author: "Noah Kim", avatar: "NK", text: "Just shared with my team — super helpful.", sentiment: "positive" },
+  { author: "Lia Romano", avatar: "LR", text: "Quick q — does this apply to enterprise plans too?", sentiment: "neutral" },
+  { author: "Ben Carter", avatar: "BC", text: "Been waiting for this update for ages 🎉", sentiment: "positive" },
+  { author: "Sana Iqbal", avatar: "SI", text: "How does this compare to last year's release?", sentiment: "neutral" },
+  { author: "Owen Reyes", avatar: "OR", text: "Following along — keep them coming.", sentiment: "neutral" },
+  { author: "Mira Chen", avatar: "MC", text: "Honestly the best update so far this year.", sentiment: "positive" },
+  { author: "Jacob Hill", avatar: "JH", text: "Tagging the team — we should try this.", sentiment: "positive" },
+  { author: "Eva Mendes", avatar: "EM", text: "When will EU customers see this rolled out?", sentiment: "neutral" },
+  { author: "Tariq Yusuf", avatar: "TY", text: "Could the docs link be added to the post?", sentiment: "neutral" },
+  { author: "Hana Kobayashi", avatar: "HK", text: "Beautiful work — visuals are 🔥", sentiment: "positive" },
+  { author: "Diego Salas", avatar: "DS", text: "Took me 5 mins to set up. Smooth.", sentiment: "positive" },
+  { author: "Lukas Weber", avatar: "LW", text: "Not sure I agree with the pricing change tbh.", sentiment: "negative" },
+  { author: "Yara Haddad", avatar: "YH", text: "Will there be a webinar walkthrough?", sentiment: "neutral" },
+  { author: "Sven Eriksson", avatar: "SE", text: "Big upgrade from last quarter, well done team.", sentiment: "positive" },
+];
+
+/** Build a realistic dense thread for a post — pads up to commentCount with synthetic items.
+ *  Stage mix is roughly: 65% replied (older), 10% in_review, 25% pending (the "new" bucket). */
+function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> } {
+  const real = p.comments.filter((c) => !c.isSpam);
+  const isNewById = new Set<string>();
+  // Real "new" items = pending or in_review (not yet handled)
+  real.forEach((c) => {
+    if (c.stage === "pending" || c.stage === "in_review") isNewById.add(c.id);
+  });
+  const target = Math.max(real.length, p.commentCount);
+  const fillerNeeded = Math.max(0, target - real.length);
+  // newCount drives how many filler items should appear as "new" (pending)
+  const fillerNewSlots = Math.max(0, p.newCount - Array.from(isNewById).length);
+
+  const filler: Comment[] = Array.from({ length: fillerNeeded }, (_, i) => {
+    const s = FILLER_SAMPLES[i % FILLER_SAMPLES.length];
+    const id = `${p.id}-F-${i}`;
+    let stage: Stage;
+    if (i < fillerNewSlots) {
+      // First N filler items are the "new" backlog — split between pending & in_review
+      stage = i % 4 === 0 ? "in_review" : "pending";
+      isNewById.add(id);
+    } else {
+      // Older comments — mostly already replied
+      stage = i % 9 === 0 ? "in_review" : "replied";
+    }
+    const ageHours = i + 1;
+    const age = ageHours < 24 ? `${ageHours}h` : `${Math.floor(ageHours / 24)}d`;
+    return {
+      id,
+      author: s.author, avatar: s.avatar, text: s.text,
+      at: age,
+      sentiment: s.sentiment,
+      likes: ((i * 5) % 18),
+      stage,
+      assignee: stage === "in_review" ? "Priya S." : stage === "replied" ? "Mike T." : undefined,
+      priority: "low",
+      sla: { dueIn: stage === "replied" ? "—" : `${1 + (i % 6)}h ${(i * 7) % 60}m`, breached: false },
+    };
+  });
+  return { items: [...real, ...filler], isNewById };
+}
+
 function ThreadsView({
   posts, updateComment, addReply,
 }: {
@@ -1159,7 +1222,7 @@ function ThreadsView({
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
 }) {
-  // Default: every post expanded so users see all threads at once
+  // Default: every post expanded
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(posts.map((p) => p.id)));
 
   const toggle = (id: string) =>
@@ -1170,16 +1233,19 @@ function ThreadsView({
     });
 
   const allOpen = posts.length > 0 && posts.every((p) => openIds.has(p.id));
+  const totalNew = posts.reduce((s, p) => s + p.newCount, 0);
+  const totalAwaiting = posts.reduce(
+    (s, p) => s + p.comments.filter((c) => !c.isSpam && (c.stage === "pending" || c.stage === "in_review")).length + p.newCount,
+    0,
+  );
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-xs text-muted-foreground">
-          Showing <span className="font-semibold text-foreground tabular-nums">{fmt(posts.length)}</span> posts ·{" "}
-          <span className="font-semibold text-foreground tabular-nums">
-            {fmt(posts.reduce((sum, p) => sum + Math.max(p.comments.filter((c) => !c.isSpam).length, p.newCount), 0))}
-          </span>{" "}
-          comments to review
+          <span className="font-semibold text-foreground tabular-nums">{fmt(posts.length)}</span> posts ·{" "}
+          <span className="font-semibold text-foreground tabular-nums">{fmt(totalNew)}</span> new ·{" "}
+          <span className="font-semibold text-foreground tabular-nums">{fmt(totalAwaiting)}</span> awaiting reply
         </p>
         <Button
           variant="outline"
@@ -1191,90 +1257,150 @@ function ThreadsView({
         </Button>
       </div>
 
-      {posts.map((p) => {
-        const open = openIds.has(p.id);
-        const realComments = p.comments.filter((c) => !c.isSpam);
-        // Pad with synthetic comments so the visible thread reflects the post's newCount badge
-        const target = Math.max(realComments.length, p.newCount);
-        const fillerNeeded = Math.max(0, target - realComments.length);
-        const fillerSamples: { author: string; avatar: string; text: string; sentiment: Sentiment }[] = [
-          { author: "Aria Patel", avatar: "AP", text: "Love this 🙌 keep it up!", sentiment: "positive" },
-          { author: "Noah Kim", avatar: "NK", text: "Just shared with my team — super helpful.", sentiment: "positive" },
-          { author: "Lia Romano", avatar: "LR", text: "Quick q — does this apply to enterprise plans too?", sentiment: "neutral" },
-          { author: "Ben Carter", avatar: "BC", text: "Been waiting for this update for ages 🎉", sentiment: "positive" },
-          { author: "Sana Iqbal", avatar: "SI", text: "How does this compare to last year's release?", sentiment: "neutral" },
-          { author: "Owen Reyes", avatar: "OR", text: "Following for the giveaway 🤞", sentiment: "neutral" },
-          { author: "Mira Chen", avatar: "MC", text: "Honestly the best update so far this year.", sentiment: "positive" },
-          { author: "Jacob Hill", avatar: "JH", text: "Tagging the team — we should try this.", sentiment: "positive" },
-          { author: "Eva Mendes", avatar: "EM", text: "When will EU customers see this rolled out?", sentiment: "neutral" },
-          { author: "Tariq Yusuf", avatar: "TY", text: "Could the docs link be added to the post?", sentiment: "neutral" },
-          { author: "Hana Kobayashi", avatar: "HK", text: "Beautiful work — visuals are 🔥", sentiment: "positive" },
-          { author: "Diego Salas", avatar: "DS", text: "Took me 5 mins to set up. Smooth.", sentiment: "positive" },
-        ];
-        const filler: Comment[] = Array.from({ length: fillerNeeded }, (_, i) => {
-          const s = fillerSamples[i % fillerSamples.length];
-          return {
-            id: `${p.id}-F-${i}`,
-            author: s.author, avatar: s.avatar, text: s.text,
-            at: `${i + 1}h`, sentiment: s.sentiment, likes: ((i * 3) % 12),
-            stage: "pending" as Stage, priority: "low" as Priority,
-            sla: { dueIn: `${1 + (i % 5)}h ${10 + i}m`, breached: false },
-          };
-        });
-        const visibleComments = [...realComments, ...filler];
+      {posts.map((p) => (
+        <PostThread
+          key={p.id}
+          post={p}
+          open={openIds.has(p.id)}
+          onToggle={() => toggle(p.id)}
+          updateComment={updateComment}
+          addReply={addReply}
+        />
+      ))}
+    </div>
+  );
+}
 
-        return (
-          <div key={p.id} className="bg-card rounded-xl border border-border overflow-hidden">
-            <button
-              onClick={() => toggle(p.id)}
-              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/20 transition-colors text-left"
+function PostThread({
+  post: p, open, onToggle, updateComment, addReply,
+}: {
+  post: Post;
+  open: boolean;
+  onToggle: () => void;
+  updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
+}) {
+  const [filter, setFilter] = useState<ThreadFilter>("all");
+  const { items, isNewById } = useMemo(() => buildDenseThread(p), [p]);
+
+  const counts = useMemo(() => {
+    const newCnt = items.filter((c) => isNewById.has(c.id)).length;
+    const awaiting = items.filter((c) => c.stage === "pending" || c.stage === "in_review").length;
+    const replied = items.filter((c) => c.stage === "replied").length;
+    return { all: items.length, new: newCnt, awaiting, replied };
+  }, [items, isNewById]);
+
+  const filtered = useMemo(() => {
+    switch (filter) {
+      case "new": return items.filter((c) => isNewById.has(c.id));
+      case "awaiting": return items.filter((c) => c.stage === "pending" || c.stage === "in_review");
+      case "replied": return items.filter((c) => c.stage === "replied");
+      default: return items;
+    }
+  }, [filter, items, isNewById]);
+
+  const chips: { id: ThreadFilter; label: string; count: number; tone: string }[] = [
+    { id: "all", label: "All", count: counts.all, tone: "bg-muted text-muted-foreground" },
+    { id: "new", label: "New", count: counts.new, tone: "bg-primary/15 text-primary" },
+    { id: "awaiting", label: "Awaiting reply", count: counts.awaiting, tone: "bg-warning/15 text-warning" },
+    { id: "replied", label: "Replied", count: counts.replied, tone: "bg-success/15 text-success" },
+  ];
+
+  return (
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/20 transition-colors text-left"
+      >
+        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xl flex-shrink-0">
+          {p.thumbnail}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <PlatformIcon name={p.platform} />
+            <p className="text-sm font-semibold text-foreground truncate">{p.title}</p>
+            {p.platform === "GBP" && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">SEO</span>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">Published {p.publishedAt}</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 text-muted-foreground" title="Total comments on this post">
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span className="font-semibold text-foreground tabular-nums">{fmt(p.commentCount)}</span>
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold tabular-nums"
+            title={`${fmt(p.newCount)} new comments since last visit`}
+          >
+            {fmt(p.newCount)} new
+          </span>
+          {counts.awaiting > 0 && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-semibold tabular-nums"
+              title="Awaiting your reply"
             >
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xl flex-shrink-0">
-                {p.thumbnail}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <PlatformIcon name={p.platform} />
-                  <p className="text-sm font-semibold text-foreground truncate">{p.title}</p>
-                  {p.platform === "GBP" && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">SEO</span>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted-foreground">Published {p.publishedAt}</p>
-              </div>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <MessageSquare className="w-3.5 h-3.5" /> <span className="font-semibold text-foreground tabular-nums">{p.commentCount}</span>
-                </span>
-                {p.newCount > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold tabular-nums">
-                    {fmt(p.newCount)} new
-                  </span>
-                )}
-              </div>
-            </button>
+              {fmt(counts.awaiting)} to reply
+            </span>
+          )}
+        </div>
+      </button>
 
-            {open && (
-              <div className="border-t border-border bg-muted/20">
-                <div className="px-4 py-2 flex items-center justify-between text-[11px] text-muted-foreground border-b border-border bg-card/40">
-                  <span>
-                    Showing <span className="font-semibold text-foreground tabular-nums">{fmt(visibleComments.length)}</span> of{" "}
-                    <span className="tabular-nums">{fmt(p.commentCount)}</span> comments
+      {open && (
+        <div className="border-t border-border bg-muted/20">
+          {/* Filter chip row — explains the 247-vs-32 relationship */}
+          <div className="px-4 py-2.5 border-b border-border bg-card/60 flex items-center gap-2 flex-wrap">
+            <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+            {chips.map((ch) => {
+              const active = filter === ch.id;
+              return (
+                <button
+                  key={ch.id}
+                  onClick={() => setFilter(ch.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors",
+                    active
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-card text-muted-foreground border-border hover:text-foreground",
+                  )}
+                >
+                  {ch.label}
+                  <span className={cn("text-[10px] tabular-nums px-1.5 rounded-full font-semibold", active ? "bg-background/20 text-background" : ch.tone)}>
+                    {fmt(ch.count)}
                   </span>
-                  <span className="tabular-nums">
-                    <span className="text-primary font-semibold">{fmt(p.newCount)}</span> new since last visit
-                  </span>
-                </div>
-                <div className="p-4 space-y-3 max-h-[520px] overflow-y-auto">
-                  {visibleComments.map((c) => (
-                    <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} addReply={addReply} />
-                  ))}
-                </div>
+                </button>
+              );
+            })}
+            <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
+              Showing <span className="font-semibold text-foreground">{fmt(filtered.length)}</span> of {fmt(p.commentCount)}
+            </span>
+          </div>
+
+          {/* Inner-scrollable thread */}
+          <div className="p-4 space-y-3 max-h-[520px] overflow-y-auto">
+            {filtered.map((c) => (
+              <div key={c.id} className="relative">
+                {isNewById.has(c.id) && (
+                  <span className="absolute -left-1 top-3 w-1.5 h-1.5 rounded-full bg-primary" title="New since last visit" />
+                )}
+                <CommentNode
+                  comment={c}
+                  depth={0}
+                  updateComment={updateComment}
+                  addReply={addReply}
+                />
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-[11px] text-center py-8 text-muted-foreground">
+                No comments match this filter.
               </div>
             )}
           </div>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 }
