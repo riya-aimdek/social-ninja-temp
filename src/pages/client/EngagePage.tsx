@@ -853,7 +853,7 @@ function BoardView({
       {/* Drag hint */}
       <div className="flex items-center justify-end">
         <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
-          <Zap className="w-3 h-3" /> Drag cards between columns to update status
+          <Zap className="w-3 h-3" /> Drag cards between columns — or use the ⋯ menu on each card to move or mark spam
         </span>
       </div>
 
