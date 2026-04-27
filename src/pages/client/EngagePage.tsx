@@ -387,7 +387,7 @@ export default function EngagePage() {
 
       {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
-      {tab === "threads" && <ThreadsView posts={posts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} />}
+      {tab === "threads" && <ThreadsView posts={posts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} />}
       {tab === "spam" && <SpamView spam={spamComments} unspam={(id) => updateComment(id, { isSpam: false })} />}
       {tab === "variants" && <VariantsView templates={templates} setTemplates={setTemplates} />}
