@@ -121,6 +121,7 @@ const App = () => (
             <Route path="/client/settings/profile" element={<ClientSettingsPage defaultTab="profile" />} />
             <Route path="/client/settings/billing" element={<ClientSettingsPage defaultTab="billing" />} />
             <Route path="/client/settings/team" element={<ClientSettingsPage defaultTab="team" />} />
+            <Route path="/client/settings/approvals" element={<ClientSettingsPage defaultTab="approvals" />} />
             <Route path="/client/settings/notifications" element={<ClientSettingsPage defaultTab="notifications" />} />
             <Route path="/client/settings/hashtags" element={<ClientSettingsPage defaultTab="hashtags" />} />
             <Route path="/client/settings/saved-replies" element={<ClientSettingsPage defaultTab="saved-replies" />} />
