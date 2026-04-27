@@ -603,6 +603,25 @@ function BoardView({
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
 }) {
+  const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<Stage | null>(null);
+
+  const PLATFORMS: ("all" | Platform)[] = ["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"];
+  const filtered = platformFilter === "all" ? comments : comments.filter((c) => c.post.platform === platformFilter);
+
+  const handleDrop = (stage: Stage) => {
+    if (draggingId) {
+      const card = comments.find((c) => c.id === draggingId);
+      if (card && card.stage !== stage) {
+        updateComment(draggingId, { stage });
+        toast.success(`Moved to ${STAGES.find((s) => s.id === stage)?.label}`);
+      }
+    }
+    setDraggingId(null);
+    setDropTarget(null);
+  };
+
   return (
     <div className="space-y-4">
       {/* Workload */}
@@ -629,25 +648,81 @@ function BoardView({
         </div>
       </div>
 
+      {/* Platform filter + helper */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Platform</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {PLATFORMS.map((p) => {
+            const active = platformFilter === p;
+            const count = p === "all" ? comments.length : comments.filter((c) => c.post.platform === p).length;
+            return (
+              <button
+                key={p}
+                onClick={() => setPlatformFilter(p)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors",
+                  active
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-card text-muted-foreground border-border hover:text-foreground",
+                )}
+              >
+                {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
+                {p === "all" ? "All" : p}
+                <span className={cn(
+                  "text-[10px] tabular-nums px-1 rounded",
+                  active ? "bg-background/20" : "text-muted-foreground",
+                )}>
+                  {cap(count, 99)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <span className="ml-auto text-[10px] text-muted-foreground inline-flex items-center gap-1">
+          <Zap className="w-3 h-3" /> Drag cards between columns to update status
+        </span>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {STAGES.map((stage) => {
-          const items = comments.filter((c) => c.stage === stage.id);
+          const items = filtered.filter((c) => c.stage === stage.id);
+          const isDropTarget = dropTarget === stage.id;
           return (
-            <div key={stage.id} className="bg-muted/40 rounded-xl p-3 min-h-[480px]">
+            <div
+              key={stage.id}
+              onDragOver={(e) => { e.preventDefault(); setDropTarget(stage.id); }}
+              onDragLeave={(e) => {
+                // Only clear if leaving the column entirely
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropTarget(null);
+              }}
+              onDrop={() => handleDrop(stage.id)}
+              className={cn(
+                "bg-muted/40 rounded-xl p-3 min-h-[480px] transition-colors",
+                isDropTarget && "bg-primary/10 ring-2 ring-primary/40",
+              )}
+            >
               <div className="flex items-center gap-2 mb-3">
                 <span className={cn("w-2 h-2 rounded-full", stage.dot)} />
                 <h3 className="text-xs font-semibold text-foreground">{stage.label}</h3>
-                <span className="text-[10px] text-muted-foreground bg-card px-1.5 py-0.5 rounded">{items.length}</span>
+                <span className="text-[10px] text-muted-foreground bg-card px-1.5 py-0.5 rounded">{cap(items.length, 99)}</span>
               </div>
               <div className="space-y-2">
                 {items.map((c) => {
                   const sm = sentimentMeta[c.sentiment];
+                  const dragging = draggingId === c.id;
                   return (
                     <div
                       key={c.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingId(c.id);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onDragEnd={() => { setDraggingId(null); setDropTarget(null); }}
                       className={cn(
-                        "bg-card border rounded-lg p-2.5 hover:border-border-hover transition-colors cursor-pointer",
+                        "bg-card border rounded-lg p-2.5 transition-all cursor-grab active:cursor-grabbing select-none",
                         c.sla.breached ? "border-l-2 border-l-error border-border" : "border-border",
+                        dragging ? "opacity-40 rotate-1 shadow-lg" : "hover:border-border-hover hover:shadow-sm",
                       )}
                     >
                       <div className="flex items-center gap-1.5 mb-1.5">
@@ -672,17 +747,17 @@ function BoardView({
                           <span className={cn("tabular-nums", c.sla.breached && "text-error font-semibold")}>{c.sla.dueIn}</span>
                         </div>
                       </div>
-                      <select
-                        value={c.stage}
-                        onChange={(e) => updateComment(c.id, { stage: e.target.value as Stage })}
-                        className="mt-2 w-full text-[10px] px-2 py-1 rounded border border-border bg-background outline-none focus:ring-1 focus:ring-ring"
-                      >
-                        {STAGES.map((s) => <option key={s.id} value={s.id}>Move to {s.label}</option>)}
-                      </select>
                     </div>
                   );
                 })}
-                {items.length === 0 && <div className="text-[11px] text-muted-foreground text-center py-6">Empty</div>}
+                {items.length === 0 && (
+                  <div className={cn(
+                    "text-[11px] text-center py-6 rounded-lg border border-dashed transition-colors",
+                    isDropTarget ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground",
+                  )}>
+                    {isDropTarget ? "Drop here" : "Empty"}
+                  </div>
+                )}
               </div>
             </div>
           );
