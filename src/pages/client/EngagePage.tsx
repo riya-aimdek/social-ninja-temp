@@ -833,23 +833,23 @@ export default function EngagePage() {
           {/* Divider */}
           <div className="h-6 w-px bg-border mx-1 shrink-0" />
 
-          {/* Compact search */}
-          <div className="relative flex-1 min-w-[160px]">
-            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
+          {/* Prominent search */}
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search…"
-              className="w-full pl-8 pr-7 h-9 rounded-lg bg-muted/40 border border-transparent focus:border-input focus:bg-background text-xs outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+              placeholder="Search comments, authors, keywords…"
+              className="w-full pl-9 pr-8 h-10 rounded-lg bg-background border border-input shadow-sm text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground placeholder:font-normal transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 aria-label="Clear search"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
