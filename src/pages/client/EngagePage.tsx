@@ -286,6 +286,22 @@ const POSTS: Post[] = [
         stage: "pending", priority: "high",
         sla: { dueIn: "1h 22m", breached: false },
       },
+      {
+        id: "C-31", author: "Priya Sundaram", avatar: "PS",
+        text: "Loving the colour palette this season 😍", at: "5h",
+        sentiment: "positive", likes: 9, trigger: "praise",
+        aiDraft: "Thanks Priya 💐 — our design team poured a lot into this palette, glad it's landing!",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "55m", breached: false },
+      },
+      {
+        id: "C-32", author: "Brett Lawson", avatar: "BL",
+        text: "When does the bundle deal end?", at: "6h",
+        sentiment: "neutral", likes: 1, trigger: "product_inquiry",
+        aiDraft: "Hey Brett! 🛍️ Bundle pricing runs through Sunday 11:59pm PT.",
+        stage: "in_review", priority: "high", assignee: "Sarah C.",
+        sla: { dueIn: "40m", breached: false },
+      },
     ],
   },
 ];
