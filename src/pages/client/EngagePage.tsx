@@ -1002,6 +1002,7 @@ export default function EngagePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
 
 
       {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
