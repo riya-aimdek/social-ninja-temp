@@ -9,6 +9,10 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 /** Format a count with thousand-separators — show exact value, never truncate */
@@ -849,7 +853,7 @@ function BoardView({
       {/* Drag hint */}
       <div className="flex items-center justify-end">
         <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
-          <Zap className="w-3 h-3" /> Drag cards between columns to update status
+          <Zap className="w-3 h-3" /> Drag cards between columns — or use the ⋯ menu on each card to move or mark spam
         </span>
       </div>
 
@@ -890,7 +894,7 @@ function BoardView({
                       }}
                       onDragEnd={() => { setDraggingId(null); setDropTarget(null); }}
                       className={cn(
-                        "bg-card border rounded-lg p-2.5 transition-all cursor-grab active:cursor-grabbing select-none",
+                        "group bg-card border rounded-lg p-2.5 transition-all cursor-grab active:cursor-grabbing select-none",
                         c.sla.breached ? "border-l-2 border-l-error border-border" : "border-border",
                         dragging ? "opacity-40 rotate-1 shadow-lg" : "hover:border-border-hover hover:shadow-sm",
                       )}
@@ -901,6 +905,46 @@ function BoardView({
                         <span className={cn("text-[9px] px-1.5 py-0.5 rounded-full font-medium capitalize ml-auto", priorityStyles[c.priority])}>
                           {c.priority}
                         </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-5 h-5 rounded hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center justify-center -my-1 -mr-1"
+                            aria-label="Card actions"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Move to
+                            </DropdownMenuLabel>
+                            {STAGES.map((s) => (
+                              <DropdownMenuItem
+                                key={s.id}
+                                disabled={s.id === c.stage}
+                                onClick={() => {
+                                  updateComment(c.id, { stage: s.id });
+                                  toast.success(`Moved to ${s.label}`);
+                                }}
+                                className="text-xs gap-2"
+                              >
+                                <span className={cn("w-2 h-2 rounded-full", s.dot)} />
+                                {s.label}
+                                {s.id === c.stage && <Check className="w-3 h-3 ml-auto text-muted-foreground" />}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                updateComment(c.id, { isSpam: true });
+                                toast.success("Marked as spam — moved to Spam Queue");
+                              }}
+                              className="text-xs gap-2 text-error focus:text-error"
+                            >
+                              <Shield className="w-3 h-3" /> Mark as spam
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                       <p className="text-[11px] text-muted-foreground italic line-clamp-1 mb-1">on "{c.post.title}"</p>
                       <p className="text-xs font-medium text-foreground line-clamp-2 mb-2">{c.text}</p>
