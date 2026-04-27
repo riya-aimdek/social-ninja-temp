@@ -8,7 +8,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+
+/** Cap a number for compact display (e.g. 10+) */
+const cap = (n: number, max = 10) => (n > max ? `${max}+` : `${n}`);
 
 /* ──────────────────────────────────────────────────────────────
    Types
