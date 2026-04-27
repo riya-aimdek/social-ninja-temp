@@ -308,181 +308,6 @@ const POSTS: Post[] = [
       },
     ],
   },
-  {
-    id: "P-197", platform: "Twitter",
-    title: "Hot take: design systems are products, not deliverables 🧵",
-    thumbnail: "🧵", publishedAt: "1d ago",
-    commentCount: 184, newCount: 38,
-    comments: [
-      {
-        id: "C-40", author: "Jamal Otieno", avatar: "JO",
-        text: "100%. Treat the consumers (other teams) like users and you win.", at: "5h",
-        sentiment: "positive", likes: 22, trigger: "praise",
-        aiDraft: "Exactly, Jamal — couldn't have said it better. Treating internal teams as users is what unlocks adoption.",
-        stage: "pending", priority: "medium",
-        sla: { dueIn: "2h 10m", breached: false },
-      },
-      {
-        id: "C-41", author: "Sasha Vargas", avatar: "SV",
-        text: "Counterpoint: most orgs aren't ready to staff a product team for tokens.", at: "4h",
-        sentiment: "neutral", likes: 14, trigger: "general",
-        aiDraft: "Fair point, Sasha — not everyone needs a full squad. Even one part-time owner with a roadmap shifts the outcome dramatically.",
-        stage: "in_review", priority: "medium", assignee: "Mike T.",
-        sla: { dueIn: "1h 35m", breached: false },
-      },
-      {
-        id: "C-42", author: "Ade Bankole", avatar: "AB",
-        text: "Saving this thread, going to share with my lead Monday 🙌", at: "3h",
-        sentiment: "positive", likes: 7, trigger: "praise",
-        aiDraft: "Love that Ade — let us know how the convo goes!",
-        stage: "pending", priority: "low",
-        sla: { dueIn: "4h 10m", breached: false },
-      },
-    ],
-  },
-  {
-    id: "P-196", platform: "Instagram",
-    title: "Behind the scenes — our packaging redesign ✂️",
-    thumbnail: "📦", publishedAt: "2d ago",
-    commentCount: 421, newCount: 53,
-    comments: [
-      {
-        id: "C-50", author: "Karen Mwangi", avatar: "KM",
-        text: "The minimal kraft look is *chef's kiss* 🤌", at: "6h",
-        sentiment: "positive", likes: 31, trigger: "praise",
-        aiDraft: "Karen 🤍 thank you! Kraft was a bit of a gamble — so glad it's landing.",
-        stage: "pending", priority: "low",
-        sla: { dueIn: "5h 00m", breached: false },
-      },
-      {
-        id: "C-51", author: "Theo Nakamura", avatar: "TN",
-        text: "Is the new packaging actually recyclable end-to-end?", at: "5h",
-        sentiment: "neutral", likes: 12, trigger: "product_inquiry",
-        aiDraft: "Great question Theo — yes, every layer (mailer, insert, tape) is curbside-recyclable. Full breakdown is on our sustainability page.",
-        stage: "in_review", priority: "high", assignee: "Priya S.",
-        sla: { dueIn: "45m", breached: false },
-      },
-      {
-        id: "C-52", author: "Mona Eliasson", avatar: "ME",
-        text: "Mine arrived crushed last week tbh 😬", at: "4h",
-        sentiment: "negative", likes: 3, trigger: "complaint",
-        aiDraft: "Mona, that's not on — really sorry. DM us your order # and we'll get a replacement out today.",
-        stage: "escalated", priority: "urgent", assignee: "Sarah C.",
-        sla: { dueIn: "OVERDUE 22m", breached: true },
-      },
-    ],
-  },
-  {
-    id: "P-195", platform: "LinkedIn",
-    title: "Q3 wrap: what worked, what didn't, what's next",
-    thumbnail: "📊", publishedAt: "2d ago",
-    commentCount: 256, newCount: 19,
-    comments: [
-      {
-        id: "C-60", author: "Felix Andersen", avatar: "FA",
-        text: "The candor here is refreshing — most Q3 posts are pure spin.", at: "8h",
-        sentiment: "positive", likes: 18, trigger: "praise",
-        aiDraft: "Thanks Felix 🙏 — we figured being honest about misses helps more than another victory lap.",
-        stage: "pending", priority: "medium",
-        sla: { dueIn: "3h 40m", breached: false },
-      },
-      {
-        id: "C-61", author: "Harini Subramanian", avatar: "HS",
-        text: "Curious what tooling you used for the attribution piece?", at: "7h",
-        sentiment: "neutral", likes: 6, trigger: "product_inquiry",
-        aiDraft: "Hi Harini! Mix of Dreamdata + a bit of internal SQL on the warehouse. Happy to share the model in DM.",
-        stage: "pending", priority: "medium",
-        sla: { dueIn: "2h 50m", breached: false },
-      },
-    ],
-  },
-  {
-    id: "P-194", platform: "GBP",
-    title: "Westside branch — now open Saturdays",
-    thumbnail: "🏪", publishedAt: "3d ago",
-    commentCount: 64, newCount: 9,
-    comments: [
-      {
-        id: "C-70", author: "Owen Pritchard", avatar: "OP",
-        text: "Finally! Used to drive across town just for the Saturday hours.", at: "10h",
-        sentiment: "positive", likes: 5, trigger: "praise",
-        aiDraft: "So glad to hear that, Owen 🙌 — see you on a Saturday soon!",
-        stage: "replied", priority: "low", assignee: "Mike T.",
-        sla: { dueIn: "—", breached: false },
-      },
-      {
-        id: "C-71", author: "Carla Núñez", avatar: "CN",
-        text: "Are walk-ins okay on Saturdays or do I need to book?", at: "9h",
-        sentiment: "neutral", likes: 1, trigger: "product_inquiry",
-        aiDraft: "Hi Carla! Walk-ins are welcome — bookings just guarantee a slot if it's busy.",
-        stage: "pending", priority: "medium",
-        sla: { dueIn: "1h 25m", breached: false },
-      },
-      {
-        id: "C-72", author: "Drew Hollings", avatar: "DH",
-        text: "Westside parking is awful though, any plans there?", at: "8h",
-        sentiment: "negative", likes: 4, trigger: "complaint",
-        aiDraft: "Hear you, Drew — we're piloting a validated lot with the garage next door starting next month. Will post details soon!",
-        stage: "in_review", priority: "high", assignee: "Sarah C.",
-        sla: { dueIn: "30m", breached: false },
-      },
-    ],
-  },
-  {
-    id: "P-193", platform: "Facebook",
-    title: "Customer story: how Acme Co cut onboarding time by 60%",
-    thumbnail: "📈", publishedAt: "3d ago",
-    commentCount: 142, newCount: 11,
-    comments: [
-      {
-        id: "C-80", author: "Iris Whitlock", avatar: "IW",
-        text: "Would love a deeper case study PDF on this one.", at: "12h",
-        sentiment: "positive", likes: 9, trigger: "product_inquiry",
-        aiDraft: "Iris, perfect timing — the long-form PDF drops next Tuesday. Want us to email you the moment it goes live?",
-        stage: "pending", priority: "medium",
-        sla: { dueIn: "2h 00m", breached: false },
-      },
-      {
-        id: "C-81", author: "Ravi Deshpande", avatar: "RD",
-        text: "60% feels generous — what was the baseline?", at: "11h",
-        sentiment: "neutral", likes: 5, trigger: "general",
-        aiDraft: "Fair pushback Ravi — baseline was their pre-rollout 4-week onboarding cycle, measured to first value. Happy to share the methodology.",
-        stage: "pending", priority: "medium",
-        sla: { dueIn: "1h 45m", breached: false },
-      },
-    ],
-  },
-  {
-    id: "P-192", platform: "Instagram",
-    title: "Giveaway 🎁 — win a year of our Pro plan",
-    thumbnail: "🎁", publishedAt: "4d ago",
-    commentCount: 1284, newCount: 87,
-    comments: [
-      {
-        id: "C-90", author: "Mae Olusanya", avatar: "MO",
-        text: "Tagging @nina @sam @jules 🤞🤞", at: "1d",
-        sentiment: "positive", likes: 2, trigger: "general",
-        aiDraft: "Good luck Mae! 🍀 Make sure you're following so we can DM the winner.",
-        stage: "pending", priority: "low",
-        sla: { dueIn: "6h 00m", breached: false },
-      },
-      {
-        id: "C-91", author: "Peter Rookwood", avatar: "PR",
-        text: "How do you pick the winner — random or judged?", at: "1d",
-        sentiment: "neutral", likes: 14, trigger: "product_inquiry",
-        aiDraft: "Hey Peter — fully random pick from valid entries, drawn live on Friday's story.",
-        stage: "in_review", priority: "medium", assignee: "Priya S.",
-        sla: { dueIn: "4h 30m", breached: false },
-      },
-      {
-        id: "C-92", author: "GIVEAWAY-BOT-9921", avatar: "GB",
-        text: "WIN $$$$ FREE iPhone click >> bit.ly/xxxx", at: "23h",
-        sentiment: "neutral", likes: 0, isSpam: true,
-        stage: "pending", priority: "low",
-        sla: { dueIn: "—", breached: false },
-      },
-    ],
-  },
 ];
 
 const REPLY_TEMPLATES: ReplyTemplate[] = [
@@ -1185,7 +1010,7 @@ function ThreadsView({
         <p className="text-xs text-muted-foreground">
           Showing <span className="font-semibold text-foreground tabular-nums">{fmt(posts.length)}</span> posts ·{" "}
           <span className="font-semibold text-foreground tabular-nums">
-            {fmt(posts.reduce((sum, p) => sum + p.comments.filter((c) => !c.isSpam).length, 0))}
+            {fmt(posts.reduce((sum, p) => sum + Math.max(p.comments.filter((c) => !c.isSpam).length, p.newCount), 0))}
           </span>{" "}
           comments to review
         </p>
@@ -1201,7 +1026,36 @@ function ThreadsView({
 
       {posts.map((p) => {
         const open = openIds.has(p.id);
-        const visibleComments = p.comments.filter((c) => !c.isSpam);
+        const realComments = p.comments.filter((c) => !c.isSpam);
+        // Pad with synthetic comments so the visible thread reflects the post's newCount badge
+        const target = Math.max(realComments.length, p.newCount);
+        const fillerNeeded = Math.max(0, target - realComments.length);
+        const fillerSamples: { author: string; avatar: string; text: string; sentiment: Sentiment }[] = [
+          { author: "Aria Patel", avatar: "AP", text: "Love this 🙌 keep it up!", sentiment: "positive" },
+          { author: "Noah Kim", avatar: "NK", text: "Just shared with my team — super helpful.", sentiment: "positive" },
+          { author: "Lia Romano", avatar: "LR", text: "Quick q — does this apply to enterprise plans too?", sentiment: "neutral" },
+          { author: "Ben Carter", avatar: "BC", text: "Been waiting for this update for ages 🎉", sentiment: "positive" },
+          { author: "Sana Iqbal", avatar: "SI", text: "How does this compare to last year's release?", sentiment: "neutral" },
+          { author: "Owen Reyes", avatar: "OR", text: "Following for the giveaway 🤞", sentiment: "neutral" },
+          { author: "Mira Chen", avatar: "MC", text: "Honestly the best update so far this year.", sentiment: "positive" },
+          { author: "Jacob Hill", avatar: "JH", text: "Tagging the team — we should try this.", sentiment: "positive" },
+          { author: "Eva Mendes", avatar: "EM", text: "When will EU customers see this rolled out?", sentiment: "neutral" },
+          { author: "Tariq Yusuf", avatar: "TY", text: "Could the docs link be added to the post?", sentiment: "neutral" },
+          { author: "Hana Kobayashi", avatar: "HK", text: "Beautiful work — visuals are 🔥", sentiment: "positive" },
+          { author: "Diego Salas", avatar: "DS", text: "Took me 5 mins to set up. Smooth.", sentiment: "positive" },
+        ];
+        const filler: Comment[] = Array.from({ length: fillerNeeded }, (_, i) => {
+          const s = fillerSamples[i % fillerSamples.length];
+          return {
+            id: `${p.id}-F-${i}`,
+            author: s.author, avatar: s.avatar, text: s.text,
+            at: `${i + 1}h`, sentiment: s.sentiment, likes: ((i * 3) % 12),
+            stage: "pending" as Stage, priority: "low" as Priority,
+            sla: { dueIn: `${1 + (i % 5)}h ${10 + i}m`, breached: false },
+          };
+        });
+        const visibleComments = [...realComments, ...filler];
+
         return (
           <div key={p.id} className="bg-card rounded-xl border border-border overflow-hidden">
             <button
@@ -1234,10 +1088,21 @@ function ThreadsView({
             </button>
 
             {open && (
-              <div className="border-t border-border p-4 space-y-3 bg-muted/20">
-                {visibleComments.map((c) => (
-                  <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} addReply={addReply} />
-                ))}
+              <div className="border-t border-border bg-muted/20">
+                <div className="px-4 py-2 flex items-center justify-between text-[11px] text-muted-foreground border-b border-border bg-card/40">
+                  <span>
+                    Showing <span className="font-semibold text-foreground tabular-nums">{fmt(visibleComments.length)}</span> of{" "}
+                    <span className="tabular-nums">{fmt(p.commentCount)}</span> comments
+                  </span>
+                  <span className="tabular-nums">
+                    <span className="text-primary font-semibold">{fmt(p.newCount)}</span> new since last visit
+                  </span>
+                </div>
+                <div className="p-4 space-y-3 max-h-[520px] overflow-y-auto">
+                  {visibleComments.map((c) => (
+                    <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} addReply={addReply} />
+                  ))}
+                </div>
               </div>
             )}
           </div>
