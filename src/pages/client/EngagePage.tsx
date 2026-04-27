@@ -1030,7 +1030,7 @@ function ThreadsView({
         return (
           <div key={p.id} className="bg-card rounded-xl border border-border overflow-hidden">
             <button
-              onClick={() => setOpenId(open ? null : p.id)}
+              onClick={() => toggle(p.id)}
               className="w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/20 transition-colors text-left"
             >
               <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xl flex-shrink-0">
