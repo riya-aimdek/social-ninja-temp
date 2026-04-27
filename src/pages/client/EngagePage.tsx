@@ -1466,7 +1466,8 @@ function ThreadsView({
   addReply: (parentId: string, text: string) => void;
 }) {
   // Default: every post expanded
-  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(posts.map((p) => p.id)));
+  // Default: only the first post expanded — keeps initial render fast
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(posts.slice(0, 1).map((p) => p.id)));
 
   const toggle = (id: string) =>
     setOpenIds((prev) => {
