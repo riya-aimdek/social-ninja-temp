@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { CheckCircle2, XCircle, Calendar, Clock, ShieldCheck, ExternalLink, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { CheckCircle2, XCircle, Calendar, Clock, ShieldCheck, ExternalLink, Zap, Home, LogIn, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import PostPreview from "@/components/publish/PostPreview";
@@ -11,13 +13,35 @@ import { cn } from "@/lib/utils";
 
 type Decision = "pending" | "approved" | "rejected";
 
+const APPROVER_SESSION_KEY = "approverSession";
+
 export default function PublicApprovalPage() {
   const { token = "" } = useParams();
+  const navigate = useNavigate();
   const post = useMemo(() => getPostByToken(token), [token]);
   const [activePlatform, setActivePlatform] = useState(0);
   const [decision, setDecision] = useState<Decision>("pending");
   const [reason, setReason] = useState("");
   const [showReject, setShowReject] = useState(false);
+
+  // Approver login gate — clients must authenticate before reviewing
+  const [isAuthed, setIsAuthed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(APPROVER_SESSION_KEY) === token;
+  });
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail.trim() || !loginPassword.trim()) {
+      toast.error("Enter your email and password");
+      return;
+    }
+    sessionStorage.setItem(APPROVER_SESSION_KEY, token);
+    setIsAuthed(true);
+    toast.success("Signed in. You can now review this post.");
+  };
 
   if (!post) {
     return (
