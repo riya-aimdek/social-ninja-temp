@@ -789,7 +789,8 @@ export default function EngagePage() {
       </div>
 
 
-      {/* ─── Inbox toolbar (single-line: categories + search + sort + filters) ─── */}
+      {/* ─── Inbox toolbar — hidden on Variants (template manager, not comments) ─── */}
+      {tab !== "variants" && (
       <div className="bg-card rounded-xl border border-border p-2">
         <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
           {/* Category pills */}
