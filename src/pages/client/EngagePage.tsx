@@ -702,7 +702,7 @@ function ThreadsView({
                 </span>
                 {p.newCount > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold">
-                    {p.newCount} new
+                    {cap(p.newCount)} new
                   </span>
                 )}
               </div>
