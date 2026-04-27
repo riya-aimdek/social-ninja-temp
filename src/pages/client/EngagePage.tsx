@@ -156,7 +156,7 @@ const POSTS: Post[] = [
     id: "P-200", platform: "GBP",
     title: "Downtown location — new hours announcement",
     thumbnail: "📍", publishedAt: "5h ago",
-    commentCount: 23, newCount: 8,
+    commentCount: 128, newCount: 24,
     comments: [
       {
         id: "C-10", author: "David Kim", avatar: "DK",
