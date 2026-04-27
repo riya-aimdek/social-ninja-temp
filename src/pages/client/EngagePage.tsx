@@ -906,7 +906,7 @@ export default function EngagePage() {
 
         {/* Active filter chips + result count */}
         {hasAnyFilter && (
-          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-border">
+          <div className="flex items-center gap-1.5 flex-wrap mt-2 pt-2 border-t border-border">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mr-1">
               {fmt(allComments.length)} result{allComments.length === 1 ? "" : "s"}
             </span>
