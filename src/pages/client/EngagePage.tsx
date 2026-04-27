@@ -308,6 +308,173 @@ const POSTS: Post[] = [
       },
     ],
   },
+  {
+    id: "P-197", platform: "Twitter",
+    title: "Hot take: design systems are products, not deliverables 🧵",
+    thumbnail: "🧵", publishedAt: "1d ago",
+    commentCount: 184, newCount: 38,
+    comments: [
+      {
+        id: "C-40", author: "Jamal Otieno", avatar: "JO",
+        text: "100%. Treat the consumers (other teams) like users and you win.", at: "5h",
+        sentiment: "positive", likes: 22, trigger: "praise",
+        aiDraft: "Exactly, Jamal — couldn't have said it better.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 10m", breached: false },
+      },
+      {
+        id: "C-41", author: "Sasha Vargas", avatar: "SV",
+        text: "Counterpoint: most orgs aren't ready to staff a product team for tokens.", at: "4h",
+        sentiment: "neutral", likes: 14, trigger: "general",
+        aiDraft: "Fair point, Sasha — even one part-time owner shifts the outcome dramatically.",
+        stage: "in_review", priority: "medium", assignee: "Mike T.",
+        sla: { dueIn: "1h 35m", breached: false },
+      },
+      {
+        id: "C-42", author: "Ade Bankole", avatar: "AB",
+        text: "Saving this thread, going to share with my lead Monday 🙌", at: "3h",
+        sentiment: "positive", likes: 7, trigger: "praise",
+        aiDraft: "Love that Ade — let us know how the convo goes!",
+        stage: "replied", priority: "low", assignee: "Priya S.",
+        sla: { dueIn: "—", breached: false },
+      },
+    ],
+  },
+  {
+    id: "P-196", platform: "Instagram",
+    title: "Behind the scenes — our packaging redesign ✂️",
+    thumbnail: "📦", publishedAt: "2d ago",
+    commentCount: 421, newCount: 53,
+    comments: [
+      {
+        id: "C-50", author: "Karen Mwangi", avatar: "KM",
+        text: "The minimal kraft look is *chef's kiss* 🤌", at: "6h",
+        sentiment: "positive", likes: 31, trigger: "praise",
+        aiDraft: "Karen 🤍 thank you! Kraft was a bit of a gamble — so glad it's landing.",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "5h 00m", breached: false },
+      },
+      {
+        id: "C-51", author: "Theo Nakamura", avatar: "TN",
+        text: "Is the new packaging actually recyclable end-to-end?", at: "5h",
+        sentiment: "neutral", likes: 12, trigger: "product_inquiry",
+        aiDraft: "Great question Theo — yes, every layer is curbside-recyclable.",
+        stage: "in_review", priority: "high", assignee: "Priya S.",
+        sla: { dueIn: "45m", breached: false },
+      },
+      {
+        id: "C-52", author: "Mona Eliasson", avatar: "ME",
+        text: "Mine arrived crushed last week tbh 😬", at: "4h",
+        sentiment: "negative", likes: 3, trigger: "complaint",
+        aiDraft: "Mona, that's not on — DM us your order # and we'll get a replacement out today.",
+        stage: "escalated", priority: "urgent", assignee: "Sarah C.",
+        sla: { dueIn: "OVERDUE 22m", breached: true },
+      },
+    ],
+  },
+  {
+    id: "P-195", platform: "LinkedIn",
+    title: "Q3 wrap: what worked, what didn't, what's next",
+    thumbnail: "📊", publishedAt: "2d ago",
+    commentCount: 256, newCount: 19,
+    comments: [
+      {
+        id: "C-60", author: "Felix Andersen", avatar: "FA",
+        text: "The candor here is refreshing — most Q3 posts are pure spin.", at: "8h",
+        sentiment: "positive", likes: 18, trigger: "praise",
+        aiDraft: "Thanks Felix 🙏 — being honest about misses helps more than another victory lap.",
+        stage: "replied", priority: "medium", assignee: "Mike T.",
+        sla: { dueIn: "—", breached: false },
+      },
+      {
+        id: "C-61", author: "Harini Subramanian", avatar: "HS",
+        text: "Curious what tooling you used for the attribution piece?", at: "7h",
+        sentiment: "neutral", likes: 6, trigger: "product_inquiry",
+        aiDraft: "Hi Harini! Mix of Dreamdata + a bit of internal SQL on the warehouse.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 50m", breached: false },
+      },
+    ],
+  },
+  {
+    id: "P-194", platform: "GBP",
+    title: "Westside branch — now open Saturdays",
+    thumbnail: "🏪", publishedAt: "3d ago",
+    commentCount: 64, newCount: 9,
+    comments: [
+      {
+        id: "C-70", author: "Owen Pritchard", avatar: "OP",
+        text: "Finally! Used to drive across town just for the Saturday hours.", at: "10h",
+        sentiment: "positive", likes: 5, trigger: "praise",
+        aiDraft: "So glad to hear that, Owen 🙌 — see you on a Saturday soon!",
+        stage: "replied", priority: "low", assignee: "Mike T.",
+        sla: { dueIn: "—", breached: false },
+      },
+      {
+        id: "C-71", author: "Carla Núñez", avatar: "CN",
+        text: "Are walk-ins okay on Saturdays or do I need to book?", at: "9h",
+        sentiment: "neutral", likes: 1, trigger: "product_inquiry",
+        aiDraft: "Hi Carla! Walk-ins are welcome — bookings just guarantee a slot if it's busy.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "1h 25m", breached: false },
+      },
+    ],
+  },
+  {
+    id: "P-193", platform: "Facebook",
+    title: "Customer story: how Acme Co cut onboarding time by 60%",
+    thumbnail: "📈", publishedAt: "3d ago",
+    commentCount: 142, newCount: 11,
+    comments: [
+      {
+        id: "C-80", author: "Iris Whitlock", avatar: "IW",
+        text: "Would love a deeper case study PDF on this one.", at: "12h",
+        sentiment: "positive", likes: 9, trigger: "product_inquiry",
+        aiDraft: "Iris, perfect timing — the long-form PDF drops next Tuesday.",
+        stage: "in_review", priority: "medium", assignee: "Priya S.",
+        sla: { dueIn: "2h 00m", breached: false },
+      },
+      {
+        id: "C-81", author: "Ravi Deshpande", avatar: "RD",
+        text: "60% feels generous — what was the baseline?", at: "11h",
+        sentiment: "neutral", likes: 5, trigger: "general",
+        aiDraft: "Fair pushback Ravi — baseline was their pre-rollout 4-week onboarding cycle.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "1h 45m", breached: false },
+      },
+    ],
+  },
+  {
+    id: "P-192", platform: "Instagram",
+    title: "Giveaway 🎁 — win a year of our Pro plan",
+    thumbnail: "🎁", publishedAt: "4d ago",
+    commentCount: 1284, newCount: 87,
+    comments: [
+      {
+        id: "C-90", author: "Mae Olusanya", avatar: "MO",
+        text: "Tagging @nina @sam @jules 🤞🤞", at: "1d",
+        sentiment: "positive", likes: 2, trigger: "general",
+        aiDraft: "Good luck Mae! 🍀 Make sure you're following so we can DM the winner.",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "6h 00m", breached: false },
+      },
+      {
+        id: "C-91", author: "Peter Rookwood", avatar: "PR",
+        text: "How do you pick the winner — random or judged?", at: "1d",
+        sentiment: "neutral", likes: 14, trigger: "product_inquiry",
+        aiDraft: "Hey Peter — fully random pick from valid entries, drawn live on Friday's story.",
+        stage: "in_review", priority: "medium", assignee: "Priya S.",
+        sla: { dueIn: "4h 30m", breached: false },
+      },
+      {
+        id: "C-92", author: "GIVEAWAY-BOT-9921", avatar: "GB",
+        text: "WIN $$$$ FREE iPhone click >> bit.ly/xxxx", at: "23h",
+        sentiment: "neutral", likes: 0, isSpam: true,
+        stage: "pending", priority: "low",
+        sla: { dueIn: "—", breached: false },
+      },
+    ],
+  },
 ];
 
 const REPLY_TEMPLATES: ReplyTemplate[] = [
@@ -985,6 +1152,69 @@ function BoardView({
    View 3 — Comment threads grouped by post (with counts)
    ────────────────────────────────────────────────────────────── */
 
+type ThreadFilter = "all" | "new" | "awaiting" | "replied";
+
+const FILLER_SAMPLES: { author: string; avatar: string; text: string; sentiment: Sentiment }[] = [
+  { author: "Aria Patel", avatar: "AP", text: "Love this 🙌 keep it up!", sentiment: "positive" },
+  { author: "Noah Kim", avatar: "NK", text: "Just shared with my team — super helpful.", sentiment: "positive" },
+  { author: "Lia Romano", avatar: "LR", text: "Quick q — does this apply to enterprise plans too?", sentiment: "neutral" },
+  { author: "Ben Carter", avatar: "BC", text: "Been waiting for this update for ages 🎉", sentiment: "positive" },
+  { author: "Sana Iqbal", avatar: "SI", text: "How does this compare to last year's release?", sentiment: "neutral" },
+  { author: "Owen Reyes", avatar: "OR", text: "Following along — keep them coming.", sentiment: "neutral" },
+  { author: "Mira Chen", avatar: "MC", text: "Honestly the best update so far this year.", sentiment: "positive" },
+  { author: "Jacob Hill", avatar: "JH", text: "Tagging the team — we should try this.", sentiment: "positive" },
+  { author: "Eva Mendes", avatar: "EM", text: "When will EU customers see this rolled out?", sentiment: "neutral" },
+  { author: "Tariq Yusuf", avatar: "TY", text: "Could the docs link be added to the post?", sentiment: "neutral" },
+  { author: "Hana Kobayashi", avatar: "HK", text: "Beautiful work — visuals are 🔥", sentiment: "positive" },
+  { author: "Diego Salas", avatar: "DS", text: "Took me 5 mins to set up. Smooth.", sentiment: "positive" },
+  { author: "Lukas Weber", avatar: "LW", text: "Not sure I agree with the pricing change tbh.", sentiment: "negative" },
+  { author: "Yara Haddad", avatar: "YH", text: "Will there be a webinar walkthrough?", sentiment: "neutral" },
+  { author: "Sven Eriksson", avatar: "SE", text: "Big upgrade from last quarter, well done team.", sentiment: "positive" },
+];
+
+/** Build a realistic dense thread for a post — pads up to commentCount with synthetic items.
+ *  Stage mix is roughly: 65% replied (older), 10% in_review, 25% pending (the "new" bucket). */
+function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> } {
+  const real = p.comments.filter((c) => !c.isSpam);
+  const isNewById = new Set<string>();
+  // Real "new" items = pending or in_review (not yet handled)
+  real.forEach((c) => {
+    if (c.stage === "pending" || c.stage === "in_review") isNewById.add(c.id);
+  });
+  const target = Math.max(real.length, p.commentCount);
+  const fillerNeeded = Math.max(0, target - real.length);
+  // newCount drives how many filler items should appear as "new" (pending)
+  const fillerNewSlots = Math.max(0, p.newCount - Array.from(isNewById).length);
+
+  const filler: Comment[] = Array.from({ length: fillerNeeded }, (_, i) => {
+    const s = FILLER_SAMPLES[i % FILLER_SAMPLES.length];
+    const id = `${p.id}-F-${i}`;
+    let stage: Stage;
+    if (i < fillerNewSlots) {
+      // First N filler items are the "new" backlog — split between pending & in_review
+      stage = i % 4 === 0 ? "in_review" : "pending";
+      isNewById.add(id);
+    } else {
+      // Older comments — mostly already replied
+      stage = i % 9 === 0 ? "in_review" : "replied";
+    }
+    const ageHours = i + 1;
+    const age = ageHours < 24 ? `${ageHours}h` : `${Math.floor(ageHours / 24)}d`;
+    return {
+      id,
+      author: s.author, avatar: s.avatar, text: s.text,
+      at: age,
+      sentiment: s.sentiment,
+      likes: ((i * 5) % 18),
+      stage,
+      assignee: stage === "in_review" ? "Priya S." : stage === "replied" ? "Mike T." : undefined,
+      priority: "low",
+      sla: { dueIn: stage === "replied" ? "—" : `${1 + (i % 6)}h ${(i * 7) % 60}m`, breached: false },
+    };
+  });
+  return { items: [...real, ...filler], isNewById };
+}
+
 function ThreadsView({
   posts, updateComment, addReply,
 }: {
@@ -992,7 +1222,7 @@ function ThreadsView({
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
 }) {
-  // Default: every post expanded so users see all threads at once
+  // Default: every post expanded
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(posts.map((p) => p.id)));
 
   const toggle = (id: string) =>
@@ -1003,16 +1233,19 @@ function ThreadsView({
     });
 
   const allOpen = posts.length > 0 && posts.every((p) => openIds.has(p.id));
+  const totalNew = posts.reduce((s, p) => s + p.newCount, 0);
+  const totalAwaiting = posts.reduce(
+    (s, p) => s + p.comments.filter((c) => !c.isSpam && (c.stage === "pending" || c.stage === "in_review")).length + p.newCount,
+    0,
+  );
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-xs text-muted-foreground">
-          Showing <span className="font-semibold text-foreground tabular-nums">{fmt(posts.length)}</span> posts ·{" "}
-          <span className="font-semibold text-foreground tabular-nums">
-            {fmt(posts.reduce((sum, p) => sum + Math.max(p.comments.filter((c) => !c.isSpam).length, p.newCount), 0))}
-          </span>{" "}
-          comments to review
+          <span className="font-semibold text-foreground tabular-nums">{fmt(posts.length)}</span> posts ·{" "}
+          <span className="font-semibold text-foreground tabular-nums">{fmt(totalNew)}</span> new ·{" "}
+          <span className="font-semibold text-foreground tabular-nums">{fmt(totalAwaiting)}</span> awaiting reply
         </p>
         <Button
           variant="outline"
@@ -1024,90 +1257,150 @@ function ThreadsView({
         </Button>
       </div>
 
-      {posts.map((p) => {
-        const open = openIds.has(p.id);
-        const realComments = p.comments.filter((c) => !c.isSpam);
-        // Pad with synthetic comments so the visible thread reflects the post's newCount badge
-        const target = Math.max(realComments.length, p.newCount);
-        const fillerNeeded = Math.max(0, target - realComments.length);
-        const fillerSamples: { author: string; avatar: string; text: string; sentiment: Sentiment }[] = [
-          { author: "Aria Patel", avatar: "AP", text: "Love this 🙌 keep it up!", sentiment: "positive" },
-          { author: "Noah Kim", avatar: "NK", text: "Just shared with my team — super helpful.", sentiment: "positive" },
-          { author: "Lia Romano", avatar: "LR", text: "Quick q — does this apply to enterprise plans too?", sentiment: "neutral" },
-          { author: "Ben Carter", avatar: "BC", text: "Been waiting for this update for ages 🎉", sentiment: "positive" },
-          { author: "Sana Iqbal", avatar: "SI", text: "How does this compare to last year's release?", sentiment: "neutral" },
-          { author: "Owen Reyes", avatar: "OR", text: "Following for the giveaway 🤞", sentiment: "neutral" },
-          { author: "Mira Chen", avatar: "MC", text: "Honestly the best update so far this year.", sentiment: "positive" },
-          { author: "Jacob Hill", avatar: "JH", text: "Tagging the team — we should try this.", sentiment: "positive" },
-          { author: "Eva Mendes", avatar: "EM", text: "When will EU customers see this rolled out?", sentiment: "neutral" },
-          { author: "Tariq Yusuf", avatar: "TY", text: "Could the docs link be added to the post?", sentiment: "neutral" },
-          { author: "Hana Kobayashi", avatar: "HK", text: "Beautiful work — visuals are 🔥", sentiment: "positive" },
-          { author: "Diego Salas", avatar: "DS", text: "Took me 5 mins to set up. Smooth.", sentiment: "positive" },
-        ];
-        const filler: Comment[] = Array.from({ length: fillerNeeded }, (_, i) => {
-          const s = fillerSamples[i % fillerSamples.length];
-          return {
-            id: `${p.id}-F-${i}`,
-            author: s.author, avatar: s.avatar, text: s.text,
-            at: `${i + 1}h`, sentiment: s.sentiment, likes: ((i * 3) % 12),
-            stage: "pending" as Stage, priority: "low" as Priority,
-            sla: { dueIn: `${1 + (i % 5)}h ${10 + i}m`, breached: false },
-          };
-        });
-        const visibleComments = [...realComments, ...filler];
+      {posts.map((p) => (
+        <PostThread
+          key={p.id}
+          post={p}
+          open={openIds.has(p.id)}
+          onToggle={() => toggle(p.id)}
+          updateComment={updateComment}
+          addReply={addReply}
+        />
+      ))}
+    </div>
+  );
+}
 
-        return (
-          <div key={p.id} className="bg-card rounded-xl border border-border overflow-hidden">
-            <button
-              onClick={() => toggle(p.id)}
-              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/20 transition-colors text-left"
+function PostThread({
+  post: p, open, onToggle, updateComment, addReply,
+}: {
+  post: Post;
+  open: boolean;
+  onToggle: () => void;
+  updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
+}) {
+  const [filter, setFilter] = useState<ThreadFilter>("all");
+  const { items, isNewById } = useMemo(() => buildDenseThread(p), [p]);
+
+  const counts = useMemo(() => {
+    const newCnt = items.filter((c) => isNewById.has(c.id)).length;
+    const awaiting = items.filter((c) => c.stage === "pending" || c.stage === "in_review").length;
+    const replied = items.filter((c) => c.stage === "replied").length;
+    return { all: items.length, new: newCnt, awaiting, replied };
+  }, [items, isNewById]);
+
+  const filtered = useMemo(() => {
+    switch (filter) {
+      case "new": return items.filter((c) => isNewById.has(c.id));
+      case "awaiting": return items.filter((c) => c.stage === "pending" || c.stage === "in_review");
+      case "replied": return items.filter((c) => c.stage === "replied");
+      default: return items;
+    }
+  }, [filter, items, isNewById]);
+
+  const chips: { id: ThreadFilter; label: string; count: number; tone: string }[] = [
+    { id: "all", label: "All", count: counts.all, tone: "bg-muted text-muted-foreground" },
+    { id: "new", label: "New", count: counts.new, tone: "bg-primary/15 text-primary" },
+    { id: "awaiting", label: "Awaiting reply", count: counts.awaiting, tone: "bg-warning/15 text-warning" },
+    { id: "replied", label: "Replied", count: counts.replied, tone: "bg-success/15 text-success" },
+  ];
+
+  return (
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/20 transition-colors text-left"
+      >
+        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xl flex-shrink-0">
+          {p.thumbnail}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <PlatformIcon name={p.platform} />
+            <p className="text-sm font-semibold text-foreground truncate">{p.title}</p>
+            {p.platform === "GBP" && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">SEO</span>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">Published {p.publishedAt}</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 text-muted-foreground" title="Total comments on this post">
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span className="font-semibold text-foreground tabular-nums">{fmt(p.commentCount)}</span>
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold tabular-nums"
+            title={`${fmt(p.newCount)} new comments since last visit`}
+          >
+            {fmt(p.newCount)} new
+          </span>
+          {counts.awaiting > 0 && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-semibold tabular-nums"
+              title="Awaiting your reply"
             >
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xl flex-shrink-0">
-                {p.thumbnail}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <PlatformIcon name={p.platform} />
-                  <p className="text-sm font-semibold text-foreground truncate">{p.title}</p>
-                  {p.platform === "GBP" && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">SEO</span>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted-foreground">Published {p.publishedAt}</p>
-              </div>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <MessageSquare className="w-3.5 h-3.5" /> <span className="font-semibold text-foreground tabular-nums">{p.commentCount}</span>
-                </span>
-                {p.newCount > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold tabular-nums">
-                    {fmt(p.newCount)} new
-                  </span>
-                )}
-              </div>
-            </button>
+              {fmt(counts.awaiting)} to reply
+            </span>
+          )}
+        </div>
+      </button>
 
-            {open && (
-              <div className="border-t border-border bg-muted/20">
-                <div className="px-4 py-2 flex items-center justify-between text-[11px] text-muted-foreground border-b border-border bg-card/40">
-                  <span>
-                    Showing <span className="font-semibold text-foreground tabular-nums">{fmt(visibleComments.length)}</span> of{" "}
-                    <span className="tabular-nums">{fmt(p.commentCount)}</span> comments
+      {open && (
+        <div className="border-t border-border bg-muted/20">
+          {/* Filter chip row — explains the 247-vs-32 relationship */}
+          <div className="px-4 py-2.5 border-b border-border bg-card/60 flex items-center gap-2 flex-wrap">
+            <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+            {chips.map((ch) => {
+              const active = filter === ch.id;
+              return (
+                <button
+                  key={ch.id}
+                  onClick={() => setFilter(ch.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors",
+                    active
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-card text-muted-foreground border-border hover:text-foreground",
+                  )}
+                >
+                  {ch.label}
+                  <span className={cn("text-[10px] tabular-nums px-1.5 rounded-full font-semibold", active ? "bg-background/20 text-background" : ch.tone)}>
+                    {fmt(ch.count)}
                   </span>
-                  <span className="tabular-nums">
-                    <span className="text-primary font-semibold">{fmt(p.newCount)}</span> new since last visit
-                  </span>
-                </div>
-                <div className="p-4 space-y-3 max-h-[520px] overflow-y-auto">
-                  {visibleComments.map((c) => (
-                    <CommentNode key={c.id} comment={c} depth={0} updateComment={updateComment} addReply={addReply} />
-                  ))}
-                </div>
+                </button>
+              );
+            })}
+            <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
+              Showing <span className="font-semibold text-foreground">{fmt(filtered.length)}</span> of {fmt(p.commentCount)}
+            </span>
+          </div>
+
+          {/* Inner-scrollable thread */}
+          <div className="p-4 space-y-3 max-h-[520px] overflow-y-auto">
+            {filtered.map((c) => (
+              <div key={c.id} className="relative">
+                {isNewById.has(c.id) && (
+                  <span className="absolute -left-1 top-3 w-1.5 h-1.5 rounded-full bg-primary" title="New since last visit" />
+                )}
+                <CommentNode
+                  comment={c}
+                  depth={0}
+                  updateComment={updateComment}
+                  addReply={addReply}
+                />
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-[11px] text-center py-8 text-muted-foreground">
+                No comments match this filter.
               </div>
             )}
           </div>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 }
