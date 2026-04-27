@@ -10,6 +10,7 @@ const tabs = [
   { id: "profile", label: "Profile", icon: User },
   { id: "billing", label: "Billing", icon: CreditCard },
   { id: "team", label: "Team", icon: Users },
+  { id: "approvals", label: "Approvals", icon: CheckCircle2 },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "hashtags", label: "Hashtags", icon: Hash },
   { id: "saved-replies", label: "Saved Replies", icon: MessageSquare },
