@@ -603,28 +603,51 @@ export default function EngagePage() {
     setPosts((prev) => prev.map((p) => ({ ...p, comments: patchTree(p.comments, id, patch) })));
   };
 
-  /** Append a reply to any node in the tree (any depth) */
-  const appendReply = (list: Comment[], parentId: string, reply: Comment): Comment[] =>
-    list.map((c) => {
-      if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
-      if (c.replies?.length) return { ...c, replies: appendReply(c.replies, parentId, reply) };
-      return c;
-    });
+  /**
+   * Instagram-style threading — replies always attach to the TOP-LEVEL parent.
+   * If the user replies to a nested reply, we resolve the top-level ancestor
+   * and prefix the text with @author so context is preserved.
+   */
+  const findTopLevelParent = (
+    list: Comment[],
+    id: string,
+  ): { top: Comment; target: Comment } | null => {
+    for (const c of list) {
+      if (c.id === id) return { top: c, target: c };
+      if (c.replies?.length) {
+        const hit = c.replies.find((r) => r.id === id);
+        if (hit) return { top: c, target: hit };
+      }
+    }
+    return null;
+  };
 
   const addReply = (parentId: string, text: string) => {
-    const reply: Comment = {
-      id: `R-${Date.now()}`,
-      author: "You",
-      avatar: "YO",
-      text,
-      at: "just now",
-      sentiment: "positive",
-      likes: 0,
-      stage: "replied",
-      priority: "low",
-      sla: { dueIn: "—", breached: false },
-    };
-    setPosts((prev) => prev.map((p) => ({ ...p, comments: appendReply(p.comments, parentId, reply) })));
+    setPosts((prev) =>
+      prev.map((p) => {
+        const found = findTopLevelParent(p.comments, parentId);
+        if (!found) return p;
+        const isNested = found.top.id !== found.target.id;
+        const reply: Comment = {
+          id: `R-${Date.now()}`,
+          author: "You",
+          avatar: "YO",
+          text: isNested ? `@${found.target.author} ${text}` : text,
+          at: "just now",
+          sentiment: "positive",
+          likes: 0,
+          stage: "replied",
+          priority: "low",
+          sla: { dueIn: "—", breached: false },
+        };
+        return {
+          ...p,
+          comments: p.comments.map((c) =>
+            c.id === found.top.id ? { ...c, replies: [...(c.replies ?? []), reply] } : c,
+          ),
+        };
+      }),
+    );
     toast.success("Reply posted");
   };
 
@@ -995,9 +1018,14 @@ function BoardView({
     <div className="space-y-4">
       {/* Workload */}
       <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Users className="w-3.5 h-3.5 text-muted-foreground" />
-          <h3 className="text-xs font-semibold text-foreground">ORM Workload</h3>
+        <div className="flex items-start gap-2 mb-3">
+          <Users className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-xs font-semibold text-foreground">Team workload</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Active comments currently assigned to each ORM team member. Use this to rebalance — drag cards below to reassign or move stages.
+            </p>
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {ORM_USERS.map((u) => (
@@ -1425,8 +1453,8 @@ function CommentNode({
   };
 
   return (
-    <div style={{ marginLeft: depth * 28 }} className="relative">
-      {depth > 0 && <div className="absolute -left-4 top-0 bottom-0 w-px bg-border" />}
+    <div className="relative">
+
       <div className="bg-card border border-border rounded-lg p-3">
         <div className="flex items-start gap-2.5">
           <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-foreground flex-shrink-0">
@@ -1493,9 +1521,12 @@ function CommentNode({
           </div>
         </div>
       </div>
-      {comment.replies && comment.replies.length > 0 && (
-        <div className="mt-2 space-y-2 ml-4">
-          {comment.replies.map((r) => <CommentNode key={r.id} comment={r} depth={depth + 1} updateComment={updateComment} addReply={addReply} />)}
+      {depth === 0 && comment.replies && comment.replies.length > 0 && (
+        <div className="mt-2 space-y-2 ml-10 pl-3 border-l border-border">
+          {/* Instagram-style: all replies in a single flat thread under the top comment */}
+          {comment.replies.map((r) => (
+            <CommentNode key={r.id} comment={r} depth={1} updateComment={updateComment} addReply={addReply} />
+          ))}
         </div>
       )}
     </div>
