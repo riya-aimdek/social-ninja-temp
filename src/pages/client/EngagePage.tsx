@@ -1516,9 +1516,12 @@ function CommentNode({
           </div>
         </div>
       </div>
-      {comment.replies && comment.replies.length > 0 && (
-        <div className="mt-2 space-y-2 ml-4">
-          {comment.replies.map((r) => <CommentNode key={r.id} comment={r} depth={depth + 1} updateComment={updateComment} addReply={addReply} />)}
+      {depth === 0 && comment.replies && comment.replies.length > 0 && (
+        <div className="mt-2 space-y-2 ml-10 pl-3 border-l border-border">
+          {/* Instagram-style: all replies in a single flat thread under the top comment */}
+          {comment.replies.map((r) => (
+            <CommentNode key={r.id} comment={r} depth={1} updateComment={updateComment} addReply={addReply} />
+          ))}
         </div>
       )}
     </div>
