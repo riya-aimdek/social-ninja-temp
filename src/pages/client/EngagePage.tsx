@@ -393,6 +393,50 @@ export default function EngagePage() {
         ))}
       </div>
 
+      {/* Global toolbar: platform filter + refresh */}
+      <div className="bg-card rounded-xl border border-border p-3 flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Platform</span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"] as const).map((p) => {
+            const active = platformFilter === p;
+            const count = platformCounts[p];
+            return (
+              <button
+                key={p}
+                onClick={() => setPlatformFilter(p)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors",
+                  active
+                    ? "bg-foreground text-background border-foreground shadow-sm"
+                    : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-foreground/30",
+                )}
+              >
+                {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
+                {p === "all" ? "All platforms" : p}
+                <span className={cn(
+                  "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
+                  active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground",
+                )}>
+                  {cap(count, 99)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-[10px] text-muted-foreground hidden sm:inline">
+            Updated {lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing} className="gap-1.5 h-8">
+            <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
         {TABS.map((t) => (
@@ -417,9 +461,20 @@ export default function EngagePage() {
         ))}
       </div>
 
+      {/* Active filter banner */}
+      {platformFilter !== "all" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 border border-border">
+          <PlatformIcon name={platformFilter as Platform} className="w-3.5 h-3.5" />
+          Filtered by <span className="font-semibold text-foreground">{platformFilter}</span> · {platformCounts[platformFilter]} comments
+          <button onClick={() => setPlatformFilter("all")} className="ml-auto text-primary hover:underline inline-flex items-center gap-1">
+            <X className="w-3 h-3" /> Clear filter
+          </button>
+        </div>
+      )}
+
       {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
-      {tab === "threads" && <ThreadsView posts={posts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} addReply={addReply} />}
+      {tab === "threads" && <ThreadsView posts={filteredPosts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} />}
       {tab === "spam" && <SpamView spam={spamComments} unspam={(id) => updateComment(id, { isSpam: false })} />}
       {tab === "variants" && <VariantsView templates={templates} setTemplates={setTemplates} />}
