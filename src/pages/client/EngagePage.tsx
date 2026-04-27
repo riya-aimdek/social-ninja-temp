@@ -731,37 +731,9 @@ function BoardView({
         </div>
       </div>
 
-      {/* Platform filter + helper */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Platform</span>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {PLATFORMS.map((p) => {
-            const active = platformFilter === p;
-            const count = p === "all" ? comments.length : comments.filter((c) => c.post.platform === p).length;
-            return (
-              <button
-                key={p}
-                onClick={() => setPlatformFilter(p)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors",
-                  active
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-card text-muted-foreground border-border hover:text-foreground",
-                )}
-              >
-                {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
-                {p === "all" ? "All" : p}
-                <span className={cn(
-                  "text-[10px] tabular-nums px-1 rounded",
-                  active ? "bg-background/20" : "text-muted-foreground",
-                )}>
-                  {cap(count, 99)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <span className="ml-auto text-[10px] text-muted-foreground inline-flex items-center gap-1">
+      {/* Drag hint */}
+      <div className="flex items-center justify-end">
+        <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
           <Zap className="w-3 h-3" /> Drag cards between columns to update status
         </span>
       </div>
