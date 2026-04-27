@@ -180,7 +180,7 @@ const POSTS: Post[] = [
     id: "P-199", platform: "LinkedIn",
     title: "We're hiring: Senior Product Designer",
     thumbnail: "💼", publishedAt: "1d ago",
-    commentCount: 89, newCount: 21,
+    commentCount: 312, newCount: 47,
     comments: [
       {
         id: "C-20", author: "Alex Rivera", avatar: "AR",
