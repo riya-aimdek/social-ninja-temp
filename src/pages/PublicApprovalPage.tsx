@@ -117,11 +117,35 @@ export default function PublicApprovalPage() {
 
           <PostPreview platform={platform} caption={post.caption} media={post.media} brand={{ name: post.clientName }} />
 
-          <div className="mt-4 bg-card border border-border rounded-lg p-4 space-y-2 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="w-3.5 h-3.5" />
-              Scheduled for <span className="text-foreground font-medium">{formatDateTime(post.scheduledFor)}</span>
+          {post.publishMode === "immediate" && (
+            <div
+              role="status"
+              className="mt-4 rounded-lg border-2 border-warning/40 bg-warning/10 p-4 flex items-start gap-3"
+            >
+              <div className="w-9 h-9 rounded-lg bg-warning/20 flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4 text-warning" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">Scheduled for Immediate Posting</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Once you approve, this post will be published right away — there is no delay or scheduled time.
+                </p>
+              </div>
             </div>
+          )}
+
+          <div className="mt-4 bg-card border border-border rounded-lg p-4 space-y-2 text-sm">
+            {post.publishMode === "immediate" ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Zap className="w-3.5 h-3.5 text-warning" />
+                Publishes <span className="text-foreground font-medium">immediately on approval</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5" />
+                Scheduled for <span className="text-foreground font-medium">{formatDateTime(post.scheduledFor)}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="w-3.5 h-3.5" />
               Will publish to <span className="text-foreground font-medium">{post.platforms.map((p) => PLATFORM_META[p].label).join(", ")}</span>
