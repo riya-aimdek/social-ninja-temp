@@ -170,7 +170,16 @@ export default function PublicApprovalPage() {
           <div className="hidden sm:block h-6 w-px bg-border" />
           <span className="hidden sm:block text-xs text-muted-foreground">Post approval</span>
         </div>
-        <span className={cn("text-[11px] px-2 py-1 rounded-full font-medium", status.classes)}>{status.label}</span>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-muted transition-colors"
+            title="Go to home"
+          >
+            <Home className="w-3.5 h-3.5" /> Home
+          </Link>
+          <span className={cn("text-[11px] px-2 py-1 rounded-full font-medium", status.classes)}>{status.label}</span>
+        </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-[1fr_360px] gap-8">
