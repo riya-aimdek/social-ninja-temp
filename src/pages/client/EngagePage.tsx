@@ -1628,7 +1628,7 @@ function PostThread({
 
           {/* Inner-scrollable thread */}
           <div className="p-4 space-y-3 max-h-[520px] overflow-y-auto">
-            {filtered.map((c) => (
+            {filtered.slice(0, visibleCount).map((c) => (
               <div key={c.id} className="relative">
                 {isNewById.has(c.id) && (
                   <span className="absolute -left-1 top-3 w-1.5 h-1.5 rounded-full bg-primary" title="New since last visit" />
@@ -1641,6 +1641,18 @@ function PostThread({
                 />
               </div>
             ))}
+            {filtered.length > visibleCount && (
+              <div className="pt-2 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setVisibleCount((n) => n + 30)}
+                  className="h-7 text-[11px]"
+                >
+                  Load {Math.min(30, filtered.length - visibleCount)} more
+                </Button>
+              </div>
+            )}
             {filtered.length === 0 && (
               <div className="text-[11px] text-center py-8 text-muted-foreground">
                 No comments match this filter.
