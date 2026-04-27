@@ -344,7 +344,10 @@ export default function EngagePage() {
           >
             <t.Icon className="w-3.5 h-3.5" /> {t.label}
             {t.id === "spam" && summary.spam > 0 && (
-              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{summary.spam}</span>
+              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{cap(summary.spam)}</span>
+            )}
+            {t.id === "queue" && summary.pending > 0 && (
+              <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{cap(summary.pending)}</span>
             )}
           </button>
         ))}
