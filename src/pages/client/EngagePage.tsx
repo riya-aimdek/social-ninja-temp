@@ -576,12 +576,58 @@ export default function EngagePage() {
   const matchPlatform = <T extends { post: Post }>(arr: T[]) =>
     platformFilter === "all" ? arr : arr.filter((c) => c.post.platform === platformFilter);
 
-  const allComments = useMemo(() => matchPlatform(allCommentsRaw), [allCommentsRaw, platformFilter]);
+  const platformMatched = useMemo(() => matchPlatform(allCommentsRaw), [allCommentsRaw, platformFilter]);
   const spamComments = useMemo(() => matchPlatform(spamCommentsRaw), [spamCommentsRaw, platformFilter]);
+
+  // Map a comment's stage → status filter buckets
+  const stageToStatus = (s: Stage): "open" | "in_progress" | "completed" =>
+    s === "pending" ? "open" : s === "replied" ? "completed" : "in_progress";
+
+  // Map a comment's trigger → tag filter labels
+  const triggerToTag: Record<Trigger, string> = {
+    anniversary: "Praise",
+    product_inquiry: "Product Inquiry",
+    job_application: "Question",
+    praise: "Praise",
+    complaint: "Complaint",
+    general: "Unclassified",
+  };
+
+  // Apply search + category + status + tag filters end-to-end
+  const allComments = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    let out = platformMatched;
+
+    if (categoryTab === "mentions") out = out.filter((c) => c.text.includes("@"));
+    else if (categoryTab === "reviews") out = out.filter((c) => c.post.platform === "GBP");
+    else if (categoryTab === "dms") out = []; // no DM mock data yet
+
+    if (q) {
+      out = out.filter(
+        (c) => c.author.toLowerCase().includes(q) || c.text.toLowerCase().includes(q),
+      );
+    }
+    if (statusFilter.size > 0) {
+      out = out.filter((c) => statusFilter.has(stageToStatus(c.stage)));
+    }
+    if (tagFilter.size > 0) {
+      out = out.filter((c) => c.trigger && tagFilter.has(triggerToTag[c.trigger]));
+    }
+    if (sortOrder === "oldest") out = [...out].reverse();
+    return out;
+  }, [platformMatched, searchQuery, categoryTab, statusFilter, tagFilter, sortOrder]);
+
   const filteredPosts = useMemo(
     () => platformFilter === "all" ? posts : posts.filter((p) => p.platform === platformFilter),
     [posts, platformFilter],
   );
+
+  const activeFilterCount = statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0);
+  const hasAnyFilter = activeFilterCount > 0 || searchQuery.trim().length > 0 || categoryTab !== "all";
+  const clearAllFilters = () => {
+    setSearchQuery(""); setCategoryTab("all"); setStatusFilter(new Set());
+    setTagFilter(new Set()); setDateRange("all"); setSortOrder("recent");
+  };
 
   /** Unfiltered platform counts — drives the filter pills */
   const platformCounts = useMemo(() => {
