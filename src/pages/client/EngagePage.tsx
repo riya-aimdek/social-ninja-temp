@@ -630,7 +630,7 @@ function ReplyQueueView({
         <div className="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between sticky top-0 bg-card z-10">
           <span className="text-xs font-semibold text-foreground">Awaiting review</span>
           <span className="text-[10px] text-muted-foreground">
-            <span className="font-bold text-foreground">{cap(queue.length + 14)}</span> comments
+            <span className="font-bold text-foreground tabular-nums">{queue.length}</span> comments
           </span>
         </div>
         {queue.map((c) => {
