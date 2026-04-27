@@ -993,16 +993,8 @@ function VariantsView({
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
               </div>
-              <button onClick={() => toggle(t.id)}
-                className={cn(
-                  "relative w-9 h-5 rounded-full transition-colors flex-shrink-0",
-                  t.enabled ? "bg-primary" : "bg-muted",
-                )}>
-                <span className={cn(
-                  "absolute top-0.5 w-4 h-4 rounded-full bg-card shadow transition-transform",
-                  t.enabled ? "translate-x-4" : "translate-x-0.5",
-                )} />
-              </button>
+              <Switch checked={t.enabled} onCheckedChange={() => toggle(t.id)} className="flex-shrink-0" />
+
             </div>
 
             <div className="space-y-2">
