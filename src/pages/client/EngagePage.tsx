@@ -420,21 +420,26 @@ export default function EngagePage() {
     spam: spamComments.length + 27,
   }), [allComments, spamComments]);
 
-  /* mutate helpers */
+  /* mutate helpers — recursive so nested replies at any depth update correctly */
+  const patchTree = (list: Comment[], id: string, patch: Partial<Comment>): Comment[] =>
+    list.map((c) => {
+      if (c.id === id) return { ...c, ...patch };
+      if (c.replies?.length) return { ...c, replies: patchTree(c.replies, id, patch) };
+      return c;
+    });
+
   const updateComment = (id: string, patch: Partial<Comment>) => {
-    setPosts((prev) =>
-      prev.map((p) => ({
-        ...p,
-        comments: p.comments.map((c) => {
-          if (c.id === id) return { ...c, ...patch };
-          if (c.replies) return { ...c, replies: c.replies.map((r) => r.id === id ? { ...r, ...patch } : r) };
-          return c;
-        }),
-      })),
-    );
+    setPosts((prev) => prev.map((p) => ({ ...p, comments: patchTree(p.comments, id, patch) })));
   };
 
-  /** Append a reply to a top-level or nested comment */
+  /** Append a reply to any node in the tree (any depth) */
+  const appendReply = (list: Comment[], parentId: string, reply: Comment): Comment[] =>
+    list.map((c) => {
+      if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
+      if (c.replies?.length) return { ...c, replies: appendReply(c.replies, parentId, reply) };
+      return c;
+    });
+
   const addReply = (parentId: string, text: string) => {
     const reply: Comment = {
       id: `R-${Date.now()}`,
@@ -448,21 +453,7 @@ export default function EngagePage() {
       priority: "low",
       sla: { dueIn: "—", breached: false },
     };
-    setPosts((prev) =>
-      prev.map((p) => ({
-        ...p,
-        comments: p.comments.map((c) => {
-          if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
-          if (c.replies?.some((r) => r.id === parentId)) {
-            return {
-              ...c,
-              replies: c.replies.map((r) => r.id === parentId ? { ...r, replies: [...(r.replies ?? []), reply] } : r),
-            };
-          }
-          return c;
-        }),
-      })),
-    );
+    setPosts((prev) => prev.map((p) => ({ ...p, comments: appendReply(p.comments, parentId, reply) })));
     toast.success("Reply posted");
   };
 
