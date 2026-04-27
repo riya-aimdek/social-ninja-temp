@@ -27,6 +27,7 @@ export interface PostDraft {
   caption: string;
   media: { type: "image" | "video"; url: string }[];
   scheduledFor: string; // ISO
+  publishMode?: "scheduled" | "immediate"; // immediate = publish as soon as approved
   status: PostStatus;
   createdBy: string;
   createdAt: string;
