@@ -709,73 +709,34 @@ export default function EngagePage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* ─── KPI strip ─── */}
+      {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { I: MessageSquare, label: "Pending review", value: summary.pending, tone: "text-info bg-info/10", ring: "hover:border-info/30" },
-          { I: AlertTriangle, label: "Urgent", value: summary.urgent, tone: "text-error bg-error/10", ring: "hover:border-error/30" },
-          { I: Clock, label: "SLA breached", value: summary.breached, tone: "text-warning bg-warning/10", ring: "hover:border-warning/30" },
-          { I: CheckCircle2, label: "Replied today", value: summary.replied, tone: "text-success bg-success/10", ring: "hover:border-success/30" },
-          { I: Shield, label: "Spam filtered", value: summary.spam, tone: "text-muted-foreground bg-muted", ring: "hover:border-foreground/20" },
+          { I: MessageSquare, label: "Pending review", value: summary.pending, tone: "text-info bg-info/10" },
+          { I: AlertTriangle, label: "Urgent", value: summary.urgent, tone: "text-error bg-error/10" },
+          { I: Clock, label: "SLA breached", value: summary.breached, tone: "text-warning bg-warning/10" },
+          { I: CheckCircle2, label: "Replied today", value: summary.replied, tone: "text-success bg-success/10" },
+          { I: Shield, label: "Spam filtered", value: summary.spam, tone: "text-muted-foreground bg-muted" },
         ].map((s) => (
-          <div
-            key={s.label}
-            className={cn(
-              "bg-card rounded-xl border border-border p-4 transition-colors",
-              s.ring,
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", s.tone)}>
+          <div key={s.label} className="bg-card rounded-xl border border-border p-4">
+            <div className="flex items-center justify-between">
+              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", s.tone)}>
                 <s.I className="w-4 h-4" />
               </div>
-              <div className="min-w-0">
-                <div className="text-2xl font-bold text-foreground tabular-nums leading-none">{s.value}</div>
-                <div className="text-xs text-muted-foreground mt-1.5 truncate">{s.label}</div>
-              </div>
+              <span className="text-2xl font-bold text-foreground tabular-nums">{s.value}</span>
             </div>
+            <div className="text-xs text-muted-foreground mt-2">{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* ─── Unified workspace: tabs · platforms · search/sort/filter · categories ─── */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        {/* Row 1 — view tabs + refresh meta */}
-        <div className="flex items-center gap-1 border-b border-border px-2 overflow-x-auto">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "px-3 py-3 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px whitespace-nowrap transition-colors",
-                tab === t.id
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <t.Icon className="w-3.5 h-3.5" /> {t.label}
-              {t.id === "spam" && summary.spam > 0 && (
-                <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{fmt(summary.spam)}</span>
-              )}
-              {t.id === "queue" && summary.pending > 0 && (
-                <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{fmt(summary.pending)}</span>
-              )}
-            </button>
-          ))}
-          <div className="ml-auto pl-3 flex items-center gap-2 shrink-0">
-            <span className="text-[10px] text-muted-foreground hidden md:inline">
-              Updated {lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </span>
-            <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing} className="gap-1.5 h-8 -mr-1">
-              <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
-          </div>
+      {/* Global toolbar: platform filter + refresh */}
+      <div className="bg-card rounded-xl border border-border p-3 flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Platform</span>
         </div>
-
-        {/* Row 2 — platform scope */}
-        <div className="px-3 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2 overflow-x-auto">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0 pr-1">Platform</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
           {(["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"] as const).map((p) => {
             const active = platformFilter === p;
             const count = platformCounts[p];
@@ -784,17 +745,17 @@ export default function EngagePage() {
                 key={p}
                 onClick={() => setPlatformFilter(p)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors shrink-0",
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors",
                   active
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                    ? "bg-foreground text-background border-foreground shadow-sm"
+                    : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-foreground/30",
                 )}
               >
                 {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
-                {p === "all" ? "All" : p}
+                {p === "all" ? "All platforms" : p}
                 <span className={cn(
                   "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
-                  active ? "bg-background/20 text-background" : "bg-card text-muted-foreground",
+                  active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground",
                 )}>
                   {fmt(count)}
                 </span>
@@ -802,16 +763,62 @@ export default function EngagePage() {
             );
           })}
         </div>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-[10px] text-muted-foreground hidden sm:inline">
+            Updated {lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing} className="gap-1.5 h-8">
+            <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+            Refresh
+          </Button>
+        </div>
+      </div>
 
-        {/* Row 3 — search + sort + filters */}
-        <div className="px-3 py-3 flex items-center gap-2 flex-wrap">
+      {/* Tabs */}
+      <div className="flex items-center gap-1 border-b border-border flex-wrap">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "px-4 py-2.5 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px whitespace-nowrap transition-colors",
+              tab === t.id
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <t.Icon className="w-3.5 h-3.5" /> {t.label}
+            {t.id === "spam" && summary.spam > 0 && (
+              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{fmt(summary.spam)}</span>
+            )}
+            {t.id === "queue" && summary.pending > 0 && (
+              <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{fmt(summary.pending)}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Active filter banner */}
+      {platformFilter !== "all" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 border border-border">
+          <PlatformIcon name={platformFilter as Platform} className="w-3.5 h-3.5" />
+          Filtered by <span className="font-semibold text-foreground">{platformFilter}</span> · {platformCounts[platformFilter]} comments
+          <button onClick={() => setPlatformFilter("all")} className="ml-auto text-primary hover:underline inline-flex items-center gap-1">
+            <X className="w-3 h-3" /> Clear filter
+          </button>
+        </div>
+      )}
+
+      {/* ─── Inbox toolbar (search + sort + filters + categories) ─── */}
+      <div className="bg-card rounded-xl border border-border p-3 space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by user, message, or keyword…"
+              placeholder="Search engagements by user, message, or keyword..."
               className="w-full pl-9 pr-9 h-9 rounded-lg border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
             />
             {searchQuery && (
@@ -850,8 +857,8 @@ export default function EngagePage() {
           </Button>
         </div>
 
-        {/* Row 4 — category sub-tabs */}
-        <div className="px-3 pb-3 flex items-center gap-1 flex-wrap">
+        {/* Category tabs */}
+        <div className="flex items-center gap-1 flex-wrap">
           {([
             { id: "all", label: "All", Icon: Inbox },
             { id: "comments", label: "Comments", Icon: MessageSquare },
@@ -890,28 +897,28 @@ export default function EngagePage() {
           })}
         </div>
 
-        {/* Row 5 — active filter chips (only when applied) */}
+        {/* Active filter chips + result count */}
         {hasAnyFilter && (
-          <div className="px-3 py-2.5 border-t border-border bg-muted/20 flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-border">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mr-1">
               {fmt(allComments.length)} result{allComments.length === 1 ? "" : "s"}
             </span>
             {[...statusFilter].map((s) => (
               <button key={`s-${s}`} onClick={() => { const n = new Set(statusFilter); n.delete(s); setStatusFilter(n); }}
-                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-card border border-border text-foreground hover:bg-muted/70">
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
                 {s === "in_progress" ? "In Progress" : s === "open" ? "Open" : "Completed"}
                 <X className="w-3 h-3" />
               </button>
             ))}
             {[...tagFilter].map((t) => (
               <button key={`t-${t}`} onClick={() => { const n = new Set(tagFilter); n.delete(t); setTagFilter(n); }}
-                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-card border border-border text-foreground hover:bg-muted/70">
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
                 {t} <X className="w-3 h-3" />
               </button>
             ))}
             {dateRange !== "all" && (
               <button onClick={() => setDateRange("all")}
-                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-card border border-border text-foreground hover:bg-muted/70">
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
                 {dateRange === "today" ? "Today" : dateRange === "7d" ? "Last 7 days" : "Last 30 days"} <X className="w-3 h-3" />
               </button>
             )}
@@ -922,7 +929,6 @@ export default function EngagePage() {
           </div>
         )}
       </div>
-
 
       {/* Filters modal (old-UI style) */}
       <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
