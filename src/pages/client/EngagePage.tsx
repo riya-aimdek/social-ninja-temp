@@ -268,6 +268,18 @@ export default function EngagePage() {
   const [tab, setTab] = useState<Tab>("queue");
   const [posts, setPosts] = useState<Post[]>(POSTS);
   const [templates, setTemplates] = useState<ReplyTemplate[]>(REPLY_TEMPLATES);
+  const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+      setLastRefresh(new Date());
+      toast.success("Inbox refreshed");
+    }, 700);
+  };
 
   // Flatten non-spam comments for queue/board/sentiment views
   const allComments = useMemo(() => {
