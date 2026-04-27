@@ -268,9 +268,21 @@ export default function EngagePage() {
   const [tab, setTab] = useState<Tab>("queue");
   const [posts, setPosts] = useState<Post[]>(POSTS);
   const [templates, setTemplates] = useState<ReplyTemplate[]>(REPLY_TEMPLATES);
+  const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+      setLastRefresh(new Date());
+      toast.success("Inbox refreshed");
+    }, 700);
+  };
 
   // Flatten non-spam comments for queue/board/sentiment views
-  const allComments = useMemo(() => {
+  const allCommentsRaw = useMemo(() => {
     const out: (Comment & { post: Post })[] = [];
     posts.forEach((p) => p.comments.forEach((c) => {
       if (!c.isSpam) out.push({ ...c, post: p });
@@ -279,10 +291,30 @@ export default function EngagePage() {
     return out;
   }, [posts]);
 
-  const spamComments = useMemo(
+  const spamCommentsRaw = useMemo(
     () => posts.flatMap((p) => p.comments.filter((c) => c.isSpam).map((c) => ({ ...c, post: p }))),
     [posts],
   );
+
+  const matchPlatform = <T extends { post: Post }>(arr: T[]) =>
+    platformFilter === "all" ? arr : arr.filter((c) => c.post.platform === platformFilter);
+
+  const allComments = useMemo(() => matchPlatform(allCommentsRaw), [allCommentsRaw, platformFilter]);
+  const spamComments = useMemo(() => matchPlatform(spamCommentsRaw), [spamCommentsRaw, platformFilter]);
+  const filteredPosts = useMemo(
+    () => platformFilter === "all" ? posts : posts.filter((p) => p.platform === platformFilter),
+    [posts, platformFilter],
+  );
+
+  /** Unfiltered platform counts — drives the filter pills */
+  const platformCounts = useMemo(() => {
+    const counts: Record<"all" | Platform, number> = {
+      all: allCommentsRaw.length,
+      Instagram: 0, Facebook: 0, LinkedIn: 0, Twitter: 0, GBP: 0,
+    };
+    allCommentsRaw.forEach((c) => { counts[c.post.platform]++; });
+    return counts;
+  }, [allCommentsRaw]);
 
   const summary = useMemo(() => ({
     pending: allComments.filter((c) => c.stage === "pending").length + 14,
@@ -361,6 +393,50 @@ export default function EngagePage() {
         ))}
       </div>
 
+      {/* Global toolbar: platform filter + refresh */}
+      <div className="bg-card rounded-xl border border-border p-3 flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Platform</span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"] as const).map((p) => {
+            const active = platformFilter === p;
+            const count = platformCounts[p];
+            return (
+              <button
+                key={p}
+                onClick={() => setPlatformFilter(p)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors",
+                  active
+                    ? "bg-foreground text-background border-foreground shadow-sm"
+                    : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-foreground/30",
+                )}
+              >
+                {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
+                {p === "all" ? "All platforms" : p}
+                <span className={cn(
+                  "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
+                  active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground",
+                )}>
+                  {cap(count, 99)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-[10px] text-muted-foreground hidden sm:inline">
+            Updated {lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing} className="gap-1.5 h-8">
+            <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
         {TABS.map((t) => (
@@ -385,9 +461,20 @@ export default function EngagePage() {
         ))}
       </div>
 
+      {/* Active filter banner */}
+      {platformFilter !== "all" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 border border-border">
+          <PlatformIcon name={platformFilter as Platform} className="w-3.5 h-3.5" />
+          Filtered by <span className="font-semibold text-foreground">{platformFilter}</span> · {platformCounts[platformFilter]} comments
+          <button onClick={() => setPlatformFilter("all")} className="ml-auto text-primary hover:underline inline-flex items-center gap-1">
+            <X className="w-3 h-3" /> Clear filter
+          </button>
+        </div>
+      )}
+
       {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
-      {tab === "threads" && <ThreadsView posts={posts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} addReply={addReply} />}
+      {tab === "threads" && <ThreadsView posts={filteredPosts.filter((p) => p.comments.some((c) => !c.isSpam))} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} />}
       {tab === "spam" && <SpamView spam={spamComments} unspam={(id) => updateComment(id, { isSpam: false })} />}
       {tab === "variants" && <VariantsView templates={templates} setTemplates={setTemplates} />}
@@ -603,12 +690,8 @@ function BoardView({
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
 }) {
-  const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<Stage | null>(null);
-
-  const PLATFORMS: ("all" | Platform)[] = ["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"];
-  const filtered = platformFilter === "all" ? comments : comments.filter((c) => c.post.platform === platformFilter);
 
   const handleDrop = (stage: Stage) => {
     if (draggingId) {
@@ -648,44 +731,16 @@ function BoardView({
         </div>
       </div>
 
-      {/* Platform filter + helper */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Platform</span>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {PLATFORMS.map((p) => {
-            const active = platformFilter === p;
-            const count = p === "all" ? comments.length : comments.filter((c) => c.post.platform === p).length;
-            return (
-              <button
-                key={p}
-                onClick={() => setPlatformFilter(p)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors",
-                  active
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-card text-muted-foreground border-border hover:text-foreground",
-                )}
-              >
-                {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
-                {p === "all" ? "All" : p}
-                <span className={cn(
-                  "text-[10px] tabular-nums px-1 rounded",
-                  active ? "bg-background/20" : "text-muted-foreground",
-                )}>
-                  {cap(count, 99)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <span className="ml-auto text-[10px] text-muted-foreground inline-flex items-center gap-1">
+      {/* Drag hint */}
+      <div className="flex items-center justify-end">
+        <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
           <Zap className="w-3 h-3" /> Drag cards between columns to update status
         </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {STAGES.map((stage) => {
-          const items = filtered.filter((c) => c.stage === stage.id);
+          const items = comments.filter((c) => c.stage === stage.id);
           const isDropTarget = dropTarget === stage.id;
           return (
             <div
