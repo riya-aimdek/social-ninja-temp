@@ -785,7 +785,7 @@ function ReplyQueueView({
               <Button variant="outline" size="sm" onClick={escalate} className="gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5 text-error" /> Escalate
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => updateComment(active.id, { isSpam: true })} className="gap-1.5 text-muted-foreground">
+              <Button variant="ghost" size="sm" onClick={markSpam} className="gap-1.5 text-muted-foreground">
                 <Trash2 className="w-3.5 h-3.5" /> Mark spam
               </Button>
               <div className="ml-auto flex items-center gap-2">
