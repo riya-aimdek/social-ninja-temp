@@ -516,7 +516,7 @@ export default function EngagePage() {
                   "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
                   active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground",
                 )}>
-                  {cap(count, 99)}
+                  {fmt(count)}
                 </span>
               </button>
             );
@@ -548,10 +548,10 @@ export default function EngagePage() {
           >
             <t.Icon className="w-3.5 h-3.5" /> {t.label}
             {t.id === "spam" && summary.spam > 0 && (
-              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{cap(summary.spam)}</span>
+              <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{fmt(summary.spam)}</span>
             )}
             {t.id === "queue" && summary.pending > 0 && (
-              <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{cap(summary.pending)}</span>
+              <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{fmt(summary.pending)}</span>
             )}
           </button>
         ))}
@@ -855,7 +855,7 @@ function BoardView({
               <div className="flex items-center gap-2 mb-3">
                 <span className={cn("w-2 h-2 rounded-full", stage.dot)} />
                 <h3 className="text-xs font-semibold text-foreground">{stage.label}</h3>
-                <span className="text-[10px] text-muted-foreground bg-card px-1.5 py-0.5 rounded">{cap(items.length, 99)}</span>
+                <span className="text-[10px] text-muted-foreground bg-card px-1.5 py-0.5 rounded">{fmt(items.length)}</span>
               </div>
               <div className="space-y-2">
                 {items.map((c) => {
@@ -961,7 +961,7 @@ function ThreadsView({
                 </span>
                 {p.newCount > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold">
-                    {cap(p.newCount)} new
+                    {fmt(p.newCount)} new
                   </span>
                 )}
               </div>
