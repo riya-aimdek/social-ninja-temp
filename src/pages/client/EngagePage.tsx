@@ -150,6 +150,38 @@ const POSTS: Post[] = [
         stage: "pending", priority: "low",
         sla: { dueIn: "—", breached: false },
       },
+      {
+        id: "C-4", author: "Aisha Rahman", avatar: "AR",
+        text: "5 years already?? Time flies — congrats to the whole team 🥂", at: "28m",
+        sentiment: "positive", likes: 12, trigger: "anniversary",
+        aiDraft: "Aisha, thank you! 🥂 Hard to believe ourselves. Cheers to the next chapter — couldn't do it without you.",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "3h 22m", breached: false },
+      },
+      {
+        id: "C-5", author: "Tomás García", avatar: "TG",
+        text: "Wishing you another 5! Loved the new product line btw 💫", at: "35m",
+        sentiment: "positive", likes: 5, trigger: "anniversary",
+        aiDraft: "Tomás 🙌 thanks for the love — and for noticing the new line! More good things on the way.",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "3h 15m", breached: false },
+      },
+      {
+        id: "C-6", author: "Hannah Becker", avatar: "HB",
+        text: "Congrats! Quick Q — do you ship internationally yet?", at: "48m",
+        sentiment: "neutral", likes: 1, trigger: "product_inquiry",
+        aiDraft: "Hi Hannah! 🌍 Yes — we ship to 32 countries. Tap the link in bio to see the full list and rates.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "3h 02m", breached: false },
+      },
+      {
+        id: "C-7", author: "Devon Ríos", avatar: "DR",
+        text: "How do I enter the giveaway?", at: "1h",
+        sentiment: "neutral", likes: 0, trigger: "product_inquiry",
+        aiDraft: "Hey Devon! 🎁 The giveaway runs through Friday — full rules are in the pinned story. Good luck!",
+        stage: "in_review", priority: "medium", assignee: "Mike T.",
+        sla: { dueIn: "2h 50m", breached: false },
+      },
     ],
   },
   {
@@ -174,6 +206,30 @@ const POSTS: Post[] = [
         stage: "escalated", priority: "urgent", assignee: "Sarah C.",
         sla: { dueIn: "OVERDUE 15m", breached: true },
       },
+      {
+        id: "C-12", author: "Marcus Lee", avatar: "ML",
+        text: "Best espresso in the neighborhood, hands down ☕", at: "2h",
+        sentiment: "positive", likes: 4, trigger: "praise",
+        aiDraft: "Marcus, you're the best 🙏 — we'll let the baristas know they've got a fan!",
+        stage: "pending", priority: "high",
+        sla: { dueIn: "1h 12m", breached: false },
+      },
+      {
+        id: "C-13", author: "Riya Pillai", avatar: "RP",
+        text: "Are the new hours permanent or seasonal?", at: "2h",
+        sentiment: "neutral", likes: 0, trigger: "product_inquiry",
+        aiDraft: "Hi Riya! These hours are permanent through the season — we'll review again in spring.",
+        stage: "pending", priority: "high",
+        sla: { dueIn: "1h 05m", breached: false },
+      },
+      {
+        id: "C-14", author: "Anonymous", avatar: "AN",
+        text: "★ rude staff", at: "8h",
+        sentiment: "negative", likes: 0, trigger: "complaint",
+        aiDraft: "We're really sorry to hear this. Could you share more about your visit so we can look into it?",
+        stage: "pending", priority: "urgent",
+        sla: { dueIn: "OVERDUE 2h", breached: true },
+      },
     ],
   },
   {
@@ -190,6 +246,30 @@ const POSTS: Post[] = [
         stage: "replied", priority: "medium", assignee: "Mike T.",
         sla: { dueIn: "—", breached: false },
       },
+      {
+        id: "C-21", author: "Naomi Bellweather", avatar: "NB",
+        text: "Is this role open to remote candidates in Europe?", at: "3h",
+        sentiment: "neutral", likes: 6, trigger: "product_inquiry",
+        aiDraft: "Hi Naomi! Yes — this role is open to EU-based remote candidates. The job spec link has the full timezone overlap requirements.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 30m", breached: false },
+      },
+      {
+        id: "C-22", author: "Yusuf Khan", avatar: "YK",
+        text: "Just submitted — fingers crossed 🤞", at: "4h",
+        sentiment: "positive", likes: 2, trigger: "job_application",
+        aiDraft: "Application received, Yusuf 🙌 our talent team will be in touch shortly!",
+        stage: "in_review", priority: "medium", assignee: "Priya S.",
+        sla: { dueIn: "1h 50m", breached: false },
+      },
+      {
+        id: "C-23", author: "Elena Costa", avatar: "EC",
+        text: "Will there be a portfolio review round?", at: "6h",
+        sentiment: "neutral", likes: 1, trigger: "product_inquiry",
+        aiDraft: "Yes Elena — round 2 is a 45-min portfolio walkthrough with the design team. Full process is in the JD.",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "5h 10m", breached: false },
+      },
     ],
   },
   {
@@ -205,6 +285,22 @@ const POSTS: Post[] = [
         aiDraft: "Hi Megan! 👋 Yes — the Sage Green is available in XS through XXL. You can grab one at the link in our bio. Let us know if you need a size guide!",
         stage: "pending", priority: "high",
         sla: { dueIn: "1h 22m", breached: false },
+      },
+      {
+        id: "C-31", author: "Priya Sundaram", avatar: "PS",
+        text: "Loving the colour palette this season 😍", at: "5h",
+        sentiment: "positive", likes: 9, trigger: "praise",
+        aiDraft: "Thanks Priya 💐 — our design team poured a lot into this palette, glad it's landing!",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "55m", breached: false },
+      },
+      {
+        id: "C-32", author: "Brett Lawson", avatar: "BL",
+        text: "When does the bundle deal end?", at: "6h",
+        sentiment: "neutral", likes: 1, trigger: "product_inquiry",
+        aiDraft: "Hey Brett! 🛍️ Bundle pricing runs through Sunday 11:59pm PT.",
+        stage: "in_review", priority: "high", assignee: "Sarah C.",
+        sla: { dueIn: "40m", breached: false },
       },
     ],
   },
@@ -534,7 +630,7 @@ function ReplyQueueView({
         <div className="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between sticky top-0 bg-card z-10">
           <span className="text-xs font-semibold text-foreground">Awaiting review</span>
           <span className="text-[10px] text-muted-foreground">
-            <span className="font-bold text-foreground">{cap(queue.length + 14)}</span> comments
+            <span className="font-bold text-foreground tabular-nums">{queue.length}</span> comments
           </span>
         </div>
         {queue.map((c) => {
