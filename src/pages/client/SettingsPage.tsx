@@ -208,6 +208,222 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
           </div>
         )}
 
+        {activeTab === "approvals" && (
+          <div className="space-y-5">
+            <div className="bg-card rounded-xl shadow-card p-6 space-y-2">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-primary" /> Approval Workflow Rules
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Configure how posts move through approval. These rules apply to all posts requiring client sign-off and reflect your internal review process.
+              </p>
+            </div>
+
+            {/* Auto-publish on timeout */}
+            <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoPublish}
+                  onChange={(e) => setAutoPublish(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-primary"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-warning" />
+                    <span className="text-sm font-semibold text-foreground">Auto-publish if not approved in time</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If approval isn't received within the defined window, the system will act automatically so scheduled posts don't miss their slot.
+                  </p>
+                </div>
+              </label>
+
+              {autoPublish && (
+                <div className="ml-7 pl-4 border-l-2 border-border space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Wait time before action</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={autoPublishHours}
+                          onChange={(e) => setAutoPublishHours(Number(e.target.value))}
+                          className="w-24 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <span className="text-sm text-muted-foreground">hours after request sent</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Action on timeout</label>
+                      <select
+                        value={autoPublishFallback}
+                        onChange={(e) => setAutoPublishFallback(e.target.value as typeof autoPublishFallback)}
+                        className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="publish">Auto-approve & publish</option>
+                        <option value="reschedule">Reschedule by 24h and retry</option>
+                        <option value="skip">Skip & mark as expired</option>
+                      </select>
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={weekendsCount}
+                      onChange={(e) => setWeekendsCount(e.target.checked)}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    <span className="text-xs text-foreground">Count weekends in the wait window</span>
+                  </label>
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
+                    <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground">
+                      Auto-published posts are clearly tagged in the audit trail and a confirmation is sent to all approvers.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Reminders */}
+            <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={reminderEnabled}
+                  onChange={(e) => setReminderEnabled(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-primary"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <BellRing className="w-4 h-4 text-info" />
+                    <span className="text-sm font-semibold text-foreground">Send reminders for pending approvals</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nudge approvers automatically so posts don't sit idle in the queue.
+                  </p>
+                </div>
+              </label>
+
+              {reminderEnabled && (
+                <div className="ml-7 pl-4 border-l-2 border-border space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">First reminder after</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={reminderFirst}
+                          onChange={(e) => setReminderFirst(Number(e.target.value))}
+                          className="w-24 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <span className="text-sm text-muted-foreground">hours</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Repeat every</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={reminderRepeat}
+                          onChange={(e) => setReminderRepeat(Number(e.target.value))}
+                          className="w-24 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <span className="text-sm text-muted-foreground">hours until acted on</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-2 block">Notify approvers via</label>
+                    <div className="flex flex-wrap gap-3">
+                      {[
+                        { key: "email" as const, label: "Email" },
+                        { key: "inApp" as const, label: "In-app" },
+                        { key: "sms" as const, label: "SMS" },
+                      ].map((c) => (
+                        <label key={c.key} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-background cursor-pointer hover:bg-accent">
+                          <input
+                            type="checkbox"
+                            checked={reminderChannels[c.key]}
+                            onChange={(e) => setReminderChannels({ ...reminderChannels, [c.key]: e.target.checked })}
+                            className="w-4 h-4 accent-primary"
+                          />
+                          <span className="text-xs text-foreground">{c.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="flex items-start gap-3 cursor-pointer pt-2 border-t border-border">
+                    <input
+                      type="checkbox"
+                      checked={escalationEnabled}
+                      onChange={(e) => setEscalationEnabled(e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-primary"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-error" />
+                        <span className="text-sm font-medium text-foreground">Escalate to backup approver after 2 reminders</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        If primary approver doesn't respond, route the request to the team lead.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* Approver permissions */}
+            <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary" /> Approver Rules
+              </h3>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={requireMultiApprover}
+                  onChange={(e) => setRequireMultiApprover(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-primary"
+                />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-foreground">Require approval from 2+ reviewers</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Posts only move forward once multiple approvers have signed off.
+                  </p>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={allowSelfApprove}
+                  onChange={(e) => setAllowSelfApprove(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-primary"
+                />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-foreground">Allow content creators to self-approve their own drafts</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Useful for trusted internal teams. Disable for stricter compliance workflows.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors">
+                Reset to defaults
+              </button>
+              <button className="px-4 py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium shadow-coral hover:opacity-90 transition-all flex items-center gap-2">
+                <Save className="w-4 h-4" /> Save Approval Rules
+              </button>
+            </div>
+          </div>
+        )}
+
         {activeTab === "notifications" && (
           <div className="bg-card rounded-xl shadow-card p-6 space-y-5">
             <h2 className="text-lg font-semibold text-foreground">Notification Preferences</h2>
