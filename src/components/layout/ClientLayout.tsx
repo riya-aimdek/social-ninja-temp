@@ -227,12 +227,7 @@ export default function ClientLayout() {
           </div>
         </header>
 
-        {/* Page title — hidden on Create (page provides its own header) */}
-        {location.pathname !== "/client/create" && (
-          <div className="px-8 pt-6 pb-2">
-            <h1 className="text-2xl font-bold text-foreground">{breadcrumbLabel}</h1>
-          </div>
-        )}
+
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto px-8 pb-8">
