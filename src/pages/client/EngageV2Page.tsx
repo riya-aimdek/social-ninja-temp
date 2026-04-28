@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search, Filter, Send, Sparkles, Smile, Meh, Frown, Image as ImageIcon,
   Instagram, Facebook, Linkedin, Twitter, MapPin, Clock, ThumbsUp,
   ExternalLink, Inbox, AlertTriangle, CheckCircle2, X, MessageSquare,
   KanbanSquare, ListTree, Shield, Shuffle, RefreshCw, ChevronDown,
-  ArrowDownUp, AtSign, Mail, Star, Bot, Check, Trash2, MoreHorizontal,
-  CornerDownLeft,
+  ArrowDownUp, AtSign, Mail, Star, Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -168,36 +167,30 @@ function PostContextCard({ post, compact = false }: { post: PostCtx; compact?: b
 }
 
 /* ──────────────────────────────────────────────────────────────
-   InteractionRow — comment paired with a post-context chip
+   InteractionRow
    ────────────────────────────────────────────────────────────── */
 
 interface InteractionRowProps {
   interaction: Interaction;
   post: PostCtx;
   selected: boolean;
-  showPostHeader: boolean; // first row in a post group renders the full context card
   onClick: () => void;
 }
 
-function InteractionRow({ interaction: i, post, selected, showPostHeader, onClick }: InteractionRowProps) {
+function InteractionRow({ interaction: i, post, selected, onClick }: InteractionRowProps) {
   const SIcon = sentimentMeta[i.sentiment].Icon;
   return (
-    <div>
-      {showPostHeader && (
-        <div className="px-3 pt-3 pb-2 sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
-          <PostContextCard post={post} compact />
-        </div>
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full text-left p-3 border-b border-border transition-colors",
+        selected ? "bg-primary/5 border-l-2 border-l-primary" : "hover:bg-muted/40 border-l-2 border-l-transparent",
       )}
-      <button
-        onClick={onClick}
-        className={cn(
-          "w-full text-left px-3 py-2.5 border-b border-border transition-colors flex gap-2.5",
-          selected
-            ? "bg-primary/5 border-l-2 border-l-primary"
-            : "hover:bg-muted/40 border-l-2 border-l-transparent",
-        )}
-      >
-        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
+    >
+      <PostContextCard post={post} compact />
+
+      <div className="flex gap-2.5 mt-2.5 pl-1">
+        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
           {i.avatar}
         </div>
         <div className="min-w-0 flex-1">
@@ -209,21 +202,16 @@ function InteractionRow({ interaction: i, post, selected, showPostHeader, onClic
               {sentimentMeta[i.sentiment].label}
             </span>
           </div>
-          <p className="text-sm text-foreground leading-snug line-clamp-2">{i.text}</p>
-          <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground">
+          <p className="text-sm text-foreground leading-snug">{i.text}</p>
+          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {i.likes}</span>
             <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", stageMeta[i.stage].cls)}>
               {stageMeta[i.stage].label}
             </span>
-            {i.aiDraft && (
-              <span className="inline-flex items-center gap-1 text-primary">
-                <Sparkles className="w-3 h-3" /> AI draft
-              </span>
-            )}
           </div>
         </div>
-      </button>
-    </div>
+      </div>
+    </button>
   );
 }
 
@@ -275,17 +263,10 @@ export default function EngageV2Page() {
   const [primaryTab, setPrimaryTab] = useState<PrimaryTab>("queue");
   const [categoryTab, setCategoryTab] = useState<CategoryTab>("all");
   const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<string>(INTERACTIONS[0].id);
   const [reply, setReply] = useState("");
   const [sort, setSort] = useState<"recent" | "oldest" | "priority">("recent");
   const [activePlatforms, setActivePlatforms] = useState<Set<Platform>>(new Set(PLATFORMS));
-  const [refreshing, setRefreshing] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
-
-  // Live, mutable interactions so the module is fully working end-to-end
-  const [interactions, setInteractions] = useState<Interaction[]>(INTERACTIONS);
-  const [selectedId, setSelectedId] = useState<string>(INTERACTIONS[0].id);
-
-  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const postById = useMemo(() => {
     const m = new Map<string, PostCtx>();
@@ -295,7 +276,7 @@ export default function EngageV2Page() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let list = interactions.filter((i) => {
+    let list = INTERACTIONS.filter((i) => {
       const post = postById.get(i.postId);
       if (!post || !activePlatforms.has(post.platform)) return false;
       if (categoryTab !== "all") {
@@ -306,7 +287,6 @@ export default function EngageV2Page() {
       }
       if (primaryTab === "spam" && i.sentiment !== "negative") return false;
       if (primaryTab === "sentiment" && i.sentiment === "neutral") return false;
-      if (primaryTab === "queue" && i.stage === "replied") return false;
       if (q) {
         const hay = `${i.author} ${i.text} ${post.caption}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -315,83 +295,15 @@ export default function EngageV2Page() {
     });
     if (sort === "oldest") list = [...list].reverse();
     return list;
-  }, [interactions, query, postById, categoryTab, primaryTab, activePlatforms, sort]);
-
-  // Keep selection valid when filters change
-  useEffect(() => {
-    if (filtered.length === 0) return;
-    if (!filtered.some((i) => i.id === selectedId)) {
-      setSelectedId(filtered[0].id);
-      setReply("");
-    }
-  }, [filtered, selectedId]);
+  }, [query, postById, categoryTab, primaryTab, activePlatforms, sort]);
 
   const selected = filtered.find((i) => i.id === selectedId) ?? filtered[0];
   const selectedPost = selected ? postById.get(selected.postId) : undefined;
 
-  // Group consecutive interactions by post so the post context only renders once per group
-  const grouped = useMemo(() => {
-    const out: { post: PostCtx; items: Interaction[] }[] = [];
-    for (const i of filtered) {
-      const post = postById.get(i.postId);
-      if (!post) continue;
-      const last = out[out.length - 1];
-      if (last && last.post.id === post.id) last.items.push(i);
-      else out.push({ post, items: [i] });
-    }
-    return out;
-  }, [filtered, postById]);
-
-  const updateInteraction = (id: string, patch: Partial<Interaction>) =>
-    setInteractions((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
-
   const send = () => {
-    if (!reply.trim() || !selected) return;
-    updateInteraction(selected.id, { stage: "replied" });
-    toast.success(`Reply sent to ${selected.author}`);
+    if (!reply.trim()) return;
+    toast.success("Reply sent");
     setReply("");
-  };
-
-  const useDraft = () => {
-    if (!selected?.aiDraft) return;
-    setReply(selected.aiDraft);
-    composerRef.current?.focus();
-  };
-
-  const regenerate = () => {
-    if (!selected) return;
-    setRegenerating(true);
-    setTimeout(() => {
-      const variants = [
-        `Hey ${selected.author.split(" ")[0]} — really appreciate you taking the time to comment! 🙌`,
-        `Thanks so much, ${selected.author.split(" ")[0]}! Means a lot to hear that.`,
-        `${selected.author.split(" ")[0]}, this made our day. Thank you for the kind words! ✨`,
-      ];
-      const next = variants[Math.floor(Math.random() * variants.length)];
-      updateInteraction(selected.id, { aiDraft: next });
-      setRegenerating(false);
-      toast.success("New AI draft generated");
-    }, 600);
-  };
-
-  const markReplied = () => {
-    if (!selected) return;
-    updateInteraction(selected.id, { stage: "replied" });
-    toast.success("Marked as replied");
-  };
-
-  const markSpam = () => {
-    if (!selected) return;
-    setInteractions((prev) => prev.filter((i) => i.id !== selected.id));
-    toast.success("Moved to spam");
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-      toast.success("Inbox refreshed");
-    }, 600);
   };
 
   const allPlatformsOn = activePlatforms.size === PLATFORMS.length;
@@ -493,8 +405,8 @@ export default function EngageV2Page() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing} className="h-8 gap-1.5 text-xs">
-            <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+          <Button variant="ghost" size="sm" onClick={() => toast.success("Refreshed")} className="h-8 gap-1.5 text-xs">
+            <RefreshCw className="w-3.5 h-3.5" />
             <span className="hidden md:inline">Refresh</span>
           </Button>
         </div>
@@ -575,39 +487,32 @@ export default function EngageV2Page() {
       )}
 
       {/* Two-pane workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-[440px_1fr] gap-4 h-[calc(100vh-440px)] min-h-[560px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 h-[calc(100vh-440px)] min-h-[520px]">
         {/* List */}
         <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground bg-muted/30">
-            <span className="font-medium">{filtered.length} interactions · {grouped.length} {grouped.length === 1 ? "post" : "posts"}</span>
-            <span>{sort === "recent" ? "Newest first" : sort === "oldest" ? "Oldest first" : "By priority"}</span>
+            <span className="font-medium">{filtered.length} interactions</span>
+            <span className="capitalize">{sort === "recent" ? "Newest first" : sort === "oldest" ? "Oldest first" : "By priority"}</span>
           </div>
           <div className="overflow-y-auto flex-1">
             {filtered.length === 0 ? (
-              <div className="p-10 text-center text-sm text-muted-foreground">
-                <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <div className="p-8 text-center text-sm text-muted-foreground">
                 No interactions match your filters.
-                {(query || categoryTab !== "all") && (
-                  <div className="mt-3">
-                    <Button size="sm" variant="outline" onClick={() => { setQuery(""); setCategoryTab("all"); }}>
-                      Clear filters
-                    </Button>
-                  </div>
-                )}
               </div>
             ) : (
-              grouped.map((group, gIdx) =>
-                group.items.map((i, idx) => (
+              filtered.map((i) => {
+                const post = postById.get(i.postId);
+                if (!post) return null;
+                return (
                   <InteractionRow
                     key={i.id}
                     interaction={i}
-                    post={group.post}
+                    post={post}
                     selected={selected?.id === i.id}
-                    showPostHeader={idx === 0}
-                    onClick={() => { setSelectedId(i.id); setReply(""); }}
+                    onClick={() => setSelectedId(i.id)}
                   />
-                ))
-              )
+                );
+              })
             )}
           </div>
         </div>
@@ -631,8 +536,8 @@ export default function EngageV2Page() {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground leading-snug line-clamp-3">{selectedPost.caption}</p>
-                    <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
+                    <p className="text-sm text-foreground leading-snug">{selectedPost.caption}</p>
+                    <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
                       <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{selectedPost.publishedAt}</span>
                       <span>·</span>
                       <span>{selectedPost.totalComments} total comments</span>
@@ -642,23 +547,6 @@ export default function EngageV2Page() {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Action bar */}
-              <div className="px-4 py-2 border-b border-border flex items-center gap-1 bg-card">
-                <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs" onClick={markReplied} disabled={selected.stage === "replied"}>
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Mark replied
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs" onClick={() => updateInteraction(selected.id, { likes: selected.likes + 1 })}>
-                  <ThumbsUp className="w-3.5 h-3.5" /> Like
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs text-error hover:text-error" onClick={markSpam}>
-                  <Trash2 className="w-3.5 h-3.5" /> Spam
-                </Button>
-                <span className="ml-auto text-[11px] text-muted-foreground inline-flex items-center gap-1 capitalize">
-                  <span className={cn("w-1.5 h-1.5 rounded-full", selected.channel === "dm" ? "bg-info" : selected.channel === "review" ? "bg-warning" : selected.channel === "mention" ? "bg-primary" : "bg-success")} />
-                  {selected.channel}
-                </span>
               </div>
 
               {/* Comment thread */}
@@ -676,7 +564,7 @@ export default function EngageV2Page() {
                       </span>
                     </div>
                     <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3">
-                      <p className="text-sm text-foreground whitespace-pre-wrap">{selected.text}</p>
+                      <p className="text-sm text-foreground">{selected.text}</p>
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {selected.likes} likes</span>
@@ -693,22 +581,13 @@ export default function EngageV2Page() {
                     <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary uppercase tracking-wide mb-1">
                       <Sparkles className="w-3 h-3" /> AI suggested reply
                     </div>
-                    <p className={cn("text-sm text-foreground", regenerating && "opacity-50")}>{selected.aiDraft}</p>
+                    <p className="text-sm text-foreground">{selected.aiDraft}</p>
                     <div className="flex gap-2 mt-2">
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={useDraft} disabled={regenerating}>
-                        <Check className="w-3 h-3" /> Use this draft
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReply(selected.aiDraft!)}>
+                        Use this draft
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5" onClick={regenerate} disabled={regenerating}>
-                        <RefreshCw className={cn("w-3 h-3", regenerating && "animate-spin")} />
-                        Regenerate
-                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs">Regenerate</Button>
                     </div>
-                  </div>
-                )}
-
-                {selected.stage === "replied" && (
-                  <div className="ml-12 flex items-center gap-2 text-xs text-success">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> You replied to this conversation
                   </div>
                 )}
               </div>
@@ -717,28 +596,16 @@ export default function EngageV2Page() {
               <div className="border-t border-border p-3 bg-card">
                 <div className="flex gap-2 items-end">
                   <textarea
-                    ref={composerRef}
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
-                    onKeyDown={(e) => {
-                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                        e.preventDefault();
-                        send();
-                      }
-                    }}
                     placeholder={`Reply to ${selected.author}…`}
                     rows={2}
                     className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
-                  <div className="flex flex-col gap-1">
-                    <Button onClick={send} disabled={!reply.trim()} className="gap-1.5">
-                      <Send className="w-3.5 h-3.5" />
-                      Send
-                    </Button>
-                    <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1 justify-end pr-1">
-                      <CornerDownLeft className="w-2.5 h-2.5" /> ⌘↵
-                    </span>
-                  </div>
+                  <Button onClick={send} disabled={!reply.trim()} className="gap-1.5">
+                    <Send className="w-3.5 h-3.5" />
+                    Send
+                  </Button>
                 </div>
               </div>
             </>
