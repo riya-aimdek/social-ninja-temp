@@ -168,30 +168,36 @@ function PostContextCard({ post, compact = false }: { post: PostCtx; compact?: b
 }
 
 /* ──────────────────────────────────────────────────────────────
-   InteractionRow
+   InteractionRow — comment paired with a post-context chip
    ────────────────────────────────────────────────────────────── */
 
 interface InteractionRowProps {
   interaction: Interaction;
   post: PostCtx;
   selected: boolean;
+  showPostHeader: boolean; // first row in a post group renders the full context card
   onClick: () => void;
 }
 
-function InteractionRow({ interaction: i, post, selected, onClick }: InteractionRowProps) {
+function InteractionRow({ interaction: i, post, selected, showPostHeader, onClick }: InteractionRowProps) {
   const SIcon = sentimentMeta[i.sentiment].Icon;
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-full text-left p-3 border-b border-border transition-colors",
-        selected ? "bg-primary/5 border-l-2 border-l-primary" : "hover:bg-muted/40 border-l-2 border-l-transparent",
+    <div>
+      {showPostHeader && (
+        <div className="px-3 pt-3 pb-2 sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
+          <PostContextCard post={post} compact />
+        </div>
       )}
-    >
-      <PostContextCard post={post} compact />
-
-      <div className="flex gap-2.5 mt-2.5 pl-1">
-        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
+      <button
+        onClick={onClick}
+        className={cn(
+          "w-full text-left px-3 py-2.5 border-b border-border transition-colors flex gap-2.5",
+          selected
+            ? "bg-primary/5 border-l-2 border-l-primary"
+            : "hover:bg-muted/40 border-l-2 border-l-transparent",
+        )}
+      >
+        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
           {i.avatar}
         </div>
         <div className="min-w-0 flex-1">
@@ -203,16 +209,21 @@ function InteractionRow({ interaction: i, post, selected, onClick }: Interaction
               {sentimentMeta[i.sentiment].label}
             </span>
           </div>
-          <p className="text-sm text-foreground leading-snug">{i.text}</p>
-          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+          <p className="text-sm text-foreground leading-snug line-clamp-2">{i.text}</p>
+          <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {i.likes}</span>
             <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", stageMeta[i.stage].cls)}>
               {stageMeta[i.stage].label}
             </span>
+            {i.aiDraft && (
+              <span className="inline-flex items-center gap-1 text-primary">
+                <Sparkles className="w-3 h-3" /> AI draft
+              </span>
+            )}
           </div>
         </div>
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }
 
