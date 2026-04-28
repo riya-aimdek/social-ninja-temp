@@ -325,27 +325,27 @@ export default function EngageV2Page() {
         </div>
       </div>
 
-      {/* KPI strip */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      {/* KPI strip — matches V1 exactly */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {KPIS.map((k) => {
           const Icon = k.Icon;
           return (
-            <div key={k.label} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0", toneStyles[k.tone])}>
+            <div key={k.label} className="bg-card rounded-xl border border-border p-4">
+              <div className="flex items-center justify-between">
+                <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", toneStyles[k.tone])}>
                   <Icon className="w-4 h-4" />
                 </div>
-                <span className="text-sm text-muted-foreground truncate">{k.label}</span>
+                <span className="text-2xl font-bold text-foreground tabular-nums">{k.value}</span>
               </div>
-              <span className="text-2xl font-bold text-foreground">{k.value}</span>
+              <div className="text-xs text-muted-foreground mt-2">{k.label}</div>
             </div>
           );
         })}
       </div>
 
-      {/* Primary tabs row */}
-      <div className="bg-card rounded-xl border border-border px-2">
-        <div className="flex items-center gap-1 overflow-x-auto">
+      {/* Tabs row with platform filter + refresh — matches V1 */}
+      <div className="flex items-end gap-3 border-b border-border flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
           {PRIMARY_TABS.map((t) => {
             const Icon = t.Icon;
             const active = primaryTab === t.id;
@@ -354,70 +354,68 @@ export default function EngageV2Page() {
                 key={t.id}
                 onClick={() => setPrimaryTab(t.id)}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-3 h-11 text-sm font-medium whitespace-nowrap transition-colors",
-                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                  "px-4 py-2.5 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px whitespace-nowrap transition-colors",
+                  active
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Icon className="w-4 h-4" />
-                {t.label}
-                {typeof t.count === "number" && (
-                  <span className={cn(
-                    "ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold",
-                    active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
-                  )}>
-                    {t.count}
-                  </span>
+                <Icon className="w-3.5 h-3.5" /> {t.label}
+                {t.id === "spam" && (
+                  <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{t.count}</span>
                 )}
-                {active && <span className="absolute left-2 right-2 bottom-0 h-0.5 bg-primary rounded-full" />}
+                {t.id === "queue" && (
+                  <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{t.count}</span>
+                )}
               </button>
             );
           })}
-
-          <div className="ml-auto flex items-center gap-1 pr-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 gap-1.5">
-                  <Filter className="w-3.5 h-3.5" />
-                  {allPlatformsOn ? "All platforms" : `${activePlatforms.size} platforms`}
-                  <span className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-semibold">
-                    {filtered.length}
+        </div>
+        <div className="flex items-center gap-2 pb-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+                <Filter className="w-3.5 h-3.5" />
+                {allPlatformsOn ? "All platforms" : `${activePlatforms.size} platforms`}
+                <span className="text-[10px] tabular-nums px-1.5 rounded-full bg-muted text-muted-foreground font-semibold">
+                  {filtered.length}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>Platforms</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {PLATFORMS.map((p) => (
+                <DropdownMenuCheckboxItem
+                  key={p}
+                  checked={activePlatforms.has(p)}
+                  onCheckedChange={(checked) => {
+                    const next = new Set(activePlatforms);
+                    if (checked) next.add(p); else next.delete(p);
+                    if (next.size === 0) return;
+                    setActivePlatforms(next);
+                  }}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <PlatformIcon name={p} />
+                    {p}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Platforms</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {PLATFORMS.map((p) => (
-                  <DropdownMenuCheckboxItem
-                    key={p}
-                    checked={activePlatforms.has(p)}
-                    onCheckedChange={(checked) => {
-                      const next = new Set(activePlatforms);
-                      if (checked) next.add(p); else next.delete(p);
-                      if (next.size === 0) return;
-                      setActivePlatforms(next);
-                    }}
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <PlatformIcon name={p} />
-                      {p}
-                    </span>
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button variant="ghost" size="sm" className="h-9 gap-1.5" onClick={() => toast.success("Refreshed")}>
-              <RefreshCw className="w-3.5 h-3.5" />
-              Refresh
-            </Button>
-          </div>
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="ghost" size="sm" onClick={() => toast.success("Refreshed")} className="h-8 gap-1.5 text-xs">
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Refresh</span>
+          </Button>
         </div>
       </div>
 
-      {/* Category pills + prominent search */}
-      <div className="flex items-center gap-2 bg-card rounded-xl border border-border p-2">
-        <div className="flex items-center gap-1 flex-shrink-0">
+      {/* Inbox toolbar — matches V1 (hidden on Variants) */}
+      {primaryTab !== "variants" && (
+      <div className="bg-card rounded-xl border border-border p-2">
+        <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
           {CATEGORY_TABS.map((c) => {
             const Icon = c.Icon;
             const active = categoryTab === c.id;
@@ -426,59 +424,67 @@ export default function EngageV2Page() {
                 key={c.id}
                 onClick={() => setCategoryTab(c.id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-medium transition-colors",
+                  "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-xs font-medium transition-colors shrink-0",
                   active
                     ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
                 )}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {c.label}
                 <span className={cn(
-                  "px-1.5 py-0.5 rounded-full text-[10px] font-semibold",
-                  active ? "bg-background/20 text-background" : "bg-muted-foreground/15 text-muted-foreground",
+                  "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
+                  active ? "bg-background/20" : "bg-muted text-muted-foreground",
                 )}>
                   {c.count}
                 </span>
               </button>
             );
           })}
-        </div>
 
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search comments, authors, or post captions…"
-            className="w-full pl-9 pr-8 h-9 rounded-lg bg-background border border-input text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-          />
-          {query && (
-            <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted">
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          )}
-        </div>
+          <div className="h-6 w-px bg-border mx-1 shrink-0" />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-9 gap-1.5 flex-shrink-0">
-              <ArrowDownUp className="w-3.5 h-3.5" />
-              {sort === "recent" ? "Recent" : sort === "oldest" ? "Oldest" : "Priority"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setSort("recent")}>Recent first</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSort("oldest")}>Oldest first</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSort("priority")}>Priority</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button variant="outline" size="sm" className="h-9 gap-1.5 flex-shrink-0">
-          <Filter className="w-3.5 h-3.5" />
-          Filters
-        </Button>
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search comments, authors, keywords…"
+              className="w-full pl-9 pr-8 h-10 rounded-lg bg-background border border-input shadow-sm text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground placeholder:font-normal transition-colors"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-9 px-2 gap-1.5 shrink-0" title="Sort order">
+                <ArrowDownUp className="w-3.5 h-3.5" />
+                <span className="hidden md:inline text-xs">{sort === "recent" ? "Recent" : sort === "oldest" ? "Oldest" : "Priority"}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => setSort("recent")} className="text-xs">Recent first</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSort("oldest")} className="text-xs">Oldest first</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSort("priority")} className="text-xs">Priority</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button variant="ghost" size="sm" className="h-9 px-2 gap-1.5 shrink-0">
+            <Filter className="w-3.5 h-3.5" />
+            <span className="hidden md:inline text-xs">Filters</span>
+          </Button>
+        </div>
       </div>
+      )}
 
       {/* Two-pane workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 h-[calc(100vh-440px)] min-h-[520px]">
