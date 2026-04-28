@@ -40,6 +40,7 @@ import CreatePage from "./pages/client/CreatePage";
 import CreateAiPage from "./pages/client/CreateAiPage";
 import PublishPage from "./pages/client/PublishPage";
 import EngagePage from "./pages/client/EngagePage";
+import EngageV2Page from "./pages/client/EngageV2Page";
 import AnalyzePage from "./pages/client/AnalyzePage";
 import PromotePage from "./pages/client/PromotePage";
 import ListenPage from "./pages/client/ListenPage";
@@ -113,6 +114,8 @@ const App = () => (
             <Route path="/client/create/ai" element={<CreateAiPage />} />
             <Route path="/client/publish" element={<PublishPage />} />
             <Route path="/client/engage" element={<EngagePage />} />
+            <Route path="/client/engage/v2" element={<EngageV2Page />} />
+            <Route path="/engage/v2" element={<Navigate to="/client/engage/v2" replace />} />
             <Route path="/client/analyze" element={<AnalyzePage />} />
             <Route path="/client/promote" element={<PromotePage />} />
             <Route path="/client/listen" element={<ListenPage />} />
