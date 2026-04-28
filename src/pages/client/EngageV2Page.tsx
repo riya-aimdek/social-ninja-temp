@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, Filter, Send, Sparkles, Smile, Meh, Frown, Image as ImageIcon,
   Instagram, Facebook, Linkedin, Twitter, MapPin, Clock, ThumbsUp,
   ExternalLink, Inbox, AlertTriangle, CheckCircle2, X, MessageSquare,
   KanbanSquare, ListTree, Shield, Shuffle, RefreshCw, ChevronDown,
-  ArrowDownUp, AtSign, Mail, Star, Bot,
+  ArrowDownUp, AtSign, Mail, Star, Bot, Check, Trash2, MoreHorizontal,
+  CornerDownLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
