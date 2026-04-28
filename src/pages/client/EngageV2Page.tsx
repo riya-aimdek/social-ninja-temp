@@ -2,10 +2,16 @@ import { useMemo, useState } from "react";
 import {
   Search, Filter, Send, Sparkles, Smile, Meh, Frown, Image as ImageIcon,
   Instagram, Facebook, Linkedin, Twitter, MapPin, Clock, ThumbsUp,
-  ChevronRight, ExternalLink, Inbox, AlertTriangle, CheckCircle2, X,
+  ExternalLink, Inbox, AlertTriangle, CheckCircle2, X, MessageSquare,
+  KanbanSquare, ListTree, Shield, Shuffle, RefreshCw, ChevronDown,
+  ArrowDownUp, AtSign, Mail, Star, Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 /* ──────────────────────────────────────────────────────────────
@@ -15,6 +21,7 @@ import { toast } from "sonner";
 type Platform = "Instagram" | "Facebook" | "LinkedIn" | "Twitter" | "GBP";
 type Sentiment = "positive" | "neutral" | "negative";
 type Stage = "pending" | "in_review" | "replied";
+type Channel = "comment" | "mention" | "dm" | "review";
 
 interface PostCtx {
   id: string;
@@ -36,6 +43,7 @@ interface Interaction {
   sentiment: Sentiment;
   likes: number;
   stage: Stage;
+  channel: Channel;
   aiDraft?: string;
 }
 
@@ -71,19 +79,19 @@ const POSTS: PostCtx[] = [
 ];
 
 const INTERACTIONS: Interaction[] = [
-  { id: "I-1", postId: "P-201", author: "Sarah Johnson", avatar: "SJ", text: "Happy 5 years! 🎉 Wishing you many more!", at: "12m", sentiment: "positive", likes: 4, stage: "pending", aiDraft: "Thank you so much, Sarah! 💛 Five years has flown by — couldn't have done it without supporters like you." },
-  { id: "I-2", postId: "P-201", author: "Emma Wilson", avatar: "EW", text: "Congrats team! Been a customer since year 1 ❤️", at: "20m", sentiment: "positive", likes: 7, stage: "in_review", aiDraft: "Emma, that means the world! 🥹 Loyal supporters like you are the reason we get to celebrate years like this." },
-  { id: "I-3", postId: "P-200", author: "Marcus Reid", avatar: "MR", text: "Will the Sunday hours be the same? Hoping to swing by after church.", at: "1h", sentiment: "neutral", likes: 0, stage: "pending", aiDraft: "Hi Marcus! Yes — Sundays are 7am–10pm too. See you then ☕" },
-  { id: "I-4", postId: "P-200", author: "Diane K.", avatar: "DK", text: "Finally! The old hours never worked for my schedule.", at: "2h", sentiment: "positive", likes: 2, stage: "pending" },
-  { id: "I-5", postId: "P-199", author: "Priya Shah", avatar: "PS", text: "Just applied — really excited about this role!", at: "3h", sentiment: "positive", likes: 1, stage: "in_review", aiDraft: "Priya, thanks for applying! Our team will review and reach out within a week." },
-  { id: "I-6", postId: "P-198", author: "Tom L.", avatar: "TL", text: "Hard agree. The polished corporate voice is so dead.", at: "5h", sentiment: "positive", likes: 18, stage: "pending" },
-  { id: "I-7", postId: "P-198", author: "Anonymous", avatar: "A?", text: "Disagree — sometimes professionalism matters more than personality.", at: "6h", sentiment: "negative", likes: 3, stage: "pending", aiDraft: "Totally fair point — context matters. We try to balance warmth with credibility." },
-  { id: "I-8", postId: "P-197", author: "Hannah Becker", avatar: "HB", text: "Do you ship to Germany? 🌍", at: "8h", sentiment: "neutral", likes: 1, stage: "pending", aiDraft: "Hi Hannah! Yes — we ship to 32 countries including Germany. Standard delivery is 5–7 days." },
-  { id: "I-9", postId: "P-197", author: "Lila M.", avatar: "LM", text: "Obsessed with the floral print 😍 ordered already!", at: "10h", sentiment: "positive", likes: 5, stage: "replied" },
+  { id: "I-1", postId: "P-201", author: "Sarah Johnson", avatar: "SJ", text: "Happy 5 years! 🎉 Wishing you many more!", at: "12m", sentiment: "positive", likes: 4, stage: "pending", channel: "comment", aiDraft: "Thank you so much, Sarah! 💛 Five years has flown by — couldn't have done it without supporters like you." },
+  { id: "I-2", postId: "P-201", author: "Emma Wilson", avatar: "EW", text: "Congrats team! Been a customer since year 1 ❤️", at: "20m", sentiment: "positive", likes: 7, stage: "in_review", channel: "comment", aiDraft: "Emma, that means the world! 🥹 Loyal supporters like you are the reason we get to celebrate years like this." },
+  { id: "I-3", postId: "P-200", author: "Marcus Reid", avatar: "MR", text: "Will the Sunday hours be the same? Hoping to swing by after church.", at: "1h", sentiment: "neutral", likes: 0, stage: "pending", channel: "review", aiDraft: "Hi Marcus! Yes — Sundays are 7am–10pm too. See you then ☕" },
+  { id: "I-4", postId: "P-200", author: "Diane K.", avatar: "DK", text: "Finally! The old hours never worked for my schedule.", at: "2h", sentiment: "positive", likes: 2, stage: "pending", channel: "review" },
+  { id: "I-5", postId: "P-199", author: "Priya Shah", avatar: "PS", text: "@brand just applied — really excited about this role!", at: "3h", sentiment: "positive", likes: 1, stage: "in_review", channel: "mention", aiDraft: "Priya, thanks for applying! Our team will review and reach out within a week." },
+  { id: "I-6", postId: "P-198", author: "Tom L.", avatar: "TL", text: "Hard agree. The polished corporate voice is so dead.", at: "5h", sentiment: "positive", likes: 18, stage: "pending", channel: "comment" },
+  { id: "I-7", postId: "P-198", author: "Anonymous", avatar: "A?", text: "Disagree — sometimes professionalism matters more than personality.", at: "6h", sentiment: "negative", likes: 3, stage: "pending", channel: "comment", aiDraft: "Totally fair point — context matters. We try to balance warmth with credibility." },
+  { id: "I-8", postId: "P-197", author: "Hannah Becker", avatar: "HB", text: "Do you ship to Germany? 🌍", at: "8h", sentiment: "neutral", likes: 1, stage: "pending", channel: "dm", aiDraft: "Hi Hannah! Yes — we ship to 32 countries including Germany. Standard delivery is 5–7 days." },
+  { id: "I-9", postId: "P-197", author: "Lila M.", avatar: "LM", text: "Obsessed with the floral print 😍 ordered already!", at: "10h", sentiment: "positive", likes: 5, stage: "replied", channel: "comment" },
 ];
 
 /* ──────────────────────────────────────────────────────────────
-   Helpers
+   Tokens
    ────────────────────────────────────────────────────────────── */
 
 const PlatformIcon = ({ name, className }: { name: Platform; className?: string }) => {
@@ -109,36 +117,30 @@ const stageMeta: Record<Stage, { label: string; cls: string }> = {
   replied: { label: "Replied", cls: "bg-success/15 text-success" },
 };
 
+const PLATFORMS: Platform[] = ["Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"];
+
 /* ──────────────────────────────────────────────────────────────
-   Sub-components
+   PostContextCard — defining v2 element
    ────────────────────────────────────────────────────────────── */
 
-/**
- * The defining piece of v2 — a compact "Original Post" card shown next to
- * every comment so the user instantly knows what triggered it.
- *
- * Adapts to two shapes:
- *   • With image  → thumbnail on the left, caption on the right
- *   • Text-only   → icon placeholder + full caption (no awkward empty box)
- */
 function PostContextCard({ post, compact = false }: { post: PostCtx; compact?: boolean }) {
   const hasImage = Boolean(post.image);
   return (
-    <div className="flex gap-3 p-3 rounded-lg border border-border bg-muted/30">
+    <div className="flex gap-3 p-2.5 rounded-lg border border-border bg-muted/30">
       {hasImage ? (
         <img
           src={post.image}
           alt=""
           className={cn(
             "rounded-md object-cover flex-shrink-0 border border-border",
-            compact ? "w-12 h-12" : "w-16 h-16",
+            compact ? "w-11 h-11" : "w-16 h-16",
           )}
         />
       ) : (
         <div
           className={cn(
             "rounded-md flex-shrink-0 border border-border bg-background flex items-center justify-center",
-            compact ? "w-12 h-12" : "w-16 h-16",
+            compact ? "w-11 h-11" : "w-16 h-16",
           )}
           aria-hidden
         >
@@ -159,13 +161,14 @@ function PostContextCard({ post, compact = false }: { post: PostCtx; compact?: b
         )}>
           {post.caption}
         </p>
-        <button className="text-[11px] text-primary hover:underline mt-1 inline-flex items-center gap-1">
-          View post <ExternalLink className="w-3 h-3" />
-        </button>
       </div>
     </div>
   );
 }
+
+/* ──────────────────────────────────────────────────────────────
+   InteractionRow
+   ────────────────────────────────────────────────────────────── */
 
 interface InteractionRowProps {
   interaction: Interaction;
@@ -184,10 +187,8 @@ function InteractionRow({ interaction: i, post, selected, onClick }: Interaction
         selected ? "bg-primary/5 border-l-2 border-l-primary" : "hover:bg-muted/40 border-l-2 border-l-transparent",
       )}
     >
-      {/* Post context — always first, never hidden */}
       <PostContextCard post={post} compact />
 
-      {/* The interaction itself */}
       <div className="flex gap-2.5 mt-2.5 pl-1">
         <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
           {i.avatar}
@@ -215,23 +216,57 @@ function InteractionRow({ interaction: i, post, selected, onClick }: Interaction
 }
 
 /* ──────────────────────────────────────────────────────────────
+   KPI strip (matches main Engage)
+   ────────────────────────────────────────────────────────────── */
+
+const KPIS = [
+  { label: "Pending review", value: 33, Icon: MessageSquare, tone: "info" },
+  { label: "Urgent", value: 6, Icon: AlertTriangle, tone: "error" },
+  { label: "SLA breached", value: 8, Icon: Clock, tone: "warning" },
+  { label: "Replied today", value: 146, Icon: CheckCircle2, tone: "success" },
+  { label: "Spam filtered", value: 29, Icon: Shield, tone: "muted" },
+] as const;
+
+const toneStyles: Record<string, string> = {
+  info: "bg-info/10 text-info",
+  error: "bg-error/10 text-error",
+  warning: "bg-warning/10 text-warning",
+  success: "bg-success/10 text-success",
+  muted: "bg-muted text-muted-foreground",
+};
+
+/* ──────────────────────────────────────────────────────────────
    Page
    ────────────────────────────────────────────────────────────── */
 
-type TabKey = "all" | "pending" | "mentions" | "resolved";
+type PrimaryTab = "queue" | "board" | "threads" | "sentiment" | "spam" | "variants";
+type CategoryTab = "all" | "comments" | "mentions" | "dms" | "reviews";
 
-const TABS: { id: TabKey; label: string; Icon: typeof Inbox }[] = [
-  { id: "all", label: "All", Icon: Inbox },
-  { id: "pending", label: "Needs reply", Icon: AlertTriangle },
-  { id: "mentions", label: "Mentions", Icon: Sparkles },
-  { id: "resolved", label: "Resolved", Icon: CheckCircle2 },
+const PRIMARY_TABS: { id: PrimaryTab; label: string; Icon: typeof Inbox; count?: number }[] = [
+  { id: "queue", label: "AI Reply Queue", Icon: Bot, count: 33 },
+  { id: "board", label: "ORM Board", Icon: KanbanSquare },
+  { id: "threads", label: "Comment Threads", Icon: ListTree },
+  { id: "sentiment", label: "Sentiment Review", Icon: Smile },
+  { id: "spam", label: "Spam Queue", Icon: Shield, count: 29 },
+  { id: "variants", label: "Reply Variants", Icon: Shuffle },
+];
+
+const CATEGORY_TABS: { id: CategoryTab; label: string; Icon: typeof Inbox; count: number }[] = [
+  { id: "all", label: "All", Icon: Inbox, count: 33 },
+  { id: "comments", label: "Comments", Icon: MessageSquare, count: 33 },
+  { id: "mentions", label: "Mentions", Icon: AtSign, count: 1 },
+  { id: "dms", label: "DMs", Icon: Mail, count: 0 },
+  { id: "reviews", label: "Reviews", Icon: Star, count: 7 },
 ];
 
 export default function EngageV2Page() {
-  const [tab, setTab] = useState<TabKey>("all");
+  const [primaryTab, setPrimaryTab] = useState<PrimaryTab>("queue");
+  const [categoryTab, setCategoryTab] = useState<CategoryTab>("all");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string>(INTERACTIONS[0].id);
   const [reply, setReply] = useState("");
+  const [sort, setSort] = useState<"recent" | "oldest" | "priority">("recent");
+  const [activePlatforms, setActivePlatforms] = useState<Set<Platform>>(new Set(PLATFORMS));
 
   const postById = useMemo(() => {
     const m = new Map<string, PostCtx>();
@@ -241,18 +276,26 @@ export default function EngageV2Page() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return INTERACTIONS.filter((i) => {
-      if (tab === "pending" && i.stage !== "pending") return false;
-      if (tab === "resolved" && i.stage !== "replied") return false;
-      if (tab === "mentions" && !i.text.includes("@")) return false;
+    let list = INTERACTIONS.filter((i) => {
+      const post = postById.get(i.postId);
+      if (!post || !activePlatforms.has(post.platform)) return false;
+      if (categoryTab !== "all") {
+        const map: Record<CategoryTab, Channel | null> = {
+          all: null, comments: "comment", mentions: "mention", dms: "dm", reviews: "review",
+        };
+        if (map[categoryTab] && i.channel !== map[categoryTab]) return false;
+      }
+      if (primaryTab === "spam" && i.sentiment !== "negative") return false;
+      if (primaryTab === "sentiment" && i.sentiment === "neutral") return false;
       if (q) {
-        const post = postById.get(i.postId);
-        const hay = `${i.author} ${i.text} ${post?.caption ?? ""}`.toLowerCase();
+        const hay = `${i.author} ${i.text} ${post.caption}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [tab, query, postById]);
+    if (sort === "oldest") list = [...list].reverse();
+    return list;
+  }, [query, postById, categoryTab, primaryTab, activePlatforms, sort]);
 
   const selected = filtered.find((i) => i.id === selectedId) ?? filtered[0];
   const selectedPost = selected ? postById.get(selected.postId) : undefined;
@@ -262,6 +305,8 @@ export default function EngageV2Page() {
     toast.success("Reply sent");
     setReply("");
   };
+
+  const allPlatformsOn = activePlatforms.size === PLATFORMS.length;
 
   return (
     <div className="space-y-4">
@@ -280,9 +325,127 @@ export default function EngageV2Page() {
         </div>
       </div>
 
-      {/* Toolbar */}
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {KPIS.map((k) => {
+          const Icon = k.Icon;
+          return (
+            <div key={k.label} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0", toneStyles[k.tone])}>
+                  <Icon className="w-4 h-4" />
+                </div>
+                <span className="text-sm text-muted-foreground truncate">{k.label}</span>
+              </div>
+              <span className="text-2xl font-bold text-foreground">{k.value}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Primary tabs row */}
+      <div className="bg-card rounded-xl border border-border px-2">
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {PRIMARY_TABS.map((t) => {
+            const Icon = t.Icon;
+            const active = primaryTab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setPrimaryTab(t.id)}
+                className={cn(
+                  "relative inline-flex items-center gap-1.5 px-3 h-11 text-sm font-medium whitespace-nowrap transition-colors",
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="w-4 h-4" />
+                {t.label}
+                {typeof t.count === "number" && (
+                  <span className={cn(
+                    "ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold",
+                    active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+                  )}>
+                    {t.count}
+                  </span>
+                )}
+                {active && <span className="absolute left-2 right-2 bottom-0 h-0.5 bg-primary rounded-full" />}
+              </button>
+            );
+          })}
+
+          <div className="ml-auto flex items-center gap-1 pr-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                  <Filter className="w-3.5 h-3.5" />
+                  {allPlatformsOn ? "All platforms" : `${activePlatforms.size} platforms`}
+                  <span className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-semibold">
+                    {filtered.length}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Platforms</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {PLATFORMS.map((p) => (
+                  <DropdownMenuCheckboxItem
+                    key={p}
+                    checked={activePlatforms.has(p)}
+                    onCheckedChange={(checked) => {
+                      const next = new Set(activePlatforms);
+                      if (checked) next.add(p); else next.delete(p);
+                      if (next.size === 0) return;
+                      setActivePlatforms(next);
+                    }}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <PlatformIcon name={p} />
+                      {p}
+                    </span>
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="ghost" size="sm" className="h-9 gap-1.5" onClick={() => toast.success("Refreshed")}>
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Category pills + prominent search */}
       <div className="flex items-center gap-2 bg-card rounded-xl border border-border p-2">
-        <div className="relative flex-1 min-w-[240px] max-w-md">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {CATEGORY_TABS.map((c) => {
+            const Icon = c.Icon;
+            const active = categoryTab === c.id;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setCategoryTab(c.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-medium transition-colors",
+                  active
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {c.label}
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded-full text-[10px] font-semibold",
+                  active ? "bg-background/20 text-background" : "bg-muted-foreground/15 text-muted-foreground",
+                )}>
+                  {c.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -297,38 +460,33 @@ export default function EngageV2Page() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-1 ml-auto">
-          {TABS.map((t) => {
-            const Icon = t.Icon;
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-medium transition-colors",
-                  active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {t.label}
-              </button>
-            );
-          })}
-          <Button variant="outline" size="sm" className="h-9 gap-1.5">
-            <Filter className="w-3.5 h-3.5" />
-            Filters
-          </Button>
-        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-9 gap-1.5 flex-shrink-0">
+              <ArrowDownUp className="w-3.5 h-3.5" />
+              {sort === "recent" ? "Recent" : sort === "oldest" ? "Oldest" : "Priority"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setSort("recent")}>Recent first</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSort("oldest")}>Oldest first</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSort("priority")}>Priority</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button variant="outline" size="sm" className="h-9 gap-1.5 flex-shrink-0">
+          <Filter className="w-3.5 h-3.5" />
+          Filters
+        </Button>
       </div>
 
       {/* Two-pane workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 h-[calc(100vh-260px)] min-h-[560px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 h-[calc(100vh-440px)] min-h-[520px]">
         {/* List */}
         <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground bg-muted/30">
             <span className="font-medium">{filtered.length} interactions</span>
-            <span>Sorted by recency</span>
+            <span className="capitalize">{sort === "recent" ? "Newest first" : sort === "oldest" ? "Oldest first" : "By priority"}</span>
           </div>
           <div className="overflow-y-auto flex-1">
             {filtered.length === 0 ? (
@@ -357,7 +515,7 @@ export default function EngageV2Page() {
         <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
           {selected && selectedPost ? (
             <>
-              {/* Persistent post context at top — never scrolls away */}
+              {/* Persistent post context — never scrolls away */}
               <div className="p-4 border-b border-border bg-muted/20">
                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
                   <PlatformIcon name={selectedPost.platform} />
