@@ -275,10 +275,17 @@ export default function EngageV2Page() {
   const [primaryTab, setPrimaryTab] = useState<PrimaryTab>("queue");
   const [categoryTab, setCategoryTab] = useState<CategoryTab>("all");
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string>(INTERACTIONS[0].id);
   const [reply, setReply] = useState("");
   const [sort, setSort] = useState<"recent" | "oldest" | "priority">("recent");
   const [activePlatforms, setActivePlatforms] = useState<Set<Platform>>(new Set(PLATFORMS));
+  const [refreshing, setRefreshing] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+
+  // Live, mutable interactions so the module is fully working end-to-end
+  const [interactions, setInteractions] = useState<Interaction[]>(INTERACTIONS);
+  const [selectedId, setSelectedId] = useState<string>(INTERACTIONS[0].id);
+
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const postById = useMemo(() => {
     const m = new Map<string, PostCtx>();
@@ -288,7 +295,7 @@ export default function EngageV2Page() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let list = INTERACTIONS.filter((i) => {
+    let list = interactions.filter((i) => {
       const post = postById.get(i.postId);
       if (!post || !activePlatforms.has(post.platform)) return false;
       if (categoryTab !== "all") {
@@ -299,6 +306,7 @@ export default function EngageV2Page() {
       }
       if (primaryTab === "spam" && i.sentiment !== "negative") return false;
       if (primaryTab === "sentiment" && i.sentiment === "neutral") return false;
+      if (primaryTab === "queue" && i.stage === "replied") return false;
       if (q) {
         const hay = `${i.author} ${i.text} ${post.caption}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -307,15 +315,83 @@ export default function EngageV2Page() {
     });
     if (sort === "oldest") list = [...list].reverse();
     return list;
-  }, [query, postById, categoryTab, primaryTab, activePlatforms, sort]);
+  }, [interactions, query, postById, categoryTab, primaryTab, activePlatforms, sort]);
+
+  // Keep selection valid when filters change
+  useEffect(() => {
+    if (filtered.length === 0) return;
+    if (!filtered.some((i) => i.id === selectedId)) {
+      setSelectedId(filtered[0].id);
+      setReply("");
+    }
+  }, [filtered, selectedId]);
 
   const selected = filtered.find((i) => i.id === selectedId) ?? filtered[0];
   const selectedPost = selected ? postById.get(selected.postId) : undefined;
 
+  // Group consecutive interactions by post so the post context only renders once per group
+  const grouped = useMemo(() => {
+    const out: { post: PostCtx; items: Interaction[] }[] = [];
+    for (const i of filtered) {
+      const post = postById.get(i.postId);
+      if (!post) continue;
+      const last = out[out.length - 1];
+      if (last && last.post.id === post.id) last.items.push(i);
+      else out.push({ post, items: [i] });
+    }
+    return out;
+  }, [filtered, postById]);
+
+  const updateInteraction = (id: string, patch: Partial<Interaction>) =>
+    setInteractions((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+
   const send = () => {
-    if (!reply.trim()) return;
-    toast.success("Reply sent");
+    if (!reply.trim() || !selected) return;
+    updateInteraction(selected.id, { stage: "replied" });
+    toast.success(`Reply sent to ${selected.author}`);
     setReply("");
+  };
+
+  const useDraft = () => {
+    if (!selected?.aiDraft) return;
+    setReply(selected.aiDraft);
+    composerRef.current?.focus();
+  };
+
+  const regenerate = () => {
+    if (!selected) return;
+    setRegenerating(true);
+    setTimeout(() => {
+      const variants = [
+        `Hey ${selected.author.split(" ")[0]} — really appreciate you taking the time to comment! 🙌`,
+        `Thanks so much, ${selected.author.split(" ")[0]}! Means a lot to hear that.`,
+        `${selected.author.split(" ")[0]}, this made our day. Thank you for the kind words! ✨`,
+      ];
+      const next = variants[Math.floor(Math.random() * variants.length)];
+      updateInteraction(selected.id, { aiDraft: next });
+      setRegenerating(false);
+      toast.success("New AI draft generated");
+    }, 600);
+  };
+
+  const markReplied = () => {
+    if (!selected) return;
+    updateInteraction(selected.id, { stage: "replied" });
+    toast.success("Marked as replied");
+  };
+
+  const markSpam = () => {
+    if (!selected) return;
+    setInteractions((prev) => prev.filter((i) => i.id !== selected.id));
+    toast.success("Moved to spam");
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+      toast.success("Inbox refreshed");
+    }, 600);
   };
 
   const allPlatformsOn = activePlatforms.size === PLATFORMS.length;
