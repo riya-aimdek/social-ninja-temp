@@ -493,8 +493,8 @@ export default function EngageV2Page() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="sm" onClick={() => toast.success("Refreshed")} className="h-8 gap-1.5 text-xs">
-            <RefreshCw className="w-3.5 h-3.5" />
+          <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing} className="h-8 gap-1.5 text-xs">
+            <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
             <span className="hidden md:inline">Refresh</span>
           </Button>
         </div>
