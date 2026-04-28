@@ -115,7 +115,7 @@ const App = () => (
             <Route path="/client/publish" element={<PublishPage />} />
             <Route path="/client/engage" element={<EngagePage />} />
             <Route path="/client/engage/v2" element={<EngageV2Page />} />
-            <Route path="/engage/v2" element={<EngageV2Page />} />
+            <Route path="/engage/v2" element={<Navigate to="/client/engage/v2" replace />} />
             <Route path="/client/analyze" element={<AnalyzePage />} />
             <Route path="/client/promote" element={<PromotePage />} />
             <Route path="/client/listen" element={<ListenPage />} />
