@@ -160,7 +160,7 @@ export default function PublishPage() {
             ]).map((v) => (
               <button
                 key={v.id}
-                onClick={() => setView(v.id)}
+                onClick={() => handleViewChange(v.id)}
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors",
                   view === v.id ? "bg-foreground text-card" : "text-foreground hover:bg-accent",
@@ -173,17 +173,17 @@ export default function PublishPage() {
         </div>
       </div>
 
-      {/* Summary banner (MoM #21) */}
+      {/* Summary banner — Published first, then Awaiting approval, Scheduled, Rejected */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Awaiting approval", value: summary.pending, I: Clock, tone: "text-warning bg-warning/10" },
-          { label: "Approved & ready", value: summary.approvedReady, I: CheckCircle2, tone: "text-success bg-success/10" },
-          { label: "Scheduled", value: summary.scheduled, I: SendIcon, tone: "text-info bg-info/10" },
-          { label: "Rejected", value: summary.rejected, I: AlertCircle, tone: "text-error bg-error/10" },
+          { label: "Published", value: summary.published, I: CheckCircle2, tone: "text-success bg-success/10", filter: "published" as Filter },
+          { label: "Awaiting approval", value: summary.pending, I: Clock, tone: "text-warning bg-warning/10", filter: "pending_approval" as Filter },
+          { label: "Scheduled", value: summary.scheduled, I: SendIcon, tone: "text-info bg-info/10", filter: "scheduled" as Filter },
+          { label: "Rejected", value: summary.rejected, I: AlertCircle, tone: "text-error bg-error/10", filter: "rejected" as Filter },
         ].map((s) => (
           <button
             key={s.label}
-            onClick={() => setFilter(s.label === "Awaiting approval" ? "pending_approval" : s.label === "Approved & ready" ? "approved" : s.label === "Scheduled" ? "scheduled" : "rejected")}
+            onClick={() => setFilter(s.filter)}
             className="bg-card rounded-xl border border-border p-4 text-left hover:border-border-hover transition-colors"
           >
             <div className="flex items-center justify-between">
@@ -200,7 +200,7 @@ export default function PublishPage() {
       {/* Filter tabs + search */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex flex-wrap gap-1.5">
-          {FILTER_TABS.map((t) => (
+          {visibleFilterTabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setFilter(t.id)}
