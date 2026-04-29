@@ -19,14 +19,13 @@ const ALL_FILTER_TABS: { id: Filter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "draft", label: "Drafts" },
   { id: "pending_approval", label: "Pending" },
-  { id: "approved", label: "Approved" },
   { id: "scheduled", label: "Scheduled" },
   { id: "published", label: "Published" },
   { id: "rejected", label: "Rejected" },
 ];
 
-// Drafts have no schedule date and Approved is a transient state — hide from calendar
-const CALENDAR_HIDDEN_FILTERS: Filter[] = ["draft", "approved"];
+// Drafts have no schedule date — hide from calendar
+const CALENDAR_HIDDEN_FILTERS: Filter[] = ["draft"];
 
 const BOARD_COLUMNS: PostStatus[] = ["draft", "pending_approval", "approved", "scheduled", "published"];
 
