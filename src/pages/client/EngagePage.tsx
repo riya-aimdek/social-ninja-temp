@@ -1286,10 +1286,11 @@ function ReplyQueueView({
    ────────────────────────────────────────────────────────────── */
 
 function BoardView({
-  comments, updateComment,
+  comments, updateComment, openContext,
 }: {
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  openContext: (commentId: string, postId: string) => void;
 }) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<Stage | null>(null);
