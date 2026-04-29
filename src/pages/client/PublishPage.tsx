@@ -278,6 +278,12 @@ export default function PublishPage() {
               </div>
             ))}
           </div>
+          <p className="text-[11px] text-muted-foreground mt-3">
+            Drafts aren't shown here — they have no schedule date. View them in{" "}
+            <button onClick={() => handleViewChange("list")} className="underline hover:text-foreground">List</button>
+            {" "}or{" "}
+            <button onClick={() => handleViewChange("board")} className="underline hover:text-foreground">Board</button>.
+          </p>
         </div>
       )}
 
