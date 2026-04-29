@@ -1939,7 +1939,7 @@ function SpamView({
               </div>
               <p className="text-sm text-muted-foreground line-through">{c.text}</p>
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               <Button variant="outline" size="sm" onClick={() => unspam(c.id)} className="gap-1">
                 <RefreshCw className="w-3 h-3" /> Restore
               </Button>
