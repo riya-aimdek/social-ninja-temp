@@ -1159,7 +1159,18 @@ function ReplyQueueView({
                   {c.priority}
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground line-clamp-1 pl-9 italic">on "{c.post.title}"</p>
+              <p className="text-[11px] text-muted-foreground line-clamp-1 pl-9 italic">
+                on{" "}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); openContext(c.id, c.post.id); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); openContext(c.id, c.post.id); } }}
+                  className="not-italic underline decoration-dotted underline-offset-2 hover:text-foreground cursor-pointer"
+                >
+                  "{c.post.title}"
+                </span>
+              </p>
               <p className="text-xs text-foreground line-clamp-2 pl-9 mt-1">{c.text}</p>
               <div className="flex items-center gap-2 mt-1.5 pl-9">
                 <span className={cn("inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
