@@ -1036,12 +1036,20 @@ export default function EngagePage() {
       </Dialog>
 
 
-      {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
-      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
+      {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} openContext={openContext} />}
+      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} openContext={openContext} />}
       {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} />}
-      {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} />}
-      {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} />}
+      {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} openContext={openContext} />}
+      {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} openContext={openContext} />}
       {tab === "variants" && <VariantsView templates={templates} setTemplates={setTemplates} />}
+
+      <PostThreadContextSheet
+        pair={contextPair}
+        posts={posts}
+        onClose={() => setContextPair(null)}
+        updateComment={updateComment}
+        addReply={addReply}
+      />
     </div>
   );
 }
