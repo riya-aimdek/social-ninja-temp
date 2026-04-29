@@ -540,6 +540,10 @@ export default function EngagePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
+  // Post-thread context sheet — opened from any view to give post context for a comment
+  const [contextPair, setContextPair] = useState<{ commentId: string; postId: string } | null>(null);
+  const openContext = (commentId: string, postId: string) => setContextPair({ commentId, postId });
+
   // Old-UI compatible filters: search + category tabs + sort + filter modal
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryTab, setCategoryTab] = useState<"all" | "comments" | "mentions" | "dms" | "reviews">("all");
