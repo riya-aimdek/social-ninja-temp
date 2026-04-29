@@ -1876,7 +1876,7 @@ function SentimentReviewView({
                         const meta = sentimentMeta[s];
                         const active = c.sentiment === s;
                         return (
-                          <button key={s} onClick={() => correct(c.id, s)} disabled={active}
+                          <button key={s} onClick={(e) => { e.stopPropagation(); correct(c.id, s); }} disabled={active}
                             title={meta.label}
                             className={cn(
                               "w-7 h-7 rounded-lg border flex items-center justify-center transition-colors",
