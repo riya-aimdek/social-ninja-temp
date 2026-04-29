@@ -1922,7 +1922,11 @@ function SpamView({
 
       <div className="bg-card rounded-xl border border-border divide-y divide-border">
         {spam.map((c) => (
-          <div key={c.id} className="p-4 flex items-start gap-3">
+          <div
+            key={c.id}
+            onClick={() => openContext(c.id, c.post.id)}
+            className="p-4 flex items-start gap-3 cursor-pointer hover:bg-muted/30"
+          >
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground flex-shrink-0">
               {c.avatar}
             </div>
@@ -1930,7 +1934,7 @@ function SpamView({
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-semibold text-foreground">{c.author}</span>
                 <PlatformIcon name={c.post.platform} className="w-3 h-3" />
-                <span className="text-[10px] text-muted-foreground">on "{c.post.title}"</span>
+                <span className="text-[10px] text-primary underline decoration-dotted underline-offset-2">on "{c.post.title}"</span>
                 <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-error/10 text-error font-medium">SPAM</span>
               </div>
               <p className="text-sm text-muted-foreground line-through">{c.text}</p>
