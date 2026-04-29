@@ -5,6 +5,7 @@ import {
   ArrowRight, MoreVertical, MapPin, Shield, Shuffle, Trash2, Plus,
   ThumbsUp, ThumbsDown, Edit3, RefreshCw, Smile, Meh, Frown, ListTree,
   Bot, Users, Zap, X, Check, AtSign, Mail, Star, ArrowDownUp, ChevronDown,
+  ExternalLink, Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
