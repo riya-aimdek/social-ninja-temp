@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 type View = "calendar" | "list" | "board";
 type Filter = "all" | PostStatus;
 
-const FILTER_TABS: { id: Filter; label: string }[] = [
+const ALL_FILTER_TABS: { id: Filter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "draft", label: "Drafts" },
   { id: "pending_approval", label: "Pending" },
@@ -24,6 +24,9 @@ const FILTER_TABS: { id: Filter; label: string }[] = [
   { id: "published", label: "Published" },
   { id: "rejected", label: "Rejected" },
 ];
+
+// Drafts have no schedule date and Approved is a transient state — hide from calendar
+const CALENDAR_HIDDEN_FILTERS: Filter[] = ["draft", "approved"];
 
 const BOARD_COLUMNS: PostStatus[] = ["draft", "pending_approval", "approved", "scheduled", "published"];
 
@@ -54,9 +57,25 @@ export default function PublishPage() {
   const summary = useMemo(() => ({
     pending: counts.pending_approval || 0,
     scheduled: counts.scheduled || 0,
-    approvedReady: counts.approved || 0,
+    published: counts.published || 0,
     rejected: counts.rejected || 0,
   }), [counts]);
+
+  // Filter tabs visible for the current view (drafts/approved hidden in calendar)
+  const visibleFilterTabs = useMemo(
+    () => view === "calendar"
+      ? ALL_FILTER_TABS.filter((t) => !CALENDAR_HIDDEN_FILTERS.includes(t.id))
+      : ALL_FILTER_TABS,
+    [view],
+  );
+
+  // If user switches to calendar while a hidden filter is active, fall back to "all"
+  const handleViewChange = (next: View) => {
+    if (next === "calendar" && CALENDAR_HIDDEN_FILTERS.includes(filter)) {
+      setFilter("all");
+    }
+    setView(next);
+  };
 
   const handleAction = (id: string, action: "approve" | "reject" | "send" | "schedule", payload?: { reason?: string }) => {
     setPosts((prev) => prev.map((p) => {
@@ -88,7 +107,7 @@ export default function PublishPage() {
     }));
   };
 
-  // Calendar grid
+  // Calendar grid — drafts have no schedule date, so always exclude from calendar
   const calendarCells = useMemo(() => {
     const year = cursor.getFullYear();
     const month = cursor.getMonth();
@@ -96,10 +115,11 @@ export default function PublishPage() {
     const startDay = first.getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const cells: { date: Date | null; posts: PostDraft[] }[] = [];
+    const calendarPosts = filtered.filter((p) => p.status !== "draft");
     for (let i = 0; i < startDay; i++) cells.push({ date: null, posts: [] });
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
-      const dayPosts = filtered.filter((p) => {
+      const dayPosts = calendarPosts.filter((p) => {
         const pd = new Date(p.scheduledFor);
         return pd.getFullYear() === year && pd.getMonth() === month && pd.getDate() === d;
       });
@@ -107,6 +127,21 @@ export default function PublishPage() {
     }
     return cells;
   }, [cursor, filtered]);
+
+  // Monthly breakdown of statuses for visible month (excludes drafts)
+  const monthBreakdown = useMemo(() => {
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth();
+    const inMonth = posts.filter((p) => {
+      if (p.status === "draft") return false;
+      const pd = new Date(p.scheduledFor);
+      return pd.getFullYear() === year && pd.getMonth() === month;
+    });
+    const by: Partial<Record<PostStatus, number>> = {};
+    inMonth.forEach((p) => { by[p.status] = (by[p.status] || 0) + 1; });
+    return by;
+  }, [cursor, posts]);
+
 
   const monthLabel = cursor.toLocaleString(undefined, { month: "long", year: "numeric" });
   const today = new Date();
@@ -125,7 +160,7 @@ export default function PublishPage() {
             ]).map((v) => (
               <button
                 key={v.id}
-                onClick={() => setView(v.id)}
+                onClick={() => handleViewChange(v.id)}
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors",
                   view === v.id ? "bg-foreground text-card" : "text-foreground hover:bg-accent",
@@ -138,17 +173,17 @@ export default function PublishPage() {
         </div>
       </div>
 
-      {/* Summary banner (MoM #21) */}
+      {/* Summary banner — Published first, then Awaiting approval, Scheduled, Rejected */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Awaiting approval", value: summary.pending, I: Clock, tone: "text-warning bg-warning/10" },
-          { label: "Approved & ready", value: summary.approvedReady, I: CheckCircle2, tone: "text-success bg-success/10" },
-          { label: "Scheduled", value: summary.scheduled, I: SendIcon, tone: "text-info bg-info/10" },
-          { label: "Rejected", value: summary.rejected, I: AlertCircle, tone: "text-error bg-error/10" },
+          { label: "Published", value: summary.published, I: CheckCircle2, tone: "text-success bg-success/10", filter: "published" as Filter },
+          { label: "Awaiting approval", value: summary.pending, I: Clock, tone: "text-warning bg-warning/10", filter: "pending_approval" as Filter },
+          { label: "Scheduled", value: summary.scheduled, I: SendIcon, tone: "text-info bg-info/10", filter: "scheduled" as Filter },
+          { label: "Rejected", value: summary.rejected, I: AlertCircle, tone: "text-error bg-error/10", filter: "rejected" as Filter },
         ].map((s) => (
           <button
             key={s.label}
-            onClick={() => setFilter(s.label === "Awaiting approval" ? "pending_approval" : s.label === "Approved & ready" ? "approved" : s.label === "Scheduled" ? "scheduled" : "rejected")}
+            onClick={() => setFilter(s.filter)}
             className="bg-card rounded-xl border border-border p-4 text-left hover:border-border-hover transition-colors"
           >
             <div className="flex items-center justify-between">
@@ -165,7 +200,7 @@ export default function PublishPage() {
       {/* Filter tabs + search */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex flex-wrap gap-1.5">
-          {FILTER_TABS.map((t) => (
+          {visibleFilterTabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setFilter(t.id)}
@@ -204,6 +239,25 @@ export default function PublishPage() {
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
+
+          {/* Monthly status breakdown */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            {(["pending_approval", "scheduled", "published", "rejected"] as PostStatus[]).map((st) => {
+              const meta = STATUS_META[st];
+              const count = monthBreakdown[st] || 0;
+              return (
+                <span key={st} className={cn("inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-full font-medium", meta.classes)}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
+                  <span className="tabular-nums">{count}</span>
+                  <span>{meta.label.toLowerCase()}</span>
+                </span>
+              );
+            })}
+            <span className="text-[11px] text-muted-foreground ml-auto">
+              Drafts aren't shown here — they have no schedule date. View them in <button onClick={() => handleViewChange("list")} className="underline hover:text-foreground">List</button> or <button onClick={() => handleViewChange("board")} className="underline hover:text-foreground">Board</button>.
+            </span>
+          </div>
+
           <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
             {daysOfWeek.map((d) => (
               <div key={d} className="bg-accent p-2 text-center text-[11px] font-medium text-muted-foreground">{d}</div>
