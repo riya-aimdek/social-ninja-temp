@@ -1788,10 +1788,11 @@ function ThreadInteractionRow({
    ────────────────────────────────────────────────────────────── */
 
 function SentimentReviewView({
-  comments, updateComment,
+  comments, updateComment, openContext,
 }: {
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  openContext: (commentId: string, postId: string) => void;
 }) {
   const [filter, setFilter] = useState<"all" | Sentiment>("all");
   const filtered = comments.filter((c) => filter === "all" || c.sentiment === filter);
