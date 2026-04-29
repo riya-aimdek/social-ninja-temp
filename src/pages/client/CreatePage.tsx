@@ -287,8 +287,8 @@ export default function CreatePage() {
 
               {/* Character meters — inline chips */}
               {selectedPlatforms.length > 0 && (
-                <div className="flex flex-wrap items-center gap-y-1.5 pt-2 border-t border-border divide-x divide-border [&>*]:px-3 first:[&>*]:pl-0 last:[&>*]:pr-0">
-                  {selectedPlatforms.map((p) => {
+                <div className="flex items-center gap-2 pt-2 border-t border-border overflow-x-auto whitespace-nowrap">
+                  {selectedPlatforms.map((p, idx) => {
                     const meta = PLATFORMS[p];
                     const text = getCaptionFor(p);
                     const len = text.length;
