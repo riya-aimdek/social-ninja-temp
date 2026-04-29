@@ -239,6 +239,25 @@ export default function PublishPage() {
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
+
+          {/* Monthly status breakdown */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            {(["pending_approval", "scheduled", "published", "rejected"] as PostStatus[]).map((st) => {
+              const meta = STATUS_META[st];
+              const count = monthBreakdown[st] || 0;
+              return (
+                <span key={st} className={cn("inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-full font-medium", meta.classes)}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
+                  <span className="tabular-nums">{count}</span>
+                  <span>{meta.label.toLowerCase()}</span>
+                </span>
+              );
+            })}
+            <span className="text-[11px] text-muted-foreground ml-auto">
+              Drafts aren't shown here — they have no schedule date. View them in <button onClick={() => handleViewChange("list")} className="underline hover:text-foreground">List</button> or <button onClick={() => handleViewChange("board")} className="underline hover:text-foreground">Board</button>.
+            </span>
+          </div>
+
           <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
             {daysOfWeek.map((d) => (
               <div key={d} className="bg-accent p-2 text-center text-[11px] font-medium text-muted-foreground">{d}</div>
