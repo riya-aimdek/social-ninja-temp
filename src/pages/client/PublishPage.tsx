@@ -77,7 +77,11 @@ export default function PublishPage() {
     setView(next);
   };
 
-  const handleAction = (id: string, action: "approve" | "reject" | "send" | "schedule", payload?: { reason?: string }) => {
+  const handleAction = (
+    id: string,
+    action: "approve" | "reject" | "send" | "schedule" | "edit_resubmit" | "reschedule",
+    payload?: { reason?: string; caption?: string; scheduledFor?: string },
+  ) => {
     setPosts((prev) => prev.map((p) => {
       if (p.id !== id) return p;
       const now = new Date().toISOString();
@@ -100,12 +104,24 @@ export default function PublishPage() {
         next.status = "scheduled";
         audit.push({ id: `a${audit.length + 1}`, at: now, actor: "System", actorRole: "system", action: "Scheduled", detail: `Queued for ${formatDateTime(p.scheduledFor)}` });
         toast.success("Post scheduled");
+      } else if (action === "edit_resubmit") {
+        if (payload?.caption) next.caption = payload.caption;
+        next.status = "pending_approval";
+        next.rejectionReason = undefined;
+        audit.push({ id: `a${audit.length + 1}`, at: now, actor: "You", actorRole: "agency", action: "Edited & resubmitted", detail: "Caption updated; sent for approval" });
+        toast.success("Edited and resent for approval");
+      } else if (action === "reschedule") {
+        if (payload?.scheduledFor) next.scheduledFor = payload.scheduledFor;
+        // Keep status as-is (rejected stays rejected; scheduled stays scheduled)
+        audit.push({ id: `a${audit.length + 1}`, at: now, actor: "You", actorRole: "agency", action: "Rescheduled", detail: `New time: ${formatDateTime(next.scheduledFor)}` });
+        toast.success(`Rescheduled to ${formatDateTime(next.scheduledFor)}`);
       }
       next.audit = audit;
       setSelected(next);
       return next;
     }));
   };
+
 
   // Calendar grid — drafts have no schedule date, so always exclude from calendar
   const calendarCells = useMemo(() => {
