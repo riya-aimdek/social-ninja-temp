@@ -1484,6 +1484,8 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
   return { items: [...real, ...filler], isNewById };
 }
 
+/** V2 context-first Comment Threads: list of interactions on the left, persistent
+ *  post context + thread + AI suggested reply + composer on the right. */
 function ThreadsView({
   posts, updateComment, addReply,
 }: {
@@ -1491,304 +1493,276 @@ function ThreadsView({
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
 }) {
-  // Default: every post expanded
-  // Default: only the first post expanded — keeps initial render fast
-  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(posts.slice(0, 1).map((p) => p.id)));
-
-  const toggle = (id: string) =>
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  // Build a flat list of (post, comment) pairs across all posts using the
+  // same dense-thread builder so counts stay consistent with the rest of the page.
+  const { rows, totals } = useMemo(() => {
+    const all: { post: Post; comment: Comment; isNew: boolean }[] = [];
+    let totalNew = 0;
+    let totalAwaiting = 0;
+    posts.forEach((p) => {
+      const { items, isNewById } = buildDenseThread(p);
+      items.forEach((c) => {
+        const isNew = isNewById.has(c.id);
+        if (isNew) totalNew += 1;
+        if (c.stage === "pending" || c.stage === "in_review") totalAwaiting += 1;
+        all.push({ post: p, comment: c, isNew });
+      });
     });
+    // Awaiting first, then new, then by recency-ish (preserve order)
+    all.sort((a, b) => {
+      const score = (r: typeof a) =>
+        (r.comment.stage === "pending" || r.comment.stage === "in_review" ? 0 : 1) +
+        (r.isNew ? 0 : 0.1);
+      return score(a) - score(b);
+    });
+    return { rows: all, totals: { new: totalNew, awaiting: totalAwaiting } };
+  }, [posts]);
 
-  const allOpen = posts.length > 0 && posts.every((p) => openIds.has(p.id));
-  const totalNew = posts.reduce((s, p) => s + p.newCount, 0);
-  const totalAwaiting = posts.reduce(
-    (s, p) => s + p.comments.filter((c) => !c.isSpam && (c.stage === "pending" || c.stage === "in_review")).length + p.newCount,
-    0,
-  );
+  const [selectedId, setSelectedId] = useState<string>(rows[0]?.comment.id ?? "");
+  const [reply, setReply] = useState("");
 
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <p className="text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground tabular-nums">{fmt(posts.length)}</span> posts ·{" "}
-          <span className="font-semibold text-foreground tabular-nums">{fmt(totalNew)}</span> new ·{" "}
-          <span className="font-semibold text-foreground tabular-nums">{fmt(totalAwaiting)}</span> awaiting reply
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setOpenIds(allOpen ? new Set() : new Set(posts.map((p) => p.id)))}
-          className="h-7 text-[11px] gap-1.5"
-        >
-          {allOpen ? "Collapse all" : "Expand all"}
-        </Button>
-      </div>
+  // Reset selection when posts change and the current id is gone
+  const selectedRow = rows.find((r) => r.comment.id === selectedId) ?? rows[0];
+  const sp = selectedRow?.post;
+  const sc = selectedRow?.comment;
 
-      {posts.map((p) => (
-        <PostThread
-          key={p.id}
-          post={p}
-          open={openIds.has(p.id)}
-          onToggle={() => toggle(p.id)}
-          updateComment={updateComment}
-          addReply={addReply}
-        />
-      ))}
-    </div>
-  );
-}
-
-function PostThread({
-  post: p, open, onToggle, updateComment, addReply,
-}: {
-  post: Post;
-  open: boolean;
-  onToggle: () => void;
-  updateComment: (id: string, patch: Partial<Comment>) => void;
-  addReply: (parentId: string, text: string) => void;
-}) {
-  const [filter, setFilter] = useState<ThreadFilter>("all");
-  const [visibleCount, setVisibleCount] = useState(20);
-  // Only build the dense thread once the post is opened — saves work on first paint
-  const { items, isNewById } = useMemo(
-    () => (open ? buildDenseThread(p) : { items: p.comments.filter((c) => !c.isSpam), isNewById: new Set<string>() }),
-    [p, open],
-  );
-
-  const counts = useMemo(() => {
-    const newCnt = items.filter((c) => isNewById.has(c.id)).length;
-    const awaiting = items.filter((c) => c.stage === "pending" || c.stage === "in_review").length;
-    const replied = items.filter((c) => c.stage === "replied").length;
-    return { all: items.length, new: newCnt, awaiting, replied };
-  }, [items, isNewById]);
-
-  const filtered = useMemo(() => {
-    switch (filter) {
-      case "new": return items.filter((c) => isNewById.has(c.id));
-      case "awaiting": return items.filter((c) => c.stage === "pending" || c.stage === "in_review");
-      case "replied": return items.filter((c) => c.stage === "replied");
-      default: return items;
-    }
-  }, [filter, items, isNewById]);
-
-  const chips: { id: ThreadFilter; label: string; count: number; tone: string }[] = [
-    { id: "all", label: "All", count: counts.all, tone: "bg-muted text-muted-foreground" },
-    { id: "new", label: "New", count: counts.new, tone: "bg-primary/15 text-primary" },
-    { id: "awaiting", label: "Awaiting reply", count: counts.awaiting, tone: "bg-warning/15 text-warning" },
-    { id: "replied", label: "Replied", count: counts.replied, tone: "bg-success/15 text-success" },
-  ];
-
-  return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/20 transition-colors text-left"
-      >
-        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xl flex-shrink-0">
-          {p.thumbnail}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <PlatformIcon name={p.platform} />
-            <p className="text-sm font-semibold text-foreground truncate">{p.title}</p>
-            {p.platform === "GBP" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">SEO</span>
-            )}
-          </div>
-          <p className="text-[11px] text-muted-foreground">Published {p.publishedAt}</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1 text-muted-foreground" title="Total comments on this post">
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span className="font-semibold text-foreground tabular-nums">{fmt(p.commentCount)}</span>
-          </span>
-          <span className="text-muted-foreground">·</span>
-          <span
-            className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold tabular-nums"
-            title={`${fmt(p.newCount)} new comments since last visit`}
-          >
-            {fmt(p.newCount)} new
-          </span>
-          {counts.awaiting > 0 && (
-            <span
-              className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-semibold tabular-nums"
-              title="Awaiting your reply"
-            >
-              {fmt(counts.awaiting)} to reply
-            </span>
-          )}
-        </div>
-      </button>
-
-      {open && (
-        <div className="border-t border-border bg-muted/20">
-          {/* Filter chip row — explains the 247-vs-32 relationship */}
-          <div className="px-4 py-2.5 border-b border-border bg-card/60 flex items-center gap-2 flex-wrap">
-            <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-            {chips.map((ch) => {
-              const active = filter === ch.id;
-              return (
-                <button
-                  key={ch.id}
-                  onClick={() => setFilter(ch.id)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors",
-                    active
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-card text-muted-foreground border-border hover:text-foreground",
-                  )}
-                >
-                  {ch.label}
-                  <span className={cn("text-[10px] tabular-nums px-1.5 rounded-full font-semibold", active ? "bg-background/20 text-background" : ch.tone)}>
-                    {fmt(ch.count)}
-                  </span>
-                </button>
-              );
-            })}
-            <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
-              Showing <span className="font-semibold text-foreground">{fmt(filtered.length)}</span> of {fmt(p.commentCount)}
-            </span>
-          </div>
-
-          {/* Inner-scrollable thread */}
-          <div className="p-4 space-y-3 max-h-[520px] overflow-y-auto">
-            {filtered.slice(0, visibleCount).map((c) => (
-              <div key={c.id} className="relative">
-                {isNewById.has(c.id) && (
-                  <span className="absolute -left-1 top-3 w-1.5 h-1.5 rounded-full bg-primary" title="New since last visit" />
-                )}
-                <CommentNode
-                  comment={c}
-                  depth={0}
-                  updateComment={updateComment}
-                  addReply={addReply}
-                />
-              </div>
-            ))}
-            {filtered.length > visibleCount && (
-              <div className="pt-2 flex justify-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setVisibleCount((n) => n + 30)}
-                  className="h-7 text-[11px]"
-                >
-                  Load {Math.min(30, filtered.length - visibleCount)} more
-                </Button>
-              </div>
-            )}
-            {filtered.length === 0 && (
-              <div className="text-[11px] text-center py-8 text-muted-foreground">
-                No comments match this filter.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CommentNode({
-  comment, depth, updateComment, addReply,
-}: {
-  comment: Comment; depth: number;
-  updateComment: (id: string, patch: Partial<Comment>) => void;
-  addReply: (parentId: string, text: string) => void;
-}) {
-  const sm = sentimentMeta[comment.sentiment];
-  const [replyOpen, setReplyOpen] = useState(false);
-  const [replyText, setReplyText] = useState(comment.aiDraft ?? "");
-
-  const submit = () => {
-    const text = replyText.trim();
-    if (!text) return;
-    addReply(comment.id, text);
-    setReplyText("");
-    setReplyOpen(false);
+  const send = () => {
+    if (!sc || !reply.trim()) return;
+    addReply(sc.id, reply.trim());
+    updateComment(sc.id, { stage: "replied" });
+    setReply("");
+    toast.success("Reply sent");
   };
 
   return (
-    <div className="relative">
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground tabular-nums">{fmt(rows.length)}</span> interactions ·{" "}
+        <span className="font-semibold text-foreground tabular-nums">{fmt(totals.new)}</span> new ·{" "}
+        <span className="font-semibold text-foreground tabular-nums">{fmt(totals.awaiting)}</span> awaiting reply
+      </p>
 
-      <div className="bg-card border border-border rounded-lg p-3">
-        <div className="flex items-start gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-foreground flex-shrink-0">
-            {comment.avatar}
+      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 h-[calc(100vh-440px)] min-h-[520px]">
+        {/* List */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
+          <div className="px-3 py-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground bg-muted/30">
+            <span className="font-medium">{fmt(rows.length)} interactions</span>
+            <span>Newest first</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-semibold text-foreground">{comment.author}</span>
-              <span className="text-[10px] text-muted-foreground">{comment.at} ago</span>
-              <span className={cn("inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
-                <sm.Icon className="w-2.5 h-2.5" /> {sm.label}
-              </span>
-              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-auto", priorityStyles[comment.priority])}>
-                {comment.stage === "replied" ? "✓ Replied" : STAGES.find((s) => s.id === comment.stage)?.label}
-              </span>
-            </div>
-            <p className="text-sm text-foreground mt-1">{comment.text}</p>
-            <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{comment.likes}</span>
-              <button onClick={() => setReplyOpen((o) => !o)} className="inline-flex items-center gap-1 hover:text-foreground">
-                <ArrowRight className="w-3 h-3" />{replyOpen ? "Cancel" : "Reply"}
-              </button>
-              {comment.aiDraft && !replyOpen && (
-                <button
-                  onClick={() => { setReplyText(comment.aiDraft!); setReplyOpen(true); }}
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
-                >
-                  <Bot className="w-3 h-3" />Use AI draft
-                </button>
-              )}
-            </div>
+          <div className="overflow-y-auto flex-1">
+            {rows.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                No interactions match your filters.
+              </div>
+            ) : (
+              rows.map(({ post, comment, isNew }) => (
+                <ThreadInteractionRow
+                  key={comment.id}
+                  post={post}
+                  comment={comment}
+                  isNew={isNew}
+                  selected={selectedRow?.comment.id === comment.id}
+                  onClick={() => { setSelectedId(comment.id); setReply(""); }}
+                />
+              ))
+            )}
+          </div>
+        </div>
 
-            {replyOpen && (
-              <div className="mt-3 space-y-2">
-                <div className="flex items-start gap-2">
-                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                    YO
-                  </div>
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder={`Reply to ${comment.author}…`}
-                    rows={2}
-                    autoFocus
-                    className="flex-1 px-3 py-2 rounded-lg border border-input text-sm bg-background outline-none focus:ring-2 focus:ring-ring resize-none"
-                  />
+        {/* Detail */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
+          {sp && sc ? (
+            <>
+              {/* Persistent post context — never scrolls away */}
+              <div className="p-4 border-b border-border bg-muted/20">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
+                  <PlatformIcon name={sp.platform} />
+                  Replying to your post on {sp.platform}
                 </div>
-                <div className="flex items-center gap-2 justify-end">
-                  {comment.aiDraft && (
-                    <button
-                      onClick={() => setReplyText(comment.aiDraft!)}
-                      className="text-[11px] text-primary inline-flex items-center gap-1 hover:underline"
-                    >
-                      <Sparkles className="w-3 h-3" />Insert AI draft
-                    </button>
-                  )}
-                  <Button size="sm" variant="outline" onClick={() => { setReplyOpen(false); setReplyText(""); }}>Cancel</Button>
-                  <Button size="sm" onClick={submit} disabled={!replyText.trim()} className="gap-1.5">
-                    <Send className="w-3 h-3" /> Reply
+                <div className="flex gap-3">
+                  <div className="w-24 h-24 rounded-lg border border-border bg-background flex items-center justify-center flex-shrink-0 text-4xl">
+                    {sp.thumbnail}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground leading-snug">{sp.title}</p>
+                    <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
+                      <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{sp.publishedAt}</span>
+                      <span>·</span>
+                      <span>{fmt(sp.commentCount)} total comments</span>
+                      <button className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
+                        Open original <ExternalLink className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comment thread */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 text-primary text-sm font-semibold flex items-center justify-center flex-shrink-0">
+                    {sc.avatar}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-sm font-semibold text-foreground">{sc.author}</span>
+                      <span className="text-xs text-muted-foreground">{sc.at}</span>
+                      <span className={cn(
+                        "ml-auto px-2 py-0.5 rounded-full text-[10px] font-medium",
+                        sc.stage === "replied" ? "bg-success/15 text-success"
+                          : sc.stage === "in_review" ? "bg-warning/15 text-warning"
+                          : sc.stage === "escalated" ? "bg-error/15 text-error"
+                          : "bg-info/15 text-info",
+                      )}>
+                        {STAGES.find((s) => s.id === sc.stage)?.label ?? sc.stage}
+                      </span>
+                    </div>
+                    <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3">
+                      <p className="text-sm text-foreground">{sc.text}</p>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                      <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {sc.likes} likes</span>
+                      <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded", sentimentMeta[sc.sentiment].bg, sentimentMeta[sc.sentiment].color)}>
+                        <Sparkles className="w-3 h-3" />
+                        {sentimentMeta[sc.sentiment].label} sentiment
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {sc.aiDraft && (
+                  <div className="ml-12 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary uppercase tracking-wide mb-1">
+                      <Sparkles className="w-3 h-3" /> AI suggested reply
+                    </div>
+                    <p className="text-sm text-foreground">{sc.aiDraft}</p>
+                    <div className="flex gap-2 mt-2">
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReply(sc.aiDraft!)}>
+                        Use this draft
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs">Regenerate</Button>
+                    </div>
+                  </div>
+                )}
+
+                {sc.replies && sc.replies.length > 0 && (
+                  <div className="ml-12 space-y-3 pl-3 border-l border-border">
+                    {sc.replies.map((r) => (
+                      <div key={r.id} className="flex gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-accent text-foreground text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
+                          {r.avatar}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-foreground">{r.author}</span>
+                            <span className="text-[11px] text-muted-foreground">{r.at}</span>
+                          </div>
+                          <p className="text-sm text-foreground mt-0.5">{r.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Reply composer */}
+              <div className="border-t border-border p-3 bg-card">
+                <div className="flex gap-2 items-end">
+                  <textarea
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    placeholder={`Reply to ${sc.author}…`}
+                    rows={2}
+                    className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                  <Button onClick={send} disabled={!reply.trim()} className="gap-1.5">
+                    <Send className="w-3.5 h-3.5" />
+                    Send
                   </Button>
                 </div>
               </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+              Select an interaction to view the conversation.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ThreadInteractionRow({
+  post, comment, isNew, selected, onClick,
+}: {
+  post: Post;
+  comment: Comment;
+  isNew: boolean;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const sm = sentimentMeta[comment.sentiment];
+  const stageCls =
+    comment.stage === "replied" ? "bg-success/15 text-success"
+    : comment.stage === "in_review" ? "bg-warning/15 text-warning"
+    : comment.stage === "escalated" ? "bg-error/15 text-error"
+    : "bg-info/15 text-info";
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full text-left p-3 border-b border-border transition-colors",
+        selected ? "bg-primary/5 border-l-2 border-l-primary" : "hover:bg-muted/40 border-l-2 border-l-transparent",
+      )}
+    >
+      {/* Compact post context */}
+      <div className="flex gap-3 p-2.5 rounded-lg border border-border bg-muted/30">
+        <div className="w-11 h-11 rounded-md flex-shrink-0 border border-border bg-background flex items-center justify-center text-2xl">
+          {post.thumbnail}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-0.5">
+            <PlatformIcon name={post.platform} />
+            <span className="font-medium uppercase tracking-wide">Original post</span>
+            <span>·</span>
+            <Clock className="w-3 h-3" />
+            <span>{post.publishedAt}</span>
+          </div>
+          <p className="text-xs text-foreground leading-snug line-clamp-2">{post.title}</p>
+        </div>
+      </div>
+
+      {/* Interaction */}
+      <div className="flex gap-2.5 mt-2.5 pl-1">
+        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
+          {comment.avatar}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-sm font-semibold text-foreground truncate">{comment.author}</span>
+            <span className="text-[11px] text-muted-foreground">{comment.at}</span>
+            <span className={cn("ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1", sm.bg, sm.color)}>
+              <sm.Icon className="w-3 h-3" />
+              {sm.label}
+            </span>
+          </div>
+          <p className="text-sm text-foreground leading-snug line-clamp-2">{comment.text}</p>
+          <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground flex-wrap">
+            <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {comment.likes}</span>
+            <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", stageCls)}>
+              {STAGES.find((s) => s.id === comment.stage)?.label ?? comment.stage}
+            </span>
+            {isNew && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary text-primary-foreground">
+                New
+              </span>
             )}
           </div>
         </div>
       </div>
-      {depth === 0 && comment.replies && comment.replies.length > 0 && (
-        <div className="mt-2 space-y-2 ml-10 pl-3 border-l border-border">
-          {/* Instagram-style: all replies in a single flat thread under the top comment */}
-          {comment.replies.map((r) => (
-            <CommentNode key={r.id} comment={r} depth={1} updateComment={updateComment} addReply={addReply} />
-          ))}
-        </div>
-      )}
-    </div>
+    </button>
   );
 }
 
