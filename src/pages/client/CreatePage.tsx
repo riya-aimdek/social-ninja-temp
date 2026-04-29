@@ -285,9 +285,9 @@ export default function CreatePage() {
                 className="w-full min-h-[180px] resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent leading-relaxed"
               />
 
-              {/* Character meters — inline chips */}
+              {/* Character meters — single-line inline chips */}
               {selectedPlatforms.length > 0 && (
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-2 border-t border-border">
+                <div className="flex items-center gap-x-1.5 pt-2 border-t border-border min-w-0">
                   {selectedPlatforms.map((p, idx) => {
                     const meta = PLATFORMS[p];
                     const text = getCaptionFor(p);
@@ -297,15 +297,15 @@ export default function CreatePage() {
                     const near = !over && pct >= 85;
                     const Icon = meta.icon;
                     return (
-                      <div key={p} className="flex items-center gap-2 shrink-0">
-                        {idx > 0 && <span className="text-border select-none">|</span>}
+                      <div key={p} className="flex items-center gap-1.5 min-w-0 flex-1">
+                        {idx > 0 && <span className="text-border select-none shrink-0">|</span>}
                         <div
-                          className="group flex items-center gap-1.5 text-[11px]"
+                          className="group flex items-center gap-1 text-[11px] min-w-0 flex-1"
                           title={`${meta.name}: ${len.toLocaleString()} / ${meta.charLimit.toLocaleString()} characters`}
                         >
-                          <Icon className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-muted-foreground">{meta.name}</span>
-                          <div className="w-12 h-1 rounded-full bg-accent overflow-hidden">
+                          <Icon className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <span className="text-muted-foreground shrink-0">{meta.name}</span>
+                          <div className="h-1 rounded-full bg-accent overflow-hidden flex-1 min-w-[16px]">
                             <div
                               className={cn(
                                 "h-full rounded-full transition-all",
@@ -316,7 +316,7 @@ export default function CreatePage() {
                           </div>
                           <span
                             className={cn(
-                              "tabular-nums",
+                              "tabular-nums shrink-0",
                               over ? "text-destructive font-semibold" : near ? "text-amber-600" : "text-muted-foreground"
                             )}
                           >
