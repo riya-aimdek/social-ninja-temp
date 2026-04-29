@@ -1856,7 +1856,7 @@ function SentimentReviewView({
             {filtered.map((c) => {
               const sm = sentimentMeta[c.sentiment];
               return (
-                <tr key={c.id} className="border-t border-border">
+                <tr key={c.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => openContext(c.id, c.post.id)}>
                   <td className="px-4 py-3 max-w-[320px]">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-foreground">{c.author}</span>
@@ -1864,7 +1864,7 @@ function SentimentReviewView({
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2">{c.text}</p>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground italic max-w-[200px] truncate">{c.post.title}</td>
+                  <td className="px-4 py-3 text-xs text-primary italic max-w-[200px] truncate underline decoration-dotted underline-offset-2">{c.post.title}</td>
                   <td className="px-4 py-3">
                     <span className={cn("inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full font-medium", sm.bg, sm.color)}>
                       <sm.Icon className="w-3 h-3" /> {sm.label}
