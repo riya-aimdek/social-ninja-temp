@@ -1364,6 +1364,7 @@ function BoardView({
                         e.dataTransfer.effectAllowed = "move";
                       }}
                       onDragEnd={() => { setDraggingId(null); setDropTarget(null); }}
+                      onClick={() => openContext(c.id, c.post.id)}
                       className={cn(
                         "group bg-card border rounded-lg p-2.5 transition-all cursor-grab active:cursor-grabbing select-none",
                         c.sla.breached ? "border-l-2 border-l-error border-border" : "border-border",
