@@ -1059,10 +1059,11 @@ export default function EngagePage() {
    ────────────────────────────────────────────────────────────── */
 
 function ReplyQueueView({
-  comments, updateComment,
+  comments, updateComment, openContext,
 }: {
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  openContext: (commentId: string, postId: string) => void;
 }) {
   const queue = useMemo(
     () => comments.filter((c) => c.stage === "pending" || c.stage === "in_review"),
