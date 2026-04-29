@@ -180,6 +180,56 @@ export const MOCK_POSTS: PostDraft[] = [
   },
 ];
 
+// ---- Extra sample posts spread across the current month to populate the calendar ----
+const _now = new Date();
+const _yr = _now.getFullYear();
+const _mo = _now.getMonth();
+const _isoOn = (day: number, hour = 10, min = 0) =>
+  new Date(_yr, _mo, day, hour, min, 0, 0).toISOString();
+
+const _extra: Array<{
+  day: number; hour?: number; status: PostStatus; client: string; project: string;
+  platforms: Platform[]; caption: string; seed: string;
+}> = [
+  { day: 2,  hour: 9,  status: "published",        client: "FoodieHub", project: "Weekly Recipes", platforms: ["instagram"],            caption: "Mood: Monday matcha ☕✨",                          seed: "matcha" },
+  { day: 4,  hour: 15, status: "published",        client: "RetailCo",  project: "Spring Launch",  platforms: ["facebook", "instagram"],caption: "Recap: our Spring preview event in 30 seconds.", seed: "recap"  },
+  { day: 6,  hour: 11, status: "published",        client: "RetailCo",  project: "Spring Launch",  platforms: ["instagram"],            caption: "Top 3 looks from this week's drop 👗",            seed: "looks"  },
+  { day: 8,  hour: 18, status: "scheduled",        client: "FoodieHub", project: "Weekly Recipes", platforms: ["tiktok"],               caption: "60-second weeknight curry 🌶️",                  seed: "curry"  },
+  { day: 10, hour: 13, status: "scheduled",        client: "RetailCo",  project: "Spring Launch",  platforms: ["linkedin"],             caption: "How we built the Spring 2026 lookbook.",         seed: "lookbk" },
+  { day: 12, hour: 17, status: "scheduled",        client: "FoodieHub", project: "Weekly Recipes", platforms: ["instagram"],            caption: "Pantry essentials checklist ✅",                  seed: "pantry" },
+  { day: 14, hour: 10, status: "scheduled",        client: "RetailCo",  project: "Spring Launch",  platforms: ["instagram", "facebook"],caption: "Weekend sale teaser — 48 hours only ⏰",         seed: "sale"   },
+  { day: 16, hour: 12, status: "pending_approval", client: "RetailCo",  project: "Spring Launch",  platforms: ["instagram"],            caption: "New arrivals carousel — please review.",         seed: "newarr" },
+  { day: 18, hour: 14, status: "pending_approval", client: "FoodieHub", project: "Weekly Recipes", platforms: ["facebook"],             caption: "Recipe of the week: lemon herb chicken.",        seed: "lemon"  },
+  { day: 20, hour: 9,  status: "scheduled",        client: "FoodieHub", project: "Weekly Recipes", platforms: ["instagram"],            caption: "Brunch board inspiration 🥐🍓",                  seed: "board"  },
+  { day: 22, hour: 16, status: "scheduled",        client: "RetailCo",  project: "Spring Launch",  platforms: ["twitter"],              caption: "Quick poll: which color drops next? 🎨",          seed: "poll"   },
+  { day: 24, hour: 11, status: "rejected",         client: "FoodieHub", project: "Weekly Recipes", platforms: ["tiktok"],               caption: "Trend remix attempt — needs rework.",            seed: "trend"  },
+  { day: 26, hour: 19, status: "scheduled",        client: "RetailCo",  project: "Spring Launch",  platforms: ["instagram"],            caption: "Customer spotlight 💫 @maya.styled",              seed: "spot"   },
+  { day: 28, hour: 10, status: "published",        client: "FoodieHub", project: "Weekly Recipes", platforms: ["instagram", "facebook"],caption: "Sunday loaf — sourdough win 🍞",                 seed: "loaf"   },
+];
+
+_extra.forEach((e, idx) => {
+  const id = `pe${idx + 1}`;
+  MOCK_POSTS.push({
+    id,
+    clientId: e.client.toLowerCase(),
+    clientName: e.client,
+    projectName: e.project,
+    platforms: e.platforms,
+    caption: e.caption,
+    media: [{ type: "image", url: img(e.seed) }],
+    scheduledFor: _isoOn(e.day, e.hour ?? 10, 0),
+    status: e.status,
+    createdBy: "Priya Sharma",
+    createdAt: _isoOn(Math.max(1, e.day - 1), 9, 0),
+    approvalToken: `tok_${id}`,
+    reviewers: ["client.lead@example.com"],
+    comments: [],
+    audit: [
+      { id: "a1", at: _isoOn(Math.max(1, e.day - 1), 9, 0), actor: "Priya Sharma", actorRole: "agency", action: "Created draft" },
+    ],
+  });
+});
+
 export const getPostByToken = (token: string) => MOCK_POSTS.find((p) => p.approvalToken === token);
 
 export const STATUS_META: Record<PostStatus, { label: string; classes: string; dot: string }> = {
