@@ -135,9 +135,6 @@ export default function PublishPage() {
               </button>
             ))}
           </div>
-          <Button size="sm">
-            <Plus className="w-4 h-4" /> New Post
-          </Button>
         </div>
       </div>
 
