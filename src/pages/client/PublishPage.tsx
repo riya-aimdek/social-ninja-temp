@@ -57,9 +57,25 @@ export default function PublishPage() {
   const summary = useMemo(() => ({
     pending: counts.pending_approval || 0,
     scheduled: counts.scheduled || 0,
-    approvedReady: counts.approved || 0,
+    published: counts.published || 0,
     rejected: counts.rejected || 0,
   }), [counts]);
+
+  // Filter tabs visible for the current view (drafts/approved hidden in calendar)
+  const visibleFilterTabs = useMemo(
+    () => view === "calendar"
+      ? ALL_FILTER_TABS.filter((t) => !CALENDAR_HIDDEN_FILTERS.includes(t.id))
+      : ALL_FILTER_TABS,
+    [view],
+  );
+
+  // If user switches to calendar while a hidden filter is active, fall back to "all"
+  const handleViewChange = (next: View) => {
+    if (next === "calendar" && CALENDAR_HIDDEN_FILTERS.includes(filter)) {
+      setFilter("all");
+    }
+    setView(next);
+  };
 
   const handleAction = (id: string, action: "approve" | "reject" | "send" | "schedule", payload?: { reason?: string }) => {
     setPosts((prev) => prev.map((p) => {
