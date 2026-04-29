@@ -128,20 +128,6 @@ export default function PublishPage() {
     return cells;
   }, [cursor, filtered]);
 
-  // Monthly breakdown of statuses for visible month (excludes drafts)
-  const monthBreakdown = useMemo(() => {
-    const year = cursor.getFullYear();
-    const month = cursor.getMonth();
-    const inMonth = posts.filter((p) => {
-      if (p.status === "draft") return false;
-      const pd = new Date(p.scheduledFor);
-      return pd.getFullYear() === year && pd.getMonth() === month;
-    });
-    const by: Partial<Record<PostStatus, number>> = {};
-    inMonth.forEach((p) => { by[p.status] = (by[p.status] || 0) + 1; });
-    return by;
-  }, [cursor, posts]);
-
 
   const monthLabel = cursor.toLocaleString(undefined, { month: "long", year: "numeric" });
   const today = new Date();
