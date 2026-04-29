@@ -1892,10 +1892,11 @@ function SentimentReviewView({
    ────────────────────────────────────────────────────────────── */
 
 function SpamView({
-  spam, unspam,
+  spam, unspam, openContext,
 }: {
   spam: (Comment & { post: Post })[];
   unspam: (id: string) => void;
+  openContext: (commentId: string, postId: string) => void;
 }) {
   return (
     <div className="space-y-4">
