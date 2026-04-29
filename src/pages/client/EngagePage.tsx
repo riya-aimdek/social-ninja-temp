@@ -14,6 +14,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from "@/components/ui/sheet";
+import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -537,6 +540,10 @@ export default function EngagePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
+  // Post-thread context sheet — opened from any view to give post context for a comment
+  const [contextPair, setContextPair] = useState<{ commentId: string; postId: string } | null>(null);
+  const openContext = (commentId: string, postId: string) => setContextPair({ commentId, postId });
+
   // Old-UI compatible filters: search + category tabs + sort + filter modal
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryTab, setCategoryTab] = useState<"all" | "comments" | "mentions" | "dms" | "reviews">("all");
@@ -1029,12 +1036,20 @@ export default function EngagePage() {
       </Dialog>
 
 
-      {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} />}
-      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} />}
+      {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} openContext={openContext} />}
+      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} openContext={openContext} />}
       {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} />}
-      {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} />}
-      {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} />}
+      {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} openContext={openContext} />}
+      {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} openContext={openContext} />}
       {tab === "variants" && <VariantsView templates={templates} setTemplates={setTemplates} />}
+
+      <PostThreadContextSheet
+        pair={contextPair}
+        posts={posts}
+        onClose={() => setContextPair(null)}
+        updateComment={updateComment}
+        addReply={addReply}
+      />
     </div>
   );
 }
@@ -1044,10 +1059,11 @@ export default function EngagePage() {
    ────────────────────────────────────────────────────────────── */
 
 function ReplyQueueView({
-  comments, updateComment,
+  comments, updateComment, openContext,
 }: {
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  openContext: (commentId: string, postId: string) => void;
 }) {
   const queue = useMemo(
     () => comments.filter((c) => c.stage === "pending" || c.stage === "in_review"),
@@ -1143,7 +1159,18 @@ function ReplyQueueView({
                   {c.priority}
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground line-clamp-1 pl-9 italic">on "{c.post.title}"</p>
+              <p className="text-[11px] text-muted-foreground line-clamp-1 pl-9 italic">
+                on{" "}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); openContext(c.id, c.post.id); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); openContext(c.id, c.post.id); } }}
+                  className="not-italic underline decoration-dotted underline-offset-2 hover:text-foreground cursor-pointer"
+                >
+                  "{c.post.title}"
+                </span>
+              </p>
               <p className="text-xs text-foreground line-clamp-2 pl-9 mt-1">{c.text}</p>
               <div className="flex items-center gap-2 mt-1.5 pl-9">
                 <span className={cn("inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
@@ -1270,10 +1297,11 @@ function ReplyQueueView({
    ────────────────────────────────────────────────────────────── */
 
 function BoardView({
-  comments, updateComment,
+  comments, updateComment, openContext,
 }: {
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  openContext: (commentId: string, postId: string) => void;
 }) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<Stage | null>(null);
@@ -1336,6 +1364,7 @@ function BoardView({
                         e.dataTransfer.effectAllowed = "move";
                       }}
                       onDragEnd={() => { setDraggingId(null); setDropTarget(null); }}
+                      onClick={() => openContext(c.id, c.post.id)}
                       className={cn(
                         "group bg-card border rounded-lg p-2.5 transition-all cursor-grab active:cursor-grabbing select-none",
                         c.sla.breached ? "border-l-2 border-l-error border-border" : "border-border",
@@ -1771,10 +1800,11 @@ function ThreadInteractionRow({
    ────────────────────────────────────────────────────────────── */
 
 function SentimentReviewView({
-  comments, updateComment,
+  comments, updateComment, openContext,
 }: {
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  openContext: (commentId: string, postId: string) => void;
 }) {
   const [filter, setFilter] = useState<"all" | Sentiment>("all");
   const filtered = comments.filter((c) => filter === "all" || c.sentiment === filter);
@@ -1826,7 +1856,7 @@ function SentimentReviewView({
             {filtered.map((c) => {
               const sm = sentimentMeta[c.sentiment];
               return (
-                <tr key={c.id} className="border-t border-border">
+                <tr key={c.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => openContext(c.id, c.post.id)}>
                   <td className="px-4 py-3 max-w-[320px]">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-foreground">{c.author}</span>
@@ -1834,7 +1864,7 @@ function SentimentReviewView({
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2">{c.text}</p>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground italic max-w-[200px] truncate">{c.post.title}</td>
+                  <td className="px-4 py-3 text-xs text-primary italic max-w-[200px] truncate underline decoration-dotted underline-offset-2">{c.post.title}</td>
                   <td className="px-4 py-3">
                     <span className={cn("inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full font-medium", sm.bg, sm.color)}>
                       <sm.Icon className="w-3 h-3" /> {sm.label}
@@ -1846,7 +1876,7 @@ function SentimentReviewView({
                         const meta = sentimentMeta[s];
                         const active = c.sentiment === s;
                         return (
-                          <button key={s} onClick={() => correct(c.id, s)} disabled={active}
+                          <button key={s} onClick={(e) => { e.stopPropagation(); correct(c.id, s); }} disabled={active}
                             title={meta.label}
                             className={cn(
                               "w-7 h-7 rounded-lg border flex items-center justify-center transition-colors",
@@ -1874,10 +1904,11 @@ function SentimentReviewView({
    ────────────────────────────────────────────────────────────── */
 
 function SpamView({
-  spam, unspam,
+  spam, unspam, openContext,
 }: {
   spam: (Comment & { post: Post })[];
   unspam: (id: string) => void;
+  openContext: (commentId: string, postId: string) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -1891,7 +1922,11 @@ function SpamView({
 
       <div className="bg-card rounded-xl border border-border divide-y divide-border">
         {spam.map((c) => (
-          <div key={c.id} className="p-4 flex items-start gap-3">
+          <div
+            key={c.id}
+            onClick={() => openContext(c.id, c.post.id)}
+            className="p-4 flex items-start gap-3 cursor-pointer hover:bg-muted/30"
+          >
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground flex-shrink-0">
               {c.avatar}
             </div>
@@ -1899,12 +1934,12 @@ function SpamView({
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-semibold text-foreground">{c.author}</span>
                 <PlatformIcon name={c.post.platform} className="w-3 h-3" />
-                <span className="text-[10px] text-muted-foreground">on "{c.post.title}"</span>
+                <span className="text-[10px] text-primary underline decoration-dotted underline-offset-2">on "{c.post.title}"</span>
                 <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-error/10 text-error font-medium">SPAM</span>
               </div>
               <p className="text-sm text-muted-foreground line-through">{c.text}</p>
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               <Button variant="outline" size="sm" onClick={() => unspam(c.id)} className="gap-1">
                 <RefreshCw className="w-3 h-3" /> Restore
               </Button>
@@ -2109,5 +2144,180 @@ function VariantsView({
         ))}
       </div>
     </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Shared post-thread context sheet — opened from any tab so the user
+   always knows which post a comment belongs to and can see the full
+   thread + AI suggested reply + composer in one place.
+   ────────────────────────────────────────────────────────────── */
+
+function findCommentDeep(list: Comment[], id: string): Comment | null {
+  for (const c of list) {
+    if (c.id === id) return c;
+    if (c.replies?.length) {
+      const found = findCommentDeep(c.replies, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function PostThreadContextSheet({
+  pair, posts, onClose, updateComment, addReply,
+}: {
+  pair: { commentId: string; postId: string } | null;
+  posts: Post[];
+  onClose: () => void;
+  updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
+}) {
+  const [reply, setReply] = useState("");
+
+  const post = pair ? posts.find((p) => p.id === pair.postId) : null;
+  const comment = post && pair ? findCommentDeep(post.comments, pair.commentId) : null;
+
+  // For synthetic filler comments (e.g. P1-F-3) we still want to show the post
+  // context; build a placeholder comment from the dense thread if needed.
+  let resolvedComment: Comment | null = comment;
+  if (!resolvedComment && post && pair) {
+    const { items } = buildDenseThread(post);
+    resolvedComment = items.find((c) => c.id === pair.commentId) ?? null;
+  }
+
+  const send = () => {
+    if (!resolvedComment || !reply.trim()) return;
+    addReply(resolvedComment.id, reply.trim());
+    updateComment(resolvedComment.id, { stage: "replied" });
+    setReply("");
+    toast.success("Reply sent");
+  };
+
+  return (
+    <Sheet open={!!pair} onOpenChange={(o) => { if (!o) { onClose(); setReply(""); } }}>
+      <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
+        <SheetHeader className="px-5 py-3 border-b border-border">
+          <SheetTitle className="text-sm font-semibold">Post & comment thread</SheetTitle>
+        </SheetHeader>
+
+        {post && resolvedComment ? (
+          <>
+            {/* Persistent post context */}
+            <div className="p-4 border-b border-border bg-muted/20">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
+                <PlatformIcon name={post.platform} />
+                Replying to your post on {post.platform}
+              </div>
+              <div className="flex gap-3">
+                <div className="w-20 h-20 rounded-lg border border-border bg-background flex items-center justify-center flex-shrink-0 text-3xl">
+                  {post.thumbnail}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-foreground leading-snug">{post.title}</p>
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
+                    <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{post.publishedAt}</span>
+                    <span>·</span>
+                    <span>{fmt(post.commentCount)} total comments</span>
+                    <button className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
+                      Open original <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Thread */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="flex gap-3">
+                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary text-sm font-semibold flex items-center justify-center flex-shrink-0">
+                  {resolvedComment.avatar}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-sm font-semibold text-foreground">{resolvedComment.author}</span>
+                    <span className="text-xs text-muted-foreground">{resolvedComment.at}</span>
+                    <span className={cn(
+                      "ml-auto px-2 py-0.5 rounded-full text-[10px] font-medium",
+                      resolvedComment.stage === "replied" ? "bg-success/15 text-success"
+                        : resolvedComment.stage === "in_review" ? "bg-warning/15 text-warning"
+                        : resolvedComment.stage === "escalated" ? "bg-error/15 text-error"
+                        : "bg-info/15 text-info",
+                    )}>
+                      {STAGES.find((s) => s.id === resolvedComment!.stage)?.label ?? resolvedComment.stage}
+                    </span>
+                  </div>
+                  <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3">
+                    <p className="text-sm text-foreground">{resolvedComment.text}</p>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                    <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {resolvedComment.likes} likes</span>
+                    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded", sentimentMeta[resolvedComment.sentiment].bg, sentimentMeta[resolvedComment.sentiment].color)}>
+                      <Sparkles className="w-3 h-3" />
+                      {sentimentMeta[resolvedComment.sentiment].label} sentiment
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {resolvedComment.aiDraft && (
+                <div className="ml-12 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary uppercase tracking-wide mb-1">
+                    <Sparkles className="w-3 h-3" /> AI suggested reply
+                  </div>
+                  <p className="text-sm text-foreground">{resolvedComment.aiDraft}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReply(resolvedComment!.aiDraft!)}>
+                      Use this draft
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs">Regenerate</Button>
+                  </div>
+                </div>
+              )}
+
+              {resolvedComment.replies && resolvedComment.replies.length > 0 && (
+                <div className="ml-12 space-y-3 pl-3 border-l border-border">
+                  {resolvedComment.replies.map((r) => (
+                    <div key={r.id} className="flex gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-accent text-foreground text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
+                        {r.avatar}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-foreground">{r.author}</span>
+                          <span className="text-[11px] text-muted-foreground">{r.at}</span>
+                        </div>
+                        <p className="text-sm text-foreground mt-0.5">{r.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Composer */}
+            <div className="border-t border-border p-3 bg-card">
+              <div className="flex gap-2 items-end">
+                <textarea
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  placeholder={`Reply to ${resolvedComment.author}…`}
+                  rows={2}
+                  className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+                <Button onClick={send} disabled={!reply.trim()} className="gap-1.5">
+                  <Send className="w-3.5 h-3.5" />
+                  Send
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground p-10 text-center">
+            Comment context unavailable.
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
