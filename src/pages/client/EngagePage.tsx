@@ -2161,19 +2161,8 @@ function PostListCard({
           : "hover:bg-muted/40 border-l-[3px] border-l-transparent",
       )}
     >
-      {/* Thumbnail */}
-      {isTextOnly ? (
-        <div className="w-12 h-12 rounded-md flex-shrink-0 bg-muted/60 flex items-center justify-center">
-          <PlatformIcon name={post.platform} className="w-4 h-4 text-muted-foreground" />
-        </div>
-      ) : (
-        <div className={cn(
-          "w-12 h-12 rounded-md flex-shrink-0 border border-border flex items-center justify-center text-xl overflow-hidden",
-          platformBgClass(post.platform),
-        )}>
-          <span>{post.thumbnail}</span>
-        </div>
-      )}
+      {/* Thumbnail (image-style preview) */}
+      <PostThumb post={post} size="sm" />
 
       {/* Body */}
       <div className="min-w-0 flex-1">
