@@ -1511,7 +1511,9 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
         // demonstrate recursive threads at every level.
         let nested: Comment[] | undefined;
         if (j > 0 && j % 3 === 0) {
-          const nestedCount = 8 + (j % 6); // 8–13 (some > 10 to show pagination)
+          // First nested branch is intentionally large (24) so users can see
+          // the "View N more" pagination on a heavy thread; others vary 8–18.
+          const nestedCount = j === 3 ? 24 : 8 + (j % 11);
           nested = Array.from({ length: nestedCount }, (_, k) => {
             const ns = FILLER_SAMPLES[(i + j + k + 5) % FILLER_SAMPLES.length];
             let deep: Comment[] | undefined;
