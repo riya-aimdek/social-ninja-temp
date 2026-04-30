@@ -2331,7 +2331,7 @@ function ThreadDetailColumn({
 
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
+    <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col h-full min-h-0">
       {/* Post context header (with inline status pills) */}
       <div className="border-b border-border bg-muted/20 p-4 flex-shrink-0">
         <div className="flex items-start gap-3 mb-3">
