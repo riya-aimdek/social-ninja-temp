@@ -553,7 +553,7 @@ type Tab = "board" | "threads" | "sentiment" | "spam" | "variants";
 
 const TABS: { id: Tab; label: string; Icon: typeof Inbox; description: string }[] = [
   { id: "board", label: "ORM Board", Icon: KanbanSquare, description: "Jira-style workload view" },
-  { id: "threads", label: "Comment Threads", Icon: ListTree, description: "Threaded comments grouped by post" },
+  { id: "threads", label: "Posts", Icon: ListTree, description: "Browse posts and their comment threads" },
   { id: "sentiment", label: "Sentiment Review", Icon: Smile, description: "Audit & correct AI sentiment tags" },
   { id: "spam", label: "Spam Queue", Icon: Shield, description: "Filtered comments awaiting review" },
   { id: "variants", label: "Reply Variants", Icon: Shuffle, description: "Manage humanized auto-reply templates" },
