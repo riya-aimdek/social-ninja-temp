@@ -1872,11 +1872,21 @@ function ThreadDetailColumn({
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const highlightRef = useRef<HTMLDivElement | null>(null);
 
-  // When the queue swaps the highlighted comment, scroll it into view.
+  // When the queue swaps the highlighted comment, scroll it into view,
+  // auto-target it for reply, and pre-load its AI draft.
   useEffect(() => {
     if (highlightCommentId && highlightRef.current) {
       highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+    if (highlightCommentId && selected) {
+      const target = selected.items.find((c) => c.id === highlightCommentId);
+      if (target) {
+        setReplyTarget(target);
+        setReply(target.aiDraft ?? "");
+        setShowAi(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [highlightCommentId, selected?.post.id]);
 
   if (!selected) {
