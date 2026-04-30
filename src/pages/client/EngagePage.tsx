@@ -1513,8 +1513,61 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
   return { items: [...real, ...filler], isNewById };
 }
 
-/** V2 context-first Comment Threads: list of interactions on the left, persistent
- *  post context + thread + AI suggested reply + composer on the right. */
+/** ORM Comment Threads — post-first triage workspace.
+ *  Left: post list with media thumbnails + ORM status pills.
+ *  Right: post context header + triage filter bar + Instagram-style threaded
+ *  comments with paginated load-more and a sticky reply composer. */
+
+type ThreadOrmFilter = "all" | "new" | "awaiting" | "urgent" | "in_review" | "replied" | "spam";
+
+interface PostOrmStats {
+  total: number;
+  newCount: number;
+  awaiting: number;
+  inReview: number;
+  replied: number;
+  urgent: number;
+  spam: number;
+  allReplied: boolean;
+}
+
+const URGENT_KEYWORDS = ["refund", "broken", "scam", "terrible", "worst", "lawsuit", "complaint", "angry"];
+
+function computePostStats(post: Post): { items: Comment[]; isNewById: Set<string>; isUrgentById: Set<string>; stats: PostOrmStats } {
+  const { items, isNewById } = buildDenseThread(post);
+  const isUrgentById = new Set<string>();
+  let awaiting = 0, inReview = 0, replied = 0, urgent = 0, spam = 0, newCount = 0;
+  items.forEach((c) => {
+    if (c.isSpam) { spam += 1; return; }
+    if (c.sentiment === "negative" || URGENT_KEYWORDS.some((k) => c.text.toLowerCase().includes(k))) {
+      isUrgentById.add(c.id);
+      urgent += 1;
+    }
+    if (isNewById.has(c.id)) newCount += 1;
+    if (c.stage === "pending") awaiting += 1;
+    else if (c.stage === "in_review") inReview += 1;
+    else if (c.stage === "replied") replied += 1;
+  });
+  const nonSpam = items.filter((c) => !c.isSpam).length;
+  return {
+    items,
+    isNewById,
+    isUrgentById,
+    stats: {
+      total: nonSpam,
+      newCount,
+      awaiting,
+      inReview,
+      replied,
+      urgent,
+      spam,
+      allReplied: nonSpam > 0 && awaiting === 0 && inReview === 0,
+    },
+  };
+}
+
+type PostSort = "newest" | "most_comments" | "most_urgent" | "awaiting";
+
 function ThreadsView({
   posts, updateComment, addReply,
 }: {
@@ -1522,276 +1575,687 @@ function ThreadsView({
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
 }) {
-  // Build a flat list of (post, comment) pairs across all posts using the
-  // same dense-thread builder so counts stay consistent with the rest of the page.
-  const { rows, totals } = useMemo(() => {
-    const all: { post: Post; comment: Comment; isNew: boolean }[] = [];
-    let totalNew = 0;
-    let totalAwaiting = 0;
-    posts.forEach((p) => {
-      const { items, isNewById } = buildDenseThread(p);
-      items.forEach((c) => {
-        const isNew = isNewById.has(c.id);
-        if (isNew) totalNew += 1;
-        if (c.stage === "pending" || c.stage === "in_review") totalAwaiting += 1;
-        all.push({ post: p, comment: c, isNew });
-      });
+  const enriched = useMemo(
+    () => posts.map((p) => ({ post: p, ...computePostStats(p) })),
+    [posts],
+  );
+
+  const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
+  const [sort, setSort] = useState<PostSort>("newest");
+  const [selectedPostId, setSelectedPostId] = useState<string>(posts[0]?.id ?? "");
+
+  const visiblePosts = useMemo(() => {
+    const list = enriched.filter((e) => platformFilter === "all" || e.post.platform === platformFilter);
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      switch (sort) {
+        case "most_comments": return b.stats.total - a.stats.total;
+        case "most_urgent": return b.stats.urgent - a.stats.urgent;
+        case "awaiting": return b.stats.awaiting - a.stats.awaiting;
+        default: return 0;
+      }
     });
-    // Awaiting first, then new, then by recency-ish (preserve order)
-    all.sort((a, b) => {
-      const score = (r: typeof a) =>
-        (r.comment.stage === "pending" || r.comment.stage === "in_review" ? 0 : 1) +
-        (r.isNew ? 0 : 0.1);
-      return score(a) - score(b);
-    });
-    return { rows: all, totals: { new: totalNew, awaiting: totalAwaiting } };
-  }, [posts]);
+    return sorted;
+  }, [enriched, platformFilter, sort]);
 
-  const [selectedId, setSelectedId] = useState<string>(rows[0]?.comment.id ?? "");
-  const [reply, setReply] = useState("");
-
-  // Reset selection when posts change and the current id is gone
-  const selectedRow = rows.find((r) => r.comment.id === selectedId) ?? rows[0];
-  const sp = selectedRow?.post;
-  const sc = selectedRow?.comment;
-
-  const send = () => {
-    if (!sc || !reply.trim()) return;
-    addReply(sc.id, reply.trim());
-    updateComment(sc.id, { stage: "replied" });
-    setReply("");
-    toast.success("Reply sent");
-  };
+  const selected = useMemo(
+    () => enriched.find((e) => e.post.id === selectedPostId) ?? visiblePosts[0] ?? null,
+    [enriched, visiblePosts, selectedPostId],
+  );
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground tabular-nums">{fmt(rows.length)}</span> interactions ·{" "}
-        <span className="font-semibold text-foreground tabular-nums">{fmt(totals.new)}</span> new ·{" "}
-        <span className="font-semibold text-foreground tabular-nums">{fmt(totals.awaiting)}</span> awaiting reply
-      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 h-[calc(100vh-380px)] min-h-[600px]">
+        <PostListColumn
+          posts={visiblePosts}
+          totalCount={enriched.length}
+          platformFilter={platformFilter}
+          setPlatformFilter={setPlatformFilter}
+          sort={sort}
+          setSort={setSort}
+          selectedId={selected?.post.id ?? ""}
+          onSelect={setSelectedPostId}
+        />
+        <ThreadDetailColumn
+          key={selected?.post.id ?? "empty"}
+          selected={selected}
+          updateComment={updateComment}
+          addReply={addReply}
+        />
+      </div>
+    </div>
+  );
+}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 h-[calc(100vh-440px)] min-h-[520px]">
-        {/* List */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
-          <div className="px-3 py-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground bg-muted/30">
-            <span className="font-medium">{fmt(rows.length)} interactions</span>
-            <span>Newest first</span>
+/* ── Left column ───────────────────────────────────────────────── */
+
+const PLATFORM_PILLS: ("all" | Platform)[] = ["all", "Instagram", "Facebook", "LinkedIn", "Twitter", "GBP"];
+const SORT_OPTIONS: { id: PostSort; label: string }[] = [
+  { id: "newest", label: "Newest" },
+  { id: "most_comments", label: "Most comments" },
+  { id: "most_urgent", label: "Most urgent" },
+  { id: "awaiting", label: "Awaiting reply" },
+];
+
+function PostListColumn({
+  posts, totalCount, platformFilter, setPlatformFilter, sort, setSort, selectedId, onSelect,
+}: {
+  posts: { post: Post; stats: PostOrmStats }[];
+  totalCount: number;
+  platformFilter: "all" | Platform;
+  setPlatformFilter: (p: "all" | Platform) => void;
+  sort: PostSort;
+  setSort: (s: PostSort) => void;
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
+      <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-sm font-semibold text-foreground">Posts</span>
+          <span className="text-xs text-muted-foreground tabular-nums">{fmt(totalCount)}</span>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <ArrowDownUp className="w-3 h-3" />
+              {SORT_OPTIONS.find((s) => s.id === sort)?.label}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {SORT_OPTIONS.map((s) => (
+              <DropdownMenuItem key={s.id} onClick={() => setSort(s.id)}>{s.label}</DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="px-3 py-2 border-b border-border overflow-x-auto">
+        <div className="flex items-center gap-1.5 min-w-max">
+          {PLATFORM_PILLS.map((p) => (
+            <button
+              key={p}
+              onClick={() => setPlatformFilter(p)}
+              className={cn(
+                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors whitespace-nowrap",
+                platformFilter === p
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-card text-muted-foreground border-border hover:text-foreground",
+              )}
+            >
+              {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
+              {p === "all" ? "All" : p === "GBP" ? "Google" : p === "Twitter" ? "Twitter/X" : p}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-y-auto flex-1">
+        {posts.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">No posts match this filter.</div>
+        ) : (
+          posts.map(({ post, stats }) => (
+            <PostListCard
+              key={post.id}
+              post={post}
+              stats={stats}
+              selected={selectedId === post.id}
+              onClick={() => onSelect(post.id)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PostListCard({
+  post, stats, selected, onClick,
+}: {
+  post: Post;
+  stats: PostOrmStats;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  // Decide which pills to show (max 3, awaiting first)
+  const pills: { key: string; label: string; cls: string }[] = [];
+  if (stats.awaiting > 0) pills.push({ key: "awaiting", label: `Awaiting reply ${stats.awaiting}`, cls: "bg-warning/15 text-warning" });
+  if (stats.urgent > 0) pills.push({ key: "urgent", label: `Urgent`, cls: "bg-error/15 text-error" });
+  if (stats.newCount > 0) pills.push({ key: "new", label: `New ${stats.newCount}`, cls: "bg-info/15 text-info" });
+  if (stats.inReview > 0) pills.push({ key: "review", label: `In review ${stats.inReview}`, cls: "bg-warning/10 text-warning" });
+  if (stats.spam > 0) pills.push({ key: "spam", label: `Spam ${stats.spam}`, cls: "bg-muted text-muted-foreground" });
+  if (stats.allReplied) {
+    pills.length = 0;
+    pills.push({ key: "done", label: "All replied", cls: "bg-success/15 text-success" });
+  }
+  const visible = pills.slice(0, 3);
+  const overflow = Math.max(0, pills.length - 3);
+
+  const isTextOnly = !post.thumbnail || post.thumbnail.trim() === "";
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full text-left px-4 py-3 border-b border-border transition-colors relative",
+        selected
+          ? "bg-primary/5 border-l-[3px] border-l-primary pl-[13px]"
+          : "hover:bg-muted/40 border-l-[3px] border-l-transparent",
+      )}
+    >
+      {stats.newCount > 0 && !selected && (
+        <span className="absolute left-1 top-4 w-1.5 h-1.5 rounded-full bg-primary" aria-label="Has new comments" />
+      )}
+
+      {/* Row 1 — identity */}
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
+        <PlatformIcon name={post.platform} className="w-3.5 h-3.5" />
+        <span className="font-medium">@yourbrand</span>
+        <span className="ml-auto inline-flex items-center gap-1">
+          <Clock className="w-3 h-3" /> {post.publishedAt}
+        </span>
+      </div>
+
+      {/* Row 2 — content */}
+      {isTextOnly ? (
+        <div className="border-l-2 border-primary/40 pl-3 mb-2">
+          <p className="text-[13px] italic text-foreground line-clamp-2 leading-snug">{post.title}</p>
+        </div>
+      ) : (
+        <div className="flex gap-2.5 mb-2">
+          <div className={cn(
+            "w-14 h-14 rounded-md flex-shrink-0 border border-border flex items-center justify-center text-2xl overflow-hidden",
+            platformBgClass(post.platform),
+          )}>
+            <span>{post.thumbnail}</span>
           </div>
-          <div className="overflow-y-auto flex-1">
-            {rows.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                No interactions match your filters.
-              </div>
-            ) : (
-              rows.map(({ post, comment, isNew }) => (
-                <ThreadInteractionRow
-                  key={comment.id}
-                  post={post}
-                  comment={comment}
-                  isNew={isNew}
-                  selected={selectedRow?.comment.id === comment.id}
-                  onClick={() => { setSelectedId(comment.id); setReply(""); }}
-                />
-              ))
-            )}
+          <p className="text-[13px] text-foreground line-clamp-2 leading-snug flex-1 min-w-0">{post.title}</p>
+        </div>
+      )}
+
+      {/* Row 3 — pills */}
+      {visible.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap mb-2">
+          {visible.map((p) => (
+            <span key={p.key} className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", p.cls)}>
+              {p.label}
+            </span>
+          ))}
+          {overflow > 0 && (
+            <span className="text-[10px] text-muted-foreground">+{overflow} more</span>
+          )}
+        </div>
+      )}
+
+      {/* Row 4 — stats */}
+      <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" />{fmt(stats.total)}</span>
+        <span>·</span>
+        <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{fmt(post.commentCount * 8 + 124)}</span>
+      </div>
+    </button>
+  );
+}
+
+function platformBgClass(p: Platform) {
+  switch (p) {
+    case "Instagram": return "bg-instagram/10";
+    case "Facebook": return "bg-facebook/10";
+    case "LinkedIn": return "bg-linkedin/10";
+    case "Twitter": return "bg-twitter/10";
+    case "GBP": return "bg-warning/10";
+  }
+}
+
+/* ── Right column ──────────────────────────────────────────────── */
+
+const PAGE_SIZE = 30;
+
+function ThreadDetailColumn({
+  selected, updateComment, addReply,
+}: {
+  selected: { post: Post; items: Comment[]; isNewById: Set<string>; isUrgentById: Set<string>; stats: PostOrmStats } | null;
+  updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
+}) {
+  const [filter, setFilter] = useState<ThreadOrmFilter>("all");
+  const [sortMode, setSortMode] = useState<"top" | "newest">("newest");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [reply, setReply] = useState("");
+  const [replyTarget, setReplyTarget] = useState<Comment | null>(null);
+  const [showAi, setShowAi] = useState(false);
+  const [showSpam, setShowSpam] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+
+  if (!selected) {
+    return (
+      <div className="bg-card rounded-xl border border-border flex items-center justify-center text-center p-8">
+        <div className="max-w-xs">
+          <MessageSquare className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-sm font-medium text-foreground">Select a post from the left to manage its comments</p>
+          <p className="text-xs text-muted-foreground mt-1">Triage, assign and reply to every comment in one place.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { post, items, isNewById, isUrgentById, stats } = selected;
+
+  const nonSpam = items.filter((c) => !c.isSpam);
+  const spamItems = items.filter((c) => c.isSpam);
+
+  const filtered = nonSpam.filter((c) => {
+    switch (filter) {
+      case "new": return isNewById.has(c.id);
+      case "awaiting": return c.stage === "pending";
+      case "urgent": return isUrgentById.has(c.id);
+      case "in_review": return c.stage === "in_review";
+      case "replied": return c.stage === "replied";
+      case "spam": return false;
+      default: return true;
+    }
+  });
+
+  const sorted = filter === "spam"
+    ? spamItems
+    : [...filtered].sort((a, b) => sortMode === "top" ? b.likes - a.likes : 0);
+
+  const visible = sorted.slice(0, visibleCount);
+  const remaining = Math.max(0, sorted.length - visibleCount);
+
+  const toggleReplies = (id: string) => {
+    setExpandedReplies((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const send = () => {
+    if (!reply.trim()) return;
+    if (replyTarget) {
+      addReply(replyTarget.id, reply.trim());
+      updateComment(replyTarget.id, { stage: "replied" });
+    } else {
+      toast.success("Reply posted to thread");
+    }
+    setReply("");
+    setReplyTarget(null);
+    setShowAi(false);
+  };
+
+  const FILTER_PILLS: { id: ThreadOrmFilter; label: string; count: number; dot?: string }[] = [
+    { id: "all", label: "All", count: stats.total },
+    { id: "new", label: "New", count: stats.newCount, dot: "bg-info" },
+    { id: "awaiting", label: "Awaiting reply", count: stats.awaiting, dot: "bg-warning" },
+    { id: "urgent", label: "Urgent", count: stats.urgent, dot: "bg-error" },
+    { id: "in_review", label: "In review", count: stats.inReview, dot: "bg-warning" },
+    { id: "replied", label: "Replied", count: stats.replied, dot: "bg-success" },
+    { id: "spam", label: "Spam", count: stats.spam, dot: "bg-muted-foreground" },
+  ];
+
+  return (
+    <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
+      {/* Sticky post context header */}
+      <div className="border-b border-border bg-muted/20 p-4 flex-shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <PlatformIcon name={post.platform} />
+            <span className="font-medium text-foreground">@yourbrand</span>
+            <span>·</span>
+            <Clock className="w-3 h-3" />
+            <span>{post.publishedAt}</span>
           </div>
+          <button className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+            Open original <ExternalLink className="w-3 h-3" />
+          </button>
         </div>
 
-        {/* Detail */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
-          {sp && sc ? (
-            <>
-              {/* Persistent post context — never scrolls away */}
-              <div className="p-4 border-b border-border bg-muted/20">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
-                  <PlatformIcon name={sp.platform} />
-                  Replying to your post on {sp.platform}
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-24 h-24 rounded-lg border border-border bg-background flex items-center justify-center flex-shrink-0 text-4xl">
-                    {sp.thumbnail}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground leading-snug">{sp.title}</p>
-                    <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
-                      <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{sp.publishedAt}</span>
-                      <span>·</span>
-                      <span>{fmt(sp.commentCount)} total comments</span>
-                      <button className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
-                        Open original <ExternalLink className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+        {post.thumbnail ? (
+          <div className={cn(
+            "w-full rounded-lg border border-border flex items-center justify-center overflow-hidden mb-3",
+            platformBgClass(post.platform),
+          )} style={{ maxHeight: 200, height: 160 }}>
+            <span className="text-7xl">{post.thumbnail}</span>
+          </div>
+        ) : (
+          <div className="border-l-2 border-primary/40 pl-3 mb-3">
+            <p className="text-sm italic text-foreground">{post.title}</p>
+          </div>
+        )}
+
+        {post.thumbnail && (
+          <p className="text-sm text-foreground leading-snug line-clamp-3 mb-2">{post.title}</p>
+        )}
+
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
+          <span className="inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" />{fmt(stats.total)} comments</span>
+          <span>·</span>
+          <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{fmt(post.commentCount * 8 + 124)} likes</span>
+          <span>·</span>
+          <span>{fmt(post.commentCount * 2 + 18)} shares</span>
+          <span>·</span>
+          <span>{fmt(post.commentCount * 38 + 1240)} reach</span>
+        </div>
+      </div>
+
+      {/* Sticky triage bar */}
+      <div className="border-b border-border px-4 py-2.5 flex-shrink-0 flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+          {FILTER_PILLS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => { setFilter(f.id); setVisibleCount(PAGE_SIZE); }}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors",
+                filter === f.id
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-card text-muted-foreground border-border hover:text-foreground",
+              )}
+            >
+              {f.dot && <span className={cn("w-1.5 h-1.5 rounded-full", f.dot)} />}
+              {f.label}
+              <span className="tabular-nums opacity-70">{fmt(f.count)}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm" variant="outline" className="h-7 text-xs"
+            onClick={() => {
+              nonSpam.forEach((c) => { if (c.stage === "pending") updateComment(c.id, { stage: "in_review", assignee: "Priya S." }); });
+              toast.success("All pending comments assigned");
+            }}
+          >Assign all pending</Button>
+          <Button
+            size="sm" variant="ghost" className="h-7 text-xs"
+            onClick={() => {
+              nonSpam.forEach((c) => { if (c.stage !== "replied") updateComment(c.id, { stage: "replied" }); });
+              toast.success("All comments marked replied");
+            }}
+          >Mark all replied</Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" className="h-7 w-7"><MoreVertical className="w-3.5 h-3.5" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Export comments</DropdownMenuItem>
+              <DropdownMenuItem>Hide post from inbox</DropdownMenuItem>
+              <DropdownMenuItem className="text-error">Report post</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Comment thread */}
+      <div className="flex-1 overflow-y-auto">
+        {sorted.length === 0 ? (
+          <ThreadEmptyState filter={filter} stats={stats} onClear={() => setFilter("all")} />
+        ) : (
+          <div className="divide-y divide-border">
+            {/* Sort toggle */}
+            {filter !== "spam" && (
+              <div className="flex items-center gap-3 px-4 py-2 text-xs">
+                <button
+                  onClick={() => setSortMode("top")}
+                  className={cn("font-medium", sortMode === "top" ? "text-foreground" : "text-muted-foreground hover:text-foreground")}
+                >Top comments</button>
+                <button
+                  onClick={() => setSortMode("newest")}
+                  className={cn("font-medium", sortMode === "newest" ? "text-foreground" : "text-muted-foreground hover:text-foreground")}
+                >Newest first</button>
               </div>
+            )}
 
-              {/* Comment thread */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 text-primary text-sm font-semibold flex items-center justify-center flex-shrink-0">
-                    {sc.avatar}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-sm font-semibold text-foreground">{sc.author}</span>
-                      <span className="text-xs text-muted-foreground">{sc.at}</span>
-                      <span className={cn(
-                        "ml-auto px-2 py-0.5 rounded-full text-[10px] font-medium",
-                        sc.stage === "replied" ? "bg-success/15 text-success"
-                          : sc.stage === "in_review" ? "bg-warning/15 text-warning"
-                          : sc.stage === "escalated" ? "bg-error/15 text-error"
-                          : "bg-info/15 text-info",
-                      )}>
-                        {STAGES.find((s) => s.id === sc.stage)?.label ?? sc.stage}
-                      </span>
-                    </div>
-                    <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3">
-                      <p className="text-sm text-foreground">{sc.text}</p>
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                      <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {sc.likes} likes</span>
-                      <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded", sentimentMeta[sc.sentiment].bg, sentimentMeta[sc.sentiment].color)}>
-                        <Sparkles className="w-3 h-3" />
-                        {sentimentMeta[sc.sentiment].label} sentiment
-                      </span>
-                    </div>
-                  </div>
-                </div>
+            {visible.map((c) => (
+              <CommentItem
+                key={c.id}
+                comment={c}
+                isNew={isNewById.has(c.id)}
+                isUrgent={isUrgentById.has(c.id)}
+                expanded={expandedReplies.has(c.id)}
+                onToggleReplies={() => toggleReplies(c.id)}
+                onReply={() => { setReplyTarget(c); setReply(""); }}
+                onAssign={() => { updateComment(c.id, { stage: "in_review", assignee: "Priya S." }); toast.success("Assigned to Priya S."); }}
+                onMarkReplied={() => { updateComment(c.id, { stage: "replied" }); toast.success("Marked as replied"); }}
+                onFlag={() => { updateComment(c.id, { isSpam: true }); toast.success("Flagged"); }}
+              />
+            ))}
 
-                {sc.aiDraft && (
-                  <div className="ml-12 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5">
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary uppercase tracking-wide mb-1">
-                      <Sparkles className="w-3 h-3" /> AI suggested reply
-                    </div>
-                    <p className="text-sm text-foreground">{sc.aiDraft}</p>
-                    <div className="flex gap-2 mt-2">
-                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReply(sc.aiDraft!)}>
-                        Use this draft
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs">Regenerate</Button>
-                    </div>
-                  </div>
-                )}
+            {remaining > 0 && (
+              <div className="py-3 flex justify-center">
+                <button
+                  className="text-sm text-muted-foreground hover:text-foreground font-medium"
+                  onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                >
+                  Load 30 more comments {remaining < PAGE_SIZE ? `(${remaining} remaining)` : `(${remaining} remaining)`}
+                </button>
+              </div>
+            )}
+            {remaining === 0 && sorted.length > PAGE_SIZE && (
+              <div className="py-3 text-center text-xs text-muted-foreground">All {fmt(sorted.length)} comments loaded</div>
+            )}
 
-                {sc.replies && sc.replies.length > 0 && (
-                  <div className="ml-12 space-y-3 pl-3 border-l border-border">
-                    {sc.replies.map((r) => (
-                      <div key={r.id} className="flex gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-accent text-foreground text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
-                          {r.avatar}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-foreground">{r.author}</span>
-                            <span className="text-[11px] text-muted-foreground">{r.at}</span>
-                          </div>
-                          <p className="text-sm text-foreground mt-0.5">{r.text}</p>
-                        </div>
+            {/* Spam collapsed group when not specifically filtering for spam */}
+            {filter !== "spam" && spamItems.length > 0 && (
+              <div className="px-4 py-3 bg-muted/30">
+                <button
+                  onClick={() => setShowSpam((s) => !s)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {showSpam ? "▾" : "▸"} {fmt(spamItems.length)} spam {spamItems.length === 1 ? "comment" : "comments"} hidden — {showSpam ? "Hide" : "Show"}
+                </button>
+                {showSpam && (
+                  <div className="mt-2 space-y-2 opacity-60">
+                    {spamItems.map((c) => (
+                      <div key={c.id} className="text-xs text-muted-foreground line-clamp-1">
+                        <span className="font-medium">{c.author}:</span> {c.text}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+            )}
+          </div>
+        )}
+      </div>
 
-              {/* Reply composer */}
-              <div className="border-t border-border p-3 bg-card">
-                <div className="flex gap-2 items-end">
-                  <textarea
-                    value={reply}
-                    onChange={(e) => setReply(e.target.value)}
-                    placeholder={`Reply to ${sc.author}…`}
-                    rows={2}
-                    className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                  <Button onClick={send} disabled={!reply.trim()} className="gap-1.5">
-                    <Send className="w-3.5 h-3.5" />
-                    Send
-                  </Button>
-                </div>
-              </div>
-            </>
+      {/* Sticky reply composer */}
+      <div className="border-t border-border p-3 bg-card flex-shrink-0">
+        <div className="flex items-center justify-between mb-2 text-[11px] text-muted-foreground">
+          {replyTarget ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              Replying to @{replyTarget.author}
+              <button onClick={() => setReplyTarget(null)} className="hover:text-foreground"><X className="w-3 h-3" /></button>
+            </span>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-              Select an interaction to view the conversation.
-            </div>
+            <span>Replying to this post on {post.platform}</span>
           )}
+          <button onClick={() => setShowAi((s) => !s)} className="inline-flex items-center gap-1 text-primary hover:underline">
+            <Sparkles className="w-3 h-3" /> {showAi ? "Hide" : "Suggest"} AI reply
+          </button>
+        </div>
+
+        {showAi && (
+          <div className="mb-2 p-2.5 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+            <p className="text-sm text-foreground">
+              {replyTarget?.aiDraft ?? `Thanks so much for engaging with this post! We really appreciate your support 💛`}
+            </p>
+            <div className="flex gap-1.5 mt-2">
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReply(replyTarget?.aiDraft ?? "Thanks so much for engaging with this post! We really appreciate your support 💛")}>
+                Use this draft
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs">Regenerate</Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs">Edit before sending</Button>
+            </div>
+          </div>
+        )}
+
+        <textarea
+          value={reply}
+          onChange={(e) => setReply(e.target.value)}
+          placeholder={replyTarget ? `Reply to ${replyTarget.author}…` : "Write a reply…"}
+          rows={2}
+          className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+        />
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <button className="inline-flex items-center gap-1 hover:text-foreground"><ImageIcon className="w-3.5 h-3.5" /> Attach</button>
+            <button className="inline-flex items-center gap-1 hover:text-foreground">📋 Saved replies</button>
+            <span className="tabular-nums">{reply.length}/2200</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" variant="ghost" className="h-7 text-xs">Save draft</Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><Clock className="w-3 h-3" />Schedule</Button>
+            <Button size="sm" onClick={send} disabled={!reply.trim()} className="h-7 text-xs gap-1">
+              <Send className="w-3 h-3" /> Send
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function ThreadInteractionRow({
-  post, comment, isNew, selected, onClick,
+function ThreadEmptyState({ filter, stats, onClear }: { filter: ThreadOrmFilter; stats: PostOrmStats; onClear: () => void }) {
+  if (filter === "all" && stats.total === 0) {
+    return (
+      <div className="p-12 text-center">
+        <MessageSquare className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+        <p className="text-sm font-medium text-foreground">No comments on this post yet</p>
+      </div>
+    );
+  }
+  if (filter === "all" && stats.allReplied) {
+    return (
+      <div className="p-12 text-center">
+        <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-3" />
+        <p className="text-sm font-semibold text-foreground">All caught up!</p>
+        <p className="text-xs text-muted-foreground mt-1">Every comment on this post has been replied to.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="p-12 text-center">
+      <p className="text-sm font-medium text-foreground">No {filter.replace("_", " ")} comments</p>
+      <button onClick={onClear} className="text-xs text-primary hover:underline mt-2">Clear filter</button>
+    </div>
+  );
+}
+
+function CommentItem({
+  comment, isNew, isUrgent, expanded, onToggleReplies, onReply, onAssign, onMarkReplied, onFlag,
 }: {
-  post: Post;
   comment: Comment;
   isNew: boolean;
-  selected: boolean;
-  onClick: () => void;
+  isUrgent: boolean;
+  expanded: boolean;
+  onToggleReplies: () => void;
+  onReply: () => void;
+  onAssign: () => void;
+  onMarkReplied: () => void;
+  onFlag: () => void;
 }) {
   const sm = sentimentMeta[comment.sentiment];
   const stageCls =
     comment.stage === "replied" ? "bg-success/15 text-success"
     : comment.stage === "in_review" ? "bg-warning/15 text-warning"
     : comment.stage === "escalated" ? "bg-error/15 text-error"
+    : isUrgent ? "bg-error/15 text-error"
     : "bg-info/15 text-info";
+  const stageLabel = isUrgent && comment.stage === "pending"
+    ? "Urgent"
+    : isNew && comment.stage === "pending"
+      ? "New"
+      : comment.stage === "pending" ? "Awaiting reply"
+      : STAGES.find((s) => s.id === comment.stage)?.label ?? comment.stage;
+
+  const replies = comment.replies ?? [];
+  const hasReplies = replies.length > 0;
 
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-full text-left p-3 border-b border-border transition-colors",
-        selected ? "bg-primary/5 border-l-2 border-l-primary" : "hover:bg-muted/40 border-l-2 border-l-transparent",
-      )}
-    >
-      {/* Compact post context */}
-      <div className="flex gap-3 p-2.5 rounded-lg border border-border bg-muted/30">
-        <div className="w-11 h-11 rounded-md flex-shrink-0 border border-border bg-background flex items-center justify-center text-2xl">
-          {post.thumbnail}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-0.5">
-            <PlatformIcon name={post.platform} />
-            <span className="font-medium uppercase tracking-wide">Original post</span>
-            <span>·</span>
-            <Clock className="w-3 h-3" />
-            <span>{post.publishedAt}</span>
-          </div>
-          <p className="text-xs text-foreground leading-snug line-clamp-2">{post.title}</p>
-        </div>
-      </div>
-
-      {/* Interaction */}
-      <div className="flex gap-2.5 mt-2.5 pl-1">
-        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
+    <div className={cn("px-4 py-3", isUrgent && "border-l-[3px] border-l-error bg-error/5")}>
+      <div className="flex gap-3">
+        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center flex-shrink-0">
           {comment.avatar}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-sm font-semibold text-foreground truncate">{comment.author}</span>
-            <span className="text-[11px] text-muted-foreground">{comment.at}</span>
-            <span className={cn("ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1", sm.bg, sm.color)}>
-              <sm.Icon className="w-3 h-3" />
-              {sm.label}
+          {/* Row 1 */}
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+            <span className="text-[13px] font-semibold text-foreground">{comment.author}</span>
+            <span className="text-[11px] text-muted-foreground">@{comment.author.toLowerCase().replace(/\s+/g, "")}</span>
+            <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium", sm.bg, sm.color)}>
+              <sm.Icon className="w-3 h-3" /> {sm.label}
             </span>
+            <span className="text-[11px] text-muted-foreground ml-auto">{comment.at}</span>
+            <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold", stageCls)}>{stageLabel}</span>
           </div>
-          <p className="text-sm text-foreground leading-snug line-clamp-2">{comment.text}</p>
-          <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground flex-wrap">
-            <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {comment.likes}</span>
-            <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", stageCls)}>
-              {STAGES.find((s) => s.id === comment.stage)?.label ?? comment.stage}
-            </span>
-            {isNew && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary text-primary-foreground">
-                New
-              </span>
-            )}
+          {/* Row 2 */}
+          <p className="text-sm text-foreground leading-snug">{comment.text}</p>
+          <div className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
+            <ThumbsUp className="w-3 h-3" /> {comment.likes}
           </div>
+          {/* Row 3 — actions */}
+          <div className="flex items-center gap-3 mt-2 text-[11px] font-medium text-muted-foreground">
+            <button onClick={onReply} className="hover:text-foreground inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" />Reply</button>
+            <button onClick={onAssign} className="hover:text-foreground inline-flex items-center gap-1"><Users className="w-3 h-3" />Assign</button>
+            <button onClick={onMarkReplied} className="hover:text-foreground inline-flex items-center gap-1"><Check className="w-3 h-3" />Status</button>
+            <button onClick={onFlag} className="hover:text-foreground inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Flag</button>
+          </div>
+
+          {/* Replies (Instagram-style) */}
+          {hasReplies && (
+            <div className="mt-2">
+              {!expanded ? (
+                <button onClick={onToggleReplies} className="text-[11px] text-muted-foreground hover:text-foreground font-medium">
+                  ─── View {replies.length} {replies.length === 1 ? "reply" : "replies"} ▾
+                </button>
+              ) : (
+                <div className="mt-2 pl-4 border-l border-border space-y-2.5">
+                  {replies.slice(0, 3).map((r) => (
+                    <div key={r.id} className="flex gap-2">
+                      <div className="w-6 h-6 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">{r.avatar}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold text-foreground">{r.author}</span>
+                          <span className="text-[10px] text-muted-foreground">{r.at}</span>
+                        </div>
+                        <p className="text-[13px] text-foreground">{r.text}</p>
+                        <div className="text-[10px] text-muted-foreground mt-0.5 inline-flex items-center gap-1">
+                          <ThumbsUp className="w-2.5 h-2.5" /> {r.likes}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {replies.length > 3 && (
+                    <button className="text-[11px] text-muted-foreground hover:text-foreground font-medium">
+                      Load {replies.length - 3} more {replies.length - 3 === 1 ? "reply" : "replies"}
+                    </button>
+                  )}
+                  <button onClick={onToggleReplies} className="text-[11px] text-muted-foreground hover:text-foreground font-medium block">
+                    Hide replies ▴
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Brand reply (when stage === replied and no explicit replies) */}
+          {comment.stage === "replied" && !hasReplies && (
+            <div className="mt-2 pl-4 border-l border-success/30">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">Your reply</div>
+              <div className="flex items-center gap-2">
+                <p className="text-[13px] text-foreground italic">Thanks so much for the kind words! 💛</p>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-success/15 text-success">Replied</span>
+                <button className="text-[11px] text-muted-foreground hover:text-foreground">Edit</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
