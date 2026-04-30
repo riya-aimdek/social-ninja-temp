@@ -1855,11 +1855,12 @@ function platformBgClass(p: Platform) {
 const PAGE_SIZE = 30;
 
 function ThreadDetailColumn({
-  selected, updateComment, addReply,
+  selected, updateComment, addReply, highlightCommentId,
 }: {
   selected: { post: Post; items: Comment[]; isNewById: Set<string>; isUrgentById: Set<string>; stats: PostOrmStats } | null;
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
+  highlightCommentId?: string | null;
 }) {
   const [filter, setFilter] = useState<ThreadOrmFilter>("all");
   const [sortMode, setSortMode] = useState<"top" | "newest">("newest");
@@ -1869,6 +1870,14 @@ function ThreadDetailColumn({
   const [showAi, setShowAi] = useState(false);
   const [showSpam, setShowSpam] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const highlightRef = useRef<HTMLDivElement | null>(null);
+
+  // When the queue swaps the highlighted comment, scroll it into view.
+  useEffect(() => {
+    if (highlightCommentId && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightCommentId, selected?.post.id]);
 
   if (!selected) {
     return (
