@@ -1889,36 +1889,27 @@ function ThreadDetailColumn({
             </div>
             <p className="text-sm text-foreground leading-snug line-clamp-3 mb-2">{post.title}</p>
 
-            {/* Status pills inside the post */}
+            {/* Status pills inside the post — clickable filter tabs */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-foreground">
-                <MessageSquare className="w-3 h-3" /> {fmt(stats.total)}
-              </span>
-              {stats.urgent > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-error/15 text-error">
-                  Urgent {stats.urgent}
-                </span>
-              )}
-              {stats.awaiting > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning/15 text-warning">
-                  Awaiting reply {stats.awaiting}
-                </span>
-              )}
-              {stats.inReview > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning/10 text-warning">
-                  In review {stats.inReview}
-                </span>
-              )}
-              {stats.replied > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success">
-                  Replied {stats.replied}
-                </span>
-              )}
-              {stats.allReplied && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success">
-                  All replied
-                </span>
-              )}
+              {([
+                { id: "all", label: "All", count: stats.total, active: "bg-foreground text-background", idle: "bg-muted text-foreground hover:bg-muted/70" },
+                ...(stats.urgent > 0 ? [{ id: "urgent" as const, label: "Urgent", count: stats.urgent, active: "bg-error text-error-foreground", idle: "bg-error/15 text-error hover:bg-error/25" }] : []),
+                ...(stats.awaiting > 0 ? [{ id: "awaiting" as const, label: "Awaiting reply", count: stats.awaiting, active: "bg-warning text-warning-foreground", idle: "bg-warning/15 text-warning hover:bg-warning/25" }] : []),
+                ...(stats.inReview > 0 ? [{ id: "in_review" as const, label: "In review", count: stats.inReview, active: "bg-warning text-warning-foreground", idle: "bg-warning/10 text-warning hover:bg-warning/20" }] : []),
+                ...(stats.replied > 0 ? [{ id: "replied" as const, label: "Replied", count: stats.replied, active: "bg-success text-success-foreground", idle: "bg-success/15 text-success hover:bg-success/25" }] : []),
+              ] as { id: ThreadOrmFilter; label: string; count: number; active: string; idle: string }[]).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => { setFilter(p.id); setVisibleCount(PAGE_SIZE); }}
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors",
+                    filter === p.id ? p.active : p.idle,
+                  )}
+                >
+                  {p.id === "all" && <MessageSquare className="w-3 h-3" />}
+                  {p.label} {fmt(p.count)}
+                </button>
+              ))}
             </div>
           </div>
         </div>
