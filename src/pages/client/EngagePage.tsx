@@ -552,7 +552,7 @@ const REPLY_TEMPLATES: ReplyTemplate[] = [
 type Tab = "board" | "threads" | "sentiment" | "spam" | "variants";
 
 const TABS: { id: Tab; label: string; Icon: typeof Inbox; description: string }[] = [
-  { id: "board", label: "ORM Board", Icon: KanbanSquare, description: "Jira-style workload view" },
+  { id: "board", label: "Comment Board", Icon: KanbanSquare, description: "Unified list view of all comments" },
   { id: "threads", label: "Posts", Icon: ListTree, description: "Browse posts and their comment threads" },
   { id: "sentiment", label: "Sentiment Review", Icon: Smile, description: "Audit & correct AI sentiment tags" },
   { id: "spam", label: "Spam Queue", Icon: Shield, description: "Filtered comments awaiting review" },
@@ -1488,16 +1488,13 @@ function BoardView({
                       />
                     </div>
 
-                    {/* Post thumbnail */}
+                    {/* Post thumbnail (image-style preview) */}
                     <button
                       onClick={() => openContext(c.id, c.post.id)}
-                      className="flex-shrink-0 relative w-14 h-14 rounded-lg bg-muted overflow-hidden flex items-center justify-center text-2xl group/thumb"
-                      title={`View post: ${c.post.title}`}
+                      title={`View thread: ${c.post.title}`}
+                      className="group/thumb"
                     >
-                      <span aria-hidden>{c.post.thumbnail}</span>
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-card border border-border flex items-center justify-center">
-                        <PlatformIcon name={c.post.platform} className="w-3 h-3" />
-                      </div>
+                      <PostThumb post={c.post} size="md" />
                     </button>
 
                     {/* Center content */}
@@ -2164,19 +2161,8 @@ function PostListCard({
           : "hover:bg-muted/40 border-l-[3px] border-l-transparent",
       )}
     >
-      {/* Thumbnail */}
-      {isTextOnly ? (
-        <div className="w-12 h-12 rounded-md flex-shrink-0 bg-muted/60 flex items-center justify-center">
-          <PlatformIcon name={post.platform} className="w-4 h-4 text-muted-foreground" />
-        </div>
-      ) : (
-        <div className={cn(
-          "w-12 h-12 rounded-md flex-shrink-0 border border-border flex items-center justify-center text-xl overflow-hidden",
-          platformBgClass(post.platform),
-        )}>
-          <span>{post.thumbnail}</span>
-        </div>
-      )}
+      {/* Thumbnail (image-style preview) */}
+      <PostThumb post={post} size="sm" />
 
       {/* Body */}
       <div className="min-w-0 flex-1">
@@ -2206,6 +2192,50 @@ function platformBgClass(p: Platform) {
     case "Twitter": return "bg-twitter/10";
     case "GBP": return "bg-warning/10";
   }
+}
+
+/** Image-style post preview with platform pin badge.
+ *  Renders the post's thumbnail emoji as the "photo subject" over a soft
+ *  platform-tinted gradient so it reads like a real image preview, not an icon. */
+function PostThumb({ post, size = "md", className }: { post: Post; size?: "sm" | "md" | "lg"; className?: string }) {
+  const sz =
+    size === "sm" ? "w-12 h-12 text-xl"
+    : size === "lg" ? "w-20 h-20 text-4xl"
+    : "w-14 h-14 text-2xl";
+  const badge =
+    size === "sm" ? "w-4 h-4" : size === "lg" ? "w-6 h-6" : "w-5 h-5";
+  const badgeIcon =
+    size === "sm" ? "w-2.5 h-2.5" : size === "lg" ? "w-3.5 h-3.5" : "w-3 h-3";
+  const hasMedia = !!post.thumbnail && post.thumbnail.trim() !== "";
+
+  return (
+    <div className={cn("relative flex-shrink-0", className)}>
+      <div
+        className={cn(
+          "rounded-lg overflow-hidden border border-border flex items-center justify-center shadow-sm",
+          sz,
+          platformBgClass(post.platform),
+        )}
+        style={{
+          backgroundImage: hasMedia
+            ? "linear-gradient(135deg, hsl(var(--background)) 0%, transparent 60%)"
+            : undefined,
+        }}
+      >
+        {hasMedia ? (
+          <span aria-hidden className="drop-shadow-sm">{post.thumbnail}</span>
+        ) : (
+          <PlatformIcon name={post.platform} className="w-4 h-4 text-muted-foreground" />
+        )}
+      </div>
+      <div className={cn(
+        "absolute -bottom-1 -right-1 rounded-full bg-card border border-border flex items-center justify-center",
+        badge,
+      )}>
+        <PlatformIcon name={post.platform} className={badgeIcon} />
+      </div>
+    </div>
+  );
 }
 
 /* ── Right column ──────────────────────────────────────────────── */
@@ -3134,145 +3164,48 @@ function PostThreadContextSheet({
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
 }) {
-  const [reply, setReply] = useState("");
-
   const post = pair ? posts.find((p) => p.id === pair.postId) : null;
-  const comment = post && pair ? findCommentDeep(post.comments, pair.commentId) : null;
 
-  // For synthetic filler comments (e.g. P1-F-3) we still want to show the post
-  // context; build a placeholder comment from the dense thread if needed.
-  let resolvedComment: Comment | null = comment;
-  if (!resolvedComment && post && pair) {
-    const { items } = buildDenseThread(post);
-    resolvedComment = items.find((c) => c.id === pair.commentId) ?? null;
-  }
-
-  const send = () => {
-    if (!resolvedComment || !reply.trim()) return;
-    addReply(resolvedComment.id, reply.trim());
-    updateComment(resolvedComment.id, { stage: "replied" });
-    setReply("");
-    toast.success("Reply sent");
-  };
+  // Build the same enriched "selected" payload the Posts tab uses so we can
+  // reuse ThreadDetailColumn (post header + threaded comments + composer).
+  const selected = useMemo(() => {
+    if (!post) return null;
+    const enriched = computePostStats(post);
+    return { post, ...enriched };
+  }, [post]);
 
   return (
-    <Sheet open={!!pair} onOpenChange={(o) => { if (!o) { onClose(); setReply(""); } }}>
-      <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
-        <SheetHeader className="px-5 py-3 border-b border-border">
-          <SheetTitle className="text-sm font-semibold">Post & comment thread</SheetTitle>
+    <Sheet open={!!pair} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col">
+        <SheetHeader className="px-5 py-3 border-b border-border flex-row items-center gap-3 space-y-0">
+          {post && <PostThumb post={post} size="sm" />}
+          <div className="min-w-0 flex-1">
+            <SheetTitle className="text-sm font-semibold truncate">
+              {post?.title ?? "Post & comment thread"}
+            </SheetTitle>
+            {post && (
+              <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{post.publishedAt}</span>
+                <span>·</span>
+                <span>{fmt(post.commentCount)} comments</span>
+                <button className="ml-2 inline-flex items-center gap-1 text-primary hover:underline">
+                  Open original <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
         </SheetHeader>
 
-        {post && resolvedComment ? (
-          <>
-            {/* Persistent post context */}
-            <div className="p-4 border-b border-border bg-muted/20">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
-                <PlatformIcon name={post.platform} />
-                Replying to your post on {post.platform}
-              </div>
-              <div className="flex gap-3">
-                <div className="w-20 h-20 rounded-lg border border-border bg-background flex items-center justify-center flex-shrink-0 text-3xl">
-                  {post.thumbnail}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-foreground leading-snug">{post.title}</p>
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
-                    <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{post.publishedAt}</span>
-                    <span>·</span>
-                    <span>{fmt(post.commentCount)} total comments</span>
-                    <button className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
-                      Open original <ExternalLink className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Thread */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              <div className="flex gap-3">
-                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary text-sm font-semibold flex items-center justify-center flex-shrink-0">
-                  {resolvedComment.avatar}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-sm font-semibold text-foreground">{resolvedComment.author}</span>
-                    <span className="text-xs text-muted-foreground">{resolvedComment.at}</span>
-                    <span className={cn(
-                      "ml-auto px-2 py-0.5 rounded-full text-[10px] font-medium",
-                      resolvedComment.stage === "replied" ? "bg-success/15 text-success"
-                        : resolvedComment.stage === "in_review" ? "bg-warning/15 text-warning"
-                        : resolvedComment.stage === "escalated" ? "bg-error/15 text-error"
-                        : "bg-info/15 text-info",
-                    )}>
-                      {STAGES.find((s) => s.id === resolvedComment!.stage)?.label ?? resolvedComment.stage}
-                    </span>
-                  </div>
-                  <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3">
-                    <p className="text-sm text-foreground">{resolvedComment.text}</p>
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                    <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {resolvedComment.likes} likes</span>
-                    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded", sentimentMeta[resolvedComment.sentiment].bg, sentimentMeta[resolvedComment.sentiment].color)}>
-                      <Sparkles className="w-3 h-3" />
-                      {sentimentMeta[resolvedComment.sentiment].label} sentiment
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {resolvedComment.aiDraft && (
-                <div className="ml-12 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5">
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary uppercase tracking-wide mb-1">
-                    <Sparkles className="w-3 h-3" /> AI suggested reply
-                  </div>
-                  <p className="text-sm text-foreground">{resolvedComment.aiDraft}</p>
-                  <div className="flex gap-2 mt-2">
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReply(resolvedComment!.aiDraft!)}>
-                      Use this draft
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs">Regenerate</Button>
-                  </div>
-                </div>
-              )}
-
-              {resolvedComment.replies && resolvedComment.replies.length > 0 && (
-                <div className="ml-12 space-y-3 pl-3 border-l border-border">
-                  {resolvedComment.replies.map((r) => (
-                    <div key={r.id} className="flex gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-accent text-foreground text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
-                        {r.avatar}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-foreground">{r.author}</span>
-                          <span className="text-[11px] text-muted-foreground">{r.at}</span>
-                        </div>
-                        <p className="text-sm text-foreground mt-0.5">{r.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Composer */}
-            <div className="border-t border-border p-3 bg-card">
-              <div className="flex gap-2 items-end">
-                <textarea
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  placeholder={`Reply to ${resolvedComment.author}…`}
-                  rows={2}
-                  className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-                <Button onClick={send} disabled={!reply.trim()} className="gap-1.5">
-                  <Send className="w-3.5 h-3.5" />
-                  Send
-                </Button>
-              </div>
-            </div>
-          </>
+        {selected && pair ? (
+          <div className="flex-1 min-h-0 p-3">
+            <ThreadDetailColumn
+              key={pair.commentId}
+              selected={selected}
+              updateComment={updateComment}
+              addReply={addReply}
+              highlightCommentId={pair.commentId}
+            />
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground p-10 text-center">
             Comment context unavailable.
