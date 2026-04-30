@@ -2660,80 +2660,99 @@ function CommentItem({
   );
 }
 
-/** Recursive nested reply — renders one reply and its own children with
- *  paginated "View N more" controls at every depth. */
-function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
-  const children = reply.replies ?? [];
-  const hasChildren = children.length > 0;
+/** Recursive nested reply — Instagram-style flat thread.
+ *  All replies (regardless of depth) render at the same indent under the
+ *  top-level comment. Replies to other replies show an "@username" mention
+ *  prefix instead of indenting further. */
+function NestedReply({ reply, depth, mentionTo }: { reply: Comment; depth: number; mentionTo?: string }) {
+  // Flatten all descendants into a single list, preserving order, and remember
+  // each one's parent so we can render an "@parent" mention prefix.
+  const flatten = (node: Comment, parentAuthor?: string): { node: Comment; parentAuthor?: string }[] => {
+    const out: { node: Comment; parentAuthor?: string }[] = [];
+    (node.replies ?? []).forEach((child) => {
+      out.push({ node: child, parentAuthor: node.author });
+      out.push(...flatten(child, node.author));
+    });
+    return out;
+  };
+  const descendants = flatten(reply);
+  const hasChildren = descendants.length > 0;
   const INITIAL = 10;
   const STEP = 10;
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(INITIAL);
-  const shown = children.slice(0, visible);
-  const remaining = Math.max(0, children.length - visible);
-  const maxDepth = 4;
+  const shown = descendants.slice(0, visible);
+  const remaining = Math.max(0, descendants.length - visible);
+
+  const mentionHandle = mentionTo ? `@${mentionTo.toLowerCase().replace(/\s+/g, "")}` : null;
+
+  // Only the first-level reply renders its own descendants list; deeper levels
+  // render flat (mentionTo provided) and never recurse children themselves.
+  const isTopLevel = depth === 1;
 
   return (
-    <div className="flex gap-2.5">
-      <div className="w-7 h-7 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">
-        {reply.avatar}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[13px] font-semibold text-foreground">{reply.author}</span>
-          <span className="text-[11px] text-muted-foreground">{reply.at}</span>
+    <>
+      <div className="flex gap-2.5">
+        <div className="w-7 h-7 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">
+          {reply.avatar}
         </div>
-        <p className="text-[13px] text-foreground leading-snug">{reply.text}</p>
-        <div className="flex items-center gap-4 text-[11px] text-muted-foreground mt-1 font-medium">
-          <span className="inline-flex items-center gap-1">
-            <ThumbsUp className="w-3 h-3" /> {reply.likes}
-          </span>
-          <button className="hover:text-foreground">Reply</button>
-        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[13px] font-semibold text-foreground">{reply.author}</span>
+            <span className="text-[11px] text-muted-foreground">{reply.at}</span>
+          </div>
+          <p className="text-[13px] text-foreground leading-snug">
+            {mentionHandle && <span className="text-primary font-medium">{mentionHandle} </span>}
+            {reply.text}
+          </p>
+          <div className="flex items-center gap-4 text-[11px] text-muted-foreground mt-1 font-medium">
+            <span className="inline-flex items-center gap-1">
+              <ThumbsUp className="w-3 h-3" /> {reply.likes}
+            </span>
+            <button className="hover:text-foreground">Reply</button>
+          </div>
 
-        {hasChildren && depth < maxDepth && (
-          <div className="mt-2">
-            {!open ? (
-              <button
-                onClick={() => setOpen(true)}
-                className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
-              >
-                <span className="inline-block w-6 h-px bg-muted-foreground/40" />
-                View {children.length} {children.length === 1 ? "reply" : "replies"}
-              </button>
-            ) : (
-              <div className="mt-2 pl-7 space-y-3">
-                {shown.map((c) => (
-                  <NestedReply key={c.id} reply={c} depth={depth + 1} />
-                ))}
-                {remaining > 0 && (
-                  <button
-                    onClick={() => setVisible((v) => v + STEP)}
-                    className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
-                  >
-                    <span className="inline-block w-6 h-px bg-muted-foreground/40" />
-                    View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"}
-                  </button>
-                )}
+          {isTopLevel && hasChildren && (
+            <div className="mt-2">
+              {!open ? (
                 <button
-                  onClick={() => { setOpen(false); setVisible(INITIAL); }}
+                  onClick={() => setOpen(true)}
                   className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
                 >
                   <span className="inline-block w-6 h-px bg-muted-foreground/40" />
-                  Hide replies
+                  View {descendants.length} {descendants.length === 1 ? "reply" : "replies"}
                 </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {hasChildren && depth >= maxDepth && (
-          <button className="mt-1 text-[11px] text-primary hover:underline font-medium">
-            Continue this thread →
-          </button>
-        )}
+              ) : null}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Flat descendants — same indent as their first-level ancestor */}
+      {isTopLevel && open && (
+        <>
+          {shown.map(({ node, parentAuthor }) => (
+            <NestedReply key={node.id} reply={node} depth={2} mentionTo={parentAuthor} />
+          ))}
+          {remaining > 0 && (
+            <button
+              onClick={() => setVisible((v) => v + STEP)}
+              className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
+            >
+              <span className="inline-block w-6 h-px bg-muted-foreground/40" />
+              View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"}
+            </button>
+          )}
+          <button
+            onClick={() => { setOpen(false); setVisible(INITIAL); }}
+            className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
+          >
+            <span className="inline-block w-6 h-px bg-muted-foreground/40" />
+            Hide replies
+          </button>
+        </>
+      )}
+    </>
   );
 }
 
