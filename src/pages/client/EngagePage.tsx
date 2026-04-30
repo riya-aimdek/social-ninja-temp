@@ -2169,7 +2169,7 @@ function CommentItem({
 
   const replies = comment.replies ?? [];
   const hasReplies = replies.length > 0;
-  const REPLIES_INITIAL = 3;
+  const REPLIES_INITIAL = 10;
   const REPLIES_STEP = 10;
   const [visibleReplies, setVisibleReplies] = useState(REPLIES_INITIAL);
   const shownReplies = replies.slice(0, visibleReplies);
@@ -2222,7 +2222,7 @@ function CommentItem({
                       onClick={() => setVisibleReplies((v) => v + REPLIES_STEP)}
                       className="text-[11px] text-primary hover:underline font-medium inline-flex items-center gap-1"
                     >
-                      ─── View {Math.min(remainingReplies, REPLIES_STEP)} more {remainingReplies === 1 ? "reply" : "replies"} ({remainingReplies} remaining) ▾
+                      ─── View {Math.min(remainingReplies, REPLIES_STEP)} more {remainingReplies === 1 ? "reply" : "replies"} ▾
                     </button>
                   )}
                   {visibleReplies > REPLIES_INITIAL && remainingReplies === 0 && (
@@ -2263,7 +2263,7 @@ function CommentItem({
 function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
   const children = reply.replies ?? [];
   const hasChildren = children.length > 0;
-  const INITIAL = 3;
+  const INITIAL = 10;
   const STEP = 10;
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(INITIAL);
@@ -2308,7 +2308,7 @@ function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
                     onClick={() => setVisible((v) => v + STEP)}
                     className="text-[11px] text-primary hover:underline font-medium"
                   >
-                    ─── View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"} ({remaining} remaining) ▾
+                    ─── View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"} ▾
                   </button>
                 )}
                 <button
