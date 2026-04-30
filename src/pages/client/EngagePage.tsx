@@ -2185,19 +2185,7 @@ function CommentItem({
               ) : (
                 <div className="mt-2 pl-4 border-l border-border space-y-2.5">
                   {shownReplies.map((r) => (
-                    <div key={r.id} className="flex gap-2">
-                      <div className="w-6 h-6 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">{r.avatar}</div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-foreground">{r.author}</span>
-                          <span className="text-[10px] text-muted-foreground">{r.at}</span>
-                        </div>
-                        <p className="text-[13px] text-foreground">{r.text}</p>
-                        <div className="text-[10px] text-muted-foreground mt-0.5 inline-flex items-center gap-1">
-                          <ThumbsUp className="w-2.5 h-2.5" /> {r.likes}
-                        </div>
-                      </div>
-                    </div>
+                    <NestedReply key={r.id} reply={r} depth={1} />
                   ))}
                   {remainingReplies > 0 && (
                     <button
