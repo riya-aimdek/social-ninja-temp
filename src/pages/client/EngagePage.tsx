@@ -1065,7 +1065,7 @@ export default function EngagePage() {
 
 
       {tab === "queue" && <ReplyQueueView comments={allComments} posts={posts} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
-      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} openContext={openContext} />}
+      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
       {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} openContext={openContext} />}
       {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} openContext={openContext} />}
@@ -1178,155 +1178,660 @@ function ReplyQueueView({
 }
 
 /* ──────────────────────────────────────────────────────────────
-   View 2 — Jira-style ORM Board
+   View 2 — ORM Board (unified list with status filter + bulk actions)
    ────────────────────────────────────────────────────────────── */
 
+const TEAM_MEMBERS = ["Sarah C.", "Priya S.", "Mike T.", "Alex R."];
+
+type BoardFilter = "all" | "pending" | "in_review" | "replied";
+
+type ReplyDraftState = {
+  open: boolean;
+  text: string;
+  isAi: boolean;
+};
+
 function BoardView({
-  comments, updateComment, openContext,
+  comments, updateComment, addReply, openContext,
 }: {
   comments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
   openContext: (commentId: string, postId: string) => void;
 }) {
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<Stage | null>(null);
+  const [filter, setFilter] = useState<BoardFilter>("pending");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [drafts, setDrafts] = useState<Record<string, ReplyDraftState>>({});
+  const [bulkAiOpen, setBulkAiOpen] = useState(false);
+  const [bulkDrafts, setBulkDrafts] = useState<Record<string, string>>({});
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const handleDrop = (stage: Stage) => {
-    if (draggingId) {
-      const card = comments.find((c) => c.id === draggingId);
-      if (card && card.stage !== stage) {
-        updateComment(draggingId, { stage });
-        toast.success(`Moved to ${STAGES.find((s) => s.id === stage)?.label}`);
-      }
-    }
-    setDraggingId(null);
-    setDropTarget(null);
+  // Counts (exclude escalated entirely — treat as urgent flag in pending/in_review)
+  const visibleAll = useMemo(
+    () => comments.filter((c) => c.stage !== "escalated" || true).map((c) =>
+      // Coerce escalated to in_review with urgent flag for this view's purposes
+      c.stage === "escalated" ? ({ ...c, stage: "in_review" as Stage, priority: "urgent" as Priority }) : c,
+    ),
+    [comments],
+  );
+
+  const counts = useMemo(() => ({
+    all: visibleAll.length,
+    pending: visibleAll.filter((c) => c.stage === "pending").length,
+    in_review: visibleAll.filter((c) => c.stage === "in_review").length,
+    replied: visibleAll.filter((c) => c.stage === "replied").length,
+  }), [visibleAll]);
+
+  const filtered = useMemo(() => {
+    const list = filter === "all" ? visibleAll : visibleAll.filter((c) => c.stage === filter);
+    // Urgent first
+    return [...list].sort((a, b) => {
+      const ua = a.priority === "urgent" ? 0 : 1;
+      const ub = b.priority === "urgent" ? 0 : 1;
+      if (ua !== ub) return ua - ub;
+      return 0;
+    });
+  }, [visibleAll, filter]);
+
+  // Clear selections that are no longer in the visible filter
+  useEffect(() => {
+    setSelected((prev) => {
+      const visibleIds = new Set(filtered.map((c) => c.id));
+      const next = new Set<string>();
+      prev.forEach((id) => { if (visibleIds.has(id)) next.add(id); });
+      return next.size === prev.size ? prev : next;
+    });
+  }, [filtered]);
+
+  const allSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
+  const someSelected = selected.size > 0;
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    setSelected((prev) => {
+      if (allSelected) return new Set();
+      const next = new Set(prev);
+      filtered.forEach((c) => next.add(c.id));
+      return next;
+    });
+  };
+  const clearSelection = () => setSelected(new Set());
+
+  const openDraft = (id: string, isAi: boolean, prefill = "") => {
+    setDrafts((prev) => ({ ...prev, [id]: { open: true, text: prefill, isAi } }));
+  };
+  const updateDraft = (id: string, patch: Partial<ReplyDraftState>) => {
+    setDrafts((prev) => ({ ...prev, [id]: { ...(prev[id] ?? { open: true, text: "", isAi: false }), ...patch } }));
+  };
+  const closeDraft = (id: string) => {
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
-  return (
-    <div className="space-y-4">
+  const sendReply = (c: Comment & { post: Post }) => {
+    const d = drafts[c.id];
+    const text = d?.text?.trim();
+    if (!text) {
+      toast.error("Reply is empty");
+      return;
+    }
+    addReply(c.id, text);
+    updateComment(c.id, { stage: "replied" });
+    closeDraft(c.id);
+  };
 
-      {/* Drag hint */}
-      <div className="flex items-center justify-end">
-        <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
-          <Zap className="w-3 h-3" /> Drag cards between columns — or use the ⋯ menu on each card to move or mark spam
-        </span>
+  const saveDraft = (c: Comment & { post: Post }) => {
+    const d = drafts[c.id];
+    const text = d?.text?.trim() ?? "";
+    if (!text) { toast.error("Nothing to save"); return; }
+    updateComment(c.id, { aiDraft: text, stage: "in_review" });
+    toast.success("Draft saved — moved to In Review");
+    closeDraft(c.id);
+  };
+
+  // Bulk operations
+  const bulkMoveInReview = (assignee?: string) => {
+    selected.forEach((id) => updateComment(id, { stage: "in_review", assignee: assignee ?? "Sarah C." }));
+    toast.success(`${selected.size} comment${selected.size === 1 ? "" : "s"} moved to In Review`);
+    clearSelection();
+  };
+
+  const bulkAssign = (assignee: string) => {
+    selected.forEach((id) => updateComment(id, { assignee }));
+    toast.success(`Assigned ${selected.size} to ${assignee}`);
+  };
+
+  const bulkMarkReplied = () => {
+    let blocked = 0;
+    selected.forEach((id) => {
+      const c = visibleAll.find((x) => x.id === id);
+      if (c && (c.aiDraft || drafts[id]?.text)) {
+        const text = (drafts[id]?.text ?? c.aiDraft ?? "").trim();
+        if (text) {
+          addReply(id, text);
+          updateComment(id, { stage: "replied" });
+          return;
+        }
+      }
+      blocked++;
+    });
+    if (blocked > 0) toast.error(`${blocked} skipped — no draft to send`);
+    clearSelection();
+  };
+
+  const bulkAiReply = () => {
+    const drafts: Record<string, string> = {};
+    selected.forEach((id) => {
+      const c = visibleAll.find((x) => x.id === id);
+      drafts[id] = c?.aiDraft ?? `Thanks for your comment, ${c?.author?.split(" ")[0] ?? "there"}! We appreciate you reaching out — we'll get back to you shortly.`;
+    });
+    setBulkDrafts(drafts);
+    setBulkAiOpen(true);
+  };
+
+  const bulkSendAll = () => {
+    Object.entries(bulkDrafts).forEach(([id, text]) => {
+      const t = text.trim();
+      if (!t) return;
+      addReply(id, t);
+      updateComment(id, { stage: "replied" });
+    });
+    toast.success(`Sent ${Object.keys(bulkDrafts).length} replies`);
+    setBulkAiOpen(false);
+    setBulkDrafts({});
+    clearSelection();
+  };
+
+  const toggleUrgent = (c: Comment & { post: Post }) => {
+    updateComment(c.id, { priority: c.priority === "urgent" ? "low" : "urgent" });
+  };
+
+  // SLA / Overdue helpers
+  const isOverdue = (c: Comment) => c.sla.breached || c.priority === "urgent" && c.stage !== "replied";
+
+  const FILTER_TABS: { id: BoardFilter; label: string; count: number; dot: string }[] = [
+    { id: "all", label: "All", count: counts.all, dot: "bg-muted-foreground" },
+    { id: "pending", label: "Pending", count: counts.pending, dot: "bg-info" },
+    { id: "in_review", label: "In Review", count: counts.in_review, dot: "bg-warning" },
+    { id: "replied", label: "Replied", count: counts.replied, dot: "bg-success" },
+  ];
+
+  return (
+    <div className="space-y-3">
+      {/* Status filter bar */}
+      <div className="flex flex-wrap items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {FILTER_TABS.map((t) => {
+            const active = filter === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setFilter(t.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                )}
+              >
+                <span className={cn("w-1.5 h-1.5 rounded-full", active ? "bg-primary-foreground" : t.dot)} />
+                {t.label}
+                <span className={cn(
+                  "tabular-nums text-[10px] px-1.5 py-0.5 rounded-full",
+                  active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground",
+                )}>{fmt(t.count)}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          <label className="inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              className="w-3.5 h-3.5 rounded border-border accent-primary"
+              checked={allSelected}
+              onChange={toggleAll}
+              aria-label="Select all visible"
+            />
+            Select all
+          </label>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {STAGES.map((stage) => {
-          const items = comments.filter((c) => c.stage === stage.id);
-          const isDropTarget = dropTarget === stage.id;
-          return (
-            <div
-              key={stage.id}
-              onDragOver={(e) => { e.preventDefault(); setDropTarget(stage.id); }}
-              onDragLeave={(e) => {
-                // Only clear if leaving the column entirely
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropTarget(null);
-              }}
-              onDrop={() => handleDrop(stage.id)}
-              className={cn(
-                "bg-muted/40 rounded-xl p-3 min-h-[480px] transition-colors",
-                isDropTarget && "bg-primary/10 ring-2 ring-primary/40",
-              )}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <span className={cn("w-2 h-2 rounded-full", stage.dot)} />
-                <h3 className="text-xs font-semibold text-foreground">{stage.label}</h3>
-                <span className="text-[10px] text-muted-foreground bg-card px-1.5 py-0.5 rounded">{fmt(items.length)}</span>
-              </div>
-              <div className="space-y-2">
-                {items.map((c) => {
-                  const sm = sentimentMeta[c.sentiment];
-                  const dragging = draggingId === c.id;
-                  return (
-                    <div
-                      key={c.id}
-                      draggable
-                      onDragStart={(e) => {
-                        setDraggingId(c.id);
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                      onDragEnd={() => { setDraggingId(null); setDropTarget(null); }}
+      {/* Bulk action bar — only when something selected */}
+      {someSelected && (
+        <div className="flex flex-wrap items-center gap-2 bg-primary/5 border border-primary/30 rounded-xl px-3 py-2 animate-fade-in">
+          <span className="text-xs font-semibold text-foreground inline-flex items-center gap-2">
+            <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 tabular-nums">{selected.size}</span>
+            selected
+            <button onClick={clearSelection} className="text-muted-foreground hover:text-foreground" aria-label="Clear selection">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </span>
+          <div className="h-4 w-px bg-border mx-1" />
+          <Button size="sm" className="h-7 text-xs" onClick={bulkAiReply}>
+            <Sparkles className="w-3 h-3 mr-1" /> Reply with AI
+          </Button>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => bulkMoveInReview()}>
+            <Users className="w-3 h-3 mr-1" /> Move to In Review
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={bulkMarkReplied}
+            disabled={!Array.from(selected).some((id) => {
+              const c = visibleAll.find((x) => x.id === id);
+              return !!(c?.aiDraft || drafts[id]?.text);
+            })}
+          >
+            <Check className="w-3 h-3 mr-1" /> Mark as Replied
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" className="h-7 text-xs">
+                Assign to <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Assign to</DropdownMenuLabel>
+              {TEAM_MEMBERS.map((m) => (
+                <DropdownMenuItem key={m} className="text-xs" onClick={() => bulkAssign(m)}>
+                  <Users className="w-3 h-3 mr-2" /> {m}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
+      {/* List */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {filtered.length === 0 ? (
+          <BoardEmptyState filter={filter} />
+        ) : (
+          <ul className="divide-y divide-border">
+            {filtered.map((c) => {
+              const sm = sentimentMeta[c.sentiment];
+              const isUrgent = c.priority === "urgent" && c.stage !== "replied";
+              const overdue = isOverdue(c);
+              const isSelected = selected.has(c.id);
+              const draft = drafts[c.id];
+              const isLong = c.text.length > 280;
+              const isExpanded = expanded.has(c.id);
+              const stageMeta = STAGES.find((s) => s.id === c.stage);
+
+              return (
+                <li
+                  key={c.id}
+                  className={cn(
+                    "relative transition-colors",
+                    isSelected ? "bg-primary/5" : "hover:bg-muted/30",
+                    isUrgent && "border-l-[3px] border-l-error",
+                  )}
+                >
+                  <div className="flex gap-3 p-3">
+                    {/* Checkbox */}
+                    <div className="flex-shrink-0 pt-1">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                        checked={isSelected}
+                        onChange={() => toggleOne(c.id)}
+                        aria-label={`Select comment from ${c.author}`}
+                      />
+                    </div>
+
+                    {/* Post thumbnail */}
+                    <button
                       onClick={() => openContext(c.id, c.post.id)}
-                      className={cn(
-                        "group bg-card border rounded-lg p-2.5 transition-all cursor-grab active:cursor-grabbing select-none",
-                        c.sla.breached ? "border-l-2 border-l-error border-border" : "border-border",
-                        dragging ? "opacity-40 rotate-1 shadow-lg" : "hover:border-border-hover hover:shadow-sm",
-                      )}
+                      className="flex-shrink-0 relative w-14 h-14 rounded-lg bg-muted overflow-hidden flex items-center justify-center text-2xl group/thumb"
+                      title={`View post: ${c.post.title}`}
                     >
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="text-[10px] font-mono text-muted-foreground">{c.id}</span>
+                      <span aria-hidden>{c.post.thumbnail}</span>
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-card border border-border flex items-center justify-center">
                         <PlatformIcon name={c.post.platform} className="w-3 h-3" />
-                        <span className={cn("text-[9px] px-1.5 py-0.5 rounded-full font-medium capitalize ml-auto", priorityStyles[c.priority])}>
-                          {c.priority}
+                      </div>
+                    </button>
+
+                    {/* Center content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Row 1 */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
+                          {c.avatar}
+                        </div>
+                        <span className="text-[13px] font-semibold text-foreground truncate">{c.author}</span>
+                        <span className="text-[12px] text-muted-foreground">·</span>
+                        <span className="text-[12px] text-muted-foreground tabular-nums">{c.at}</span>
+                        {isUrgent && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-error/15 text-error">
+                            <span className="w-1.5 h-1.5 rounded-full bg-error" /> Urgent
+                          </span>
+                        )}
+                        <div className="ml-auto flex items-center gap-2">
+                          {overdue && c.stage !== "replied" && (
+                            <span className="text-[10px] font-semibold text-error tabular-nums">
+                              OVERDUE {c.sla.dueIn}
+                            </span>
+                          )}
+                          {stageMeta && (
+                            <span className={cn(
+                              "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
+                              c.stage === "pending" && "bg-info/15 text-info",
+                              c.stage === "in_review" && "bg-warning/15 text-warning",
+                              c.stage === "replied" && "bg-success/15 text-success",
+                            )}>
+                              <span className={cn("w-1.5 h-1.5 rounded-full", stageMeta.dot)} />
+                              {stageMeta.label}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Row 2 */}
+                      <div className="flex items-center gap-2 mt-1 text-[11px]">
+                        <button
+                          onClick={() => openContext(c.id, c.post.id)}
+                          className="text-muted-foreground italic truncate hover:text-foreground hover:underline max-w-[60%]"
+                          title={c.post.title}
+                        >
+                          on "{c.post.title}"
+                        </button>
+                        <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
+                          <sm.Icon className="w-2.5 h-2.5" /> {sm.label}
                         </span>
+                      </div>
+
+                      {/* Row 3 — full comment */}
+                      <p className={cn(
+                        "mt-2 text-[13px] text-foreground whitespace-pre-wrap",
+                        !isExpanded && isLong && "line-clamp-4",
+                      )}>
+                        {c.text}
+                      </p>
+                      {isLong && (
+                        <button
+                          onClick={() => setExpanded((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(c.id)) next.delete(c.id); else next.add(c.id);
+                            return next;
+                          })}
+                          className="mt-1 text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+                        >
+                          {isExpanded ? "Show less" : "Show more"}
+                          <ChevronDown className={cn("w-3 h-3 transition-transform", isExpanded && "rotate-180")} />
+                        </button>
+                      )}
+
+                      {/* Row 4 — inline actions */}
+                      <div className="mt-2.5 flex items-center gap-1 flex-wrap">
+                        {c.stage === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => openDraft(c.id, true, c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`)}
+                            >
+                              <Sparkles className="w-3 h-3 mr-1" /> Reply with AI
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openDraft(c.id, false)}>
+                              <Edit3 className="w-3 h-3 mr-1" /> Write reply
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs"
+                              onClick={() => updateComment(c.id, { stage: "in_review", assignee: c.assignee ?? "Sarah C." })}
+                            >
+                              <Users className="w-3 h-3 mr-1" /> Move to In Review
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost" className="h-7 text-xs">
+                                  Assign to <ChevronDown className="w-3 h-3 ml-1" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                {TEAM_MEMBERS.map((m) => (
+                                  <DropdownMenuItem
+                                    key={m}
+                                    className="text-xs"
+                                    onClick={() => { updateComment(c.id, { assignee: m }); toast.success(`Assigned to ${m}`); }}
+                                  >
+                                    {m}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
+                        )}
+
+                        {c.stage === "in_review" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => openDraft(c.id, true, c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`)}
+                            >
+                              <Sparkles className="w-3 h-3 mr-1" /> Reply with AI
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openDraft(c.id, false, c.aiDraft ?? "")}>
+                              <Edit3 className="w-3 h-3 mr-1" /> Write reply
+                            </Button>
+                            {c.assignee && (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground px-2">
+                                <Users className="w-3 h-3" /> Assigned to <strong className="text-foreground font-medium">{c.assignee}</strong>
+                              </span>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost" className="h-7 text-xs">Reassign</Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                {TEAM_MEMBERS.map((m) => (
+                                  <DropdownMenuItem
+                                    key={m}
+                                    className="text-xs"
+                                    onClick={() => { updateComment(c.id, { assignee: m }); toast.success(`Reassigned to ${m}`); }}
+                                  >
+                                    {m}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
+                        )}
+
+                        {c.stage === "replied" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs"
+                              onClick={() => openContext(c.id, c.post.id)}
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" /> View reply
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openDraft(c.id, false)}>
+                              <Edit3 className="w-3 h-3 mr-1" /> Reply again
+                            </Button>
+                          </>
+                        )}
+
+                        {/* Three-dot menu */}
                         <DropdownMenu>
                           <DropdownMenuTrigger
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-5 h-5 rounded hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center justify-center -my-1 -mr-1"
-                            aria-label="Card actions"
+                            className="ml-auto w-7 h-7 rounded hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center justify-center"
+                            aria-label="More actions"
                           >
                             <MoreVertical className="w-3.5 h-3.5" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                              Move to
-                            </DropdownMenuLabel>
-                            {STAGES.map((s) => (
-                              <DropdownMenuItem
-                                key={s.id}
-                                disabled={s.id === c.stage}
-                                onClick={() => {
-                                  updateComment(c.id, { stage: s.id });
-                                  toast.success(`Moved to ${s.label}`);
-                                }}
-                                className="text-xs gap-2"
-                              >
-                                <span className={cn("w-2 h-2 rounded-full", s.dot)} />
-                                {s.label}
-                                {s.id === c.stage && <Check className="w-3 h-3 ml-auto text-muted-foreground" />}
-                              </DropdownMenuItem>
-                            ))}
-                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-xs gap-2" onClick={() => toggleUrgent(c)}>
+                              <AlertTriangle className="w-3 h-3" />
+                              {c.priority === "urgent" ? "Remove urgent" : "Flag as urgent"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs gap-2" onClick={() => toast.success("Comment hidden")}>
+                              <X className="w-3 h-3" /> Hide
+                            </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => {
-                                updateComment(c.id, { isSpam: true });
-                                toast.success("Marked as spam — moved to Spam Queue");
-                              }}
                               className="text-xs gap-2 text-error focus:text-error"
+                              onClick={() => { updateComment(c.id, { isSpam: true }); toast.success("Marked as spam"); }}
                             >
                               <Shield className="w-3 h-3" /> Mark as spam
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-xs gap-2"
+                              onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/comment/${c.id}`); toast.success("Link copied"); }}
+                            >
+                              <ExternalLink className="w-3 h-3" /> Copy link
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      <p className="text-[11px] text-muted-foreground italic line-clamp-1 mb-1">on "{c.post.title}"</p>
-                      <p className="text-xs font-medium text-foreground line-clamp-2 mb-2">{c.text}</p>
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
-                          <sm.Icon className="w-2.5 h-2.5" /> {sm.label}
-                        </span>
-                        <span className={cn("tabular-nums text-muted-foreground", c.sla.breached && "text-error font-semibold")}>{c.sla.dueIn}</span>
+                    </div>
+                  </div>
+
+                  {/* Inline reply expansion */}
+                  {draft?.open && (
+                    <div className="bg-muted/40 border-t border-border px-3 py-3 ml-[88px] mr-3 mb-3 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        {draft.isAi ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                            <Sparkles className="w-3 h-3" /> AI draft
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            <Edit3 className="w-3 h-3" /> Manual reply
+                          </span>
+                        )}
+                        <span className="text-[11px] text-muted-foreground">Replying to {c.author}</span>
+                        <button
+                          onClick={() => closeDraft(c.id)}
+                          className="ml-auto text-muted-foreground hover:text-foreground"
+                          aria-label="Close reply"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <textarea
+                        value={draft.text}
+                        onChange={(e) => updateDraft(c.id, { text: e.target.value })}
+                        placeholder="Write your reply..."
+                        rows={3}
+                        className="w-full text-sm bg-background border border-border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="text-[11px] text-muted-foreground tabular-nums">{draft.text.length}/280</span>
+                        <button className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                          <ImageIcon className="w-3 h-3" /> Attach
+                        </button>
+                        <button className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                          📋 Saved replies
+                        </button>
+                        {draft.isAi && (
+                          <button
+                            onClick={() => updateDraft(c.id, { text: `Thanks for reaching out, ${c.author.split(" ")[0]}! We hear you and our team is on it. Appreciate your patience.` })}
+                            className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            <RefreshCw className="w-3 h-3" /> Regenerate
+                          </button>
+                        )}
+                        <div className="ml-auto flex items-center gap-1.5">
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => closeDraft(c.id)}>Discard</Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => saveDraft(c)}>Save as draft</Button>
+                          <Button size="sm" className="h-7 text-xs" onClick={() => sendReply(c)}>
+                            <Send className="w-3 h-3 mr-1" /> Send reply
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
-                {items.length === 0 && (
-                  <div className={cn(
-                    "text-[11px] text-center py-6 rounded-lg border border-dashed transition-colors",
-                    isDropTarget ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground",
-                  )}>
-                    {isDropTarget ? "Drop here" : "Empty"}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
+
+      {/* Bulk AI review modal */}
+      <Dialog open={bulkAiOpen} onOpenChange={(o) => { setBulkAiOpen(o); if (!o) setBulkDrafts({}); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>AI replies for {Object.keys(bulkDrafts).length} selected comment{Object.keys(bulkDrafts).length === 1 ? "" : "s"}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-3 -mx-2 px-2">
+            {Object.entries(bulkDrafts).map(([id, text]) => {
+              const c = visibleAll.find((x) => x.id === id);
+              if (!c) return null;
+              return (
+                <div key={id} className="border border-border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-semibold flex items-center justify-center">{c.avatar}</div>
+                    <span className="text-xs font-semibold">{c.author}</span>
+                    <PlatformIcon name={c.post.platform} className="w-3 h-3 ml-auto" />
+                  </div>
+                  <p className="text-xs text-muted-foreground italic line-clamp-2">"{c.text}"</p>
+                  <textarea
+                    value={text}
+                    onChange={(e) => setBulkDrafts((prev) => ({ ...prev, [id]: e.target.value }))}
+                    rows={2}
+                    className="w-full text-xs bg-muted/40 border border-border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" size="sm" onClick={() => { setBulkAiOpen(false); setBulkDrafts({}); }}>Cancel</Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              // Send individually — same as send all but with toast per item
+              Object.entries(bulkDrafts).forEach(([id, text]) => {
+                const t = text.trim();
+                if (!t) return;
+                addReply(id, t);
+                updateComment(id, { stage: "replied" });
+              });
+              toast.success("Sent individually");
+              setBulkAiOpen(false);
+              setBulkDrafts({});
+              clearSelection();
+            }}>Send individually</Button>
+            <Button size="sm" onClick={bulkSendAll}>
+              <Send className="w-3 h-3 mr-1" /> Send all replies
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function BoardEmptyState({ filter }: { filter: BoardFilter }) {
+  const meta: Record<BoardFilter, { Icon: typeof CheckCircle2; title: string; sub: string; iconCls: string }> = {
+    all: { Icon: Inbox, title: "No comments", sub: "Nothing in the board right now.", iconCls: "text-muted-foreground" },
+    pending: { Icon: CheckCircle2, title: "All caught up!", sub: "No pending comments remaining.", iconCls: "text-success" },
+    in_review: { Icon: Users, title: "No comments are currently being reviewed", sub: "Items moved to In Review will appear here.", iconCls: "text-muted-foreground" },
+    replied: { Icon: MessageSquare, title: "No replies sent yet", sub: "Start from the Pending view.", iconCls: "text-muted-foreground" },
+  };
+  const m = meta[filter];
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <m.Icon className={cn("w-10 h-10 mb-3", m.iconCls)} />
+      <h3 className="text-sm font-semibold text-foreground">{m.title}</h3>
+      <p className="text-xs text-muted-foreground mt-1">{m.sub}</p>
     </div>
   );
 }
