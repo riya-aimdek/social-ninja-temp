@@ -1087,7 +1087,7 @@ export default function EngagePage() {
    ────────────────────────────────────────────────────────────── */
 
 function ReplyQueueView({
-  comments, posts, updateComment, addReply, openContext,
+  comments, posts, updateComment, addReply,
 }: {
   comments: (Comment & { post: Post })[];
   posts: Post[];
@@ -1095,118 +1095,82 @@ function ReplyQueueView({
   addReply: (parentId: string, text: string) => void;
   openContext: (commentId: string, postId: string) => void;
 }) {
-  const queue = useMemo(
-    () => comments.filter((c) => c.stage === "pending" || c.stage === "in_review"),
-    [comments],
-  );
-  const [activeId, setActiveId] = useState<string | null>(queue[0]?.id ?? null);
+  // Posts that have at least one comment awaiting review.
+  const awaitingPostIds = useMemo(() => {
+    const ids = new Set<string>();
+    comments.forEach((c) => {
+      if (c.stage === "pending" || c.stage === "in_review") ids.add(c.post.id);
+    });
+    return ids;
+  }, [comments]);
 
-  // Re-sync active card if the current one leaves the queue.
-  const active = queue.find((c) => c.id === activeId) ?? queue[0] ?? null;
-  const effectiveActiveId = active?.id ?? null;
-
-  // Look up the live post (so newly added replies show up in the thread).
-  const activePost = useMemo(
-    () => (active ? posts.find((p) => p.id === active.post.id) ?? active.post : null),
-    [active, posts],
+  const enriched = useMemo(
+    () => posts
+      .filter((p) => awaitingPostIds.has(p.id))
+      .map((p) => ({ post: p, ...computePostStats(p) })),
+    [posts, awaitingPostIds],
   );
+
+  const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
+  const [sort, setSort] = useState<PostSort>("most_urgent");
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(enriched[0]?.post.id ?? null);
+
+  const visiblePosts = useMemo(() => {
+    const list = enriched.filter((e) => platformFilter === "all" || e.post.platform === platformFilter);
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      switch (sort) {
+        case "most_comments": return b.stats.total - a.stats.total;
+        case "most_urgent": return b.stats.urgent - a.stats.urgent;
+        case "awaiting": return (b.stats.awaiting + b.stats.inReview) - (a.stats.awaiting + a.stats.inReview);
+        default: return 0;
+      }
+    });
+    return sorted;
+  }, [enriched, platformFilter, sort]);
 
   const selected = useMemo(
-    () => (activePost ? { post: activePost, ...computePostStats(activePost) } : null),
-    [activePost],
+    () => enriched.find((e) => e.post.id === selectedPostId) ?? visiblePosts[0] ?? null,
+    [enriched, visiblePosts, selectedPostId],
   );
 
-  const advance = () => {
-    const next = queue.find((c) => c.id !== effectiveActiveId);
-    setActiveId(next?.id ?? null);
-  };
+  // Default-highlight the first awaiting comment of the selected post so the
+  // reviewer lands directly on something actionable (with its AI draft loaded).
+  const highlightId = useMemo(() => {
+    if (!selected) return null;
+    const first = selected.items.find((c) => !c.isSpam && (c.stage === "pending" || c.stage === "in_review"));
+    return first?.id ?? null;
+  }, [selected]);
+
+  if (enriched.length === 0) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-12 text-center">
+        <CheckCircle2 className="w-10 h-10 text-success mx-auto mb-3" />
+        <p className="text-sm font-medium text-foreground">Inbox zero! 🎉</p>
+        <p className="text-xs text-muted-foreground">No posts have comments awaiting review.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-12 gap-4 h-[calc(100vh-380px)] min-h-[560px]">
-      {/* Left: queue list */}
-      <div className="col-span-4 bg-card rounded-xl border border-border overflow-y-auto">
-        <div className="px-4 py-2.5 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
-          <div className="flex items-center gap-2">
-            <Bot className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-semibold text-foreground">AI Reply Queue</span>
-          </div>
-          <span className="text-[10px] text-muted-foreground">
-            <span className="font-bold text-foreground tabular-nums">{fmt(queue.length)}</span> awaiting
-          </span>
-        </div>
-        {queue.map((c) => {
-          const sm = sentimentMeta[c.sentiment];
-          const isActive = effectiveActiveId === c.id;
-          return (
-            <button
-              key={c.id}
-              onClick={() => setActiveId(c.id)}
-              className={cn(
-                "w-full text-left px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors",
-                isActive && "bg-primary/5 border-l-2 border-l-primary",
-              )}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-foreground">
-                  {c.avatar}
-                </div>
-                <span className="text-xs font-semibold text-foreground truncate">{c.author}</span>
-                <PlatformIcon name={c.post.platform} />
-                <span className={cn("ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize", priorityStyles[c.priority])}>
-                  {c.priority}
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground line-clamp-1 pl-9 italic">
-                on{" "}
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); openContext(c.id, c.post.id); }}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); openContext(c.id, c.post.id); } }}
-                  className="not-italic underline decoration-dotted underline-offset-2 hover:text-foreground cursor-pointer"
-                >
-                  "{c.post.title}"
-                </span>
-              </p>
-              <p className="text-xs text-foreground line-clamp-2 pl-9 mt-1">{c.text}</p>
-              <div className="flex items-center gap-2 mt-1.5 pl-9">
-                <span className={cn("inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
-                  <sm.Icon className="w-2.5 h-2.5" /> {sm.label}
-                </span>
-                {c.trigger && <span className="text-[10px] text-muted-foreground">· {triggerLabel[c.trigger]}</span>}
-                <span className={cn("ml-auto text-[10px] tabular-nums", c.sla.breached ? "text-error font-semibold" : "text-muted-foreground")}>
-                  {c.sla.dueIn}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-        {queue.length === 0 && (
-          <div className="p-10 text-center">
-            <CheckCircle2 className="w-8 h-8 text-success mx-auto mb-2" />
-            <p className="text-sm font-medium text-foreground">Inbox zero! 🎉</p>
-            <p className="text-xs text-muted-foreground">No comments awaiting review.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Right: same thread view as Comment Threads, with this comment highlighted */}
-      <div className="col-span-8 min-h-0">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 h-[calc(100vh-380px)] min-h-[600px]">
+        <PostListColumn
+          posts={visiblePosts}
+          totalCount={enriched.length}
+          platformFilter={platformFilter}
+          setPlatformFilter={setPlatformFilter}
+          sort={sort}
+          setSort={setSort}
+          selectedId={selected?.post.id ?? ""}
+          onSelect={setSelectedPostId}
+        />
         <ThreadDetailColumn
+          key={selected?.post.id ?? "empty"}
           selected={selected}
-          updateComment={(id, patch) => {
-            updateComment(id, patch);
-            // When the active card transitions out of the queue (e.g. replied/escalated),
-            // automatically advance to the next awaiting item.
-            if (id === effectiveActiveId && patch.stage && patch.stage !== "pending" && patch.stage !== "in_review") {
-              setTimeout(advance, 0);
-            }
-          }}
-          addReply={(parentId, text) => {
-            addReply(parentId, text);
-            if (parentId === effectiveActiveId) setTimeout(advance, 0);
-          }}
-          highlightCommentId={effectiveActiveId}
+          updateComment={updateComment}
+          addReply={addReply}
+          highlightCommentId={highlightId}
         />
       </div>
     </div>
