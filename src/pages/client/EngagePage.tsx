@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Inbox, KanbanSquare, MessageSquare, AlertTriangle, Clock, CheckCircle2,
   Facebook, Instagram, Linkedin, Twitter, Send, Sparkles, Filter, Search,
@@ -1064,7 +1064,7 @@ export default function EngagePage() {
       </Dialog>
 
 
-      {tab === "queue" && <ReplyQueueView comments={allComments} updateComment={updateComment} openContext={openContext} />}
+      {tab === "queue" && <ReplyQueueView comments={allComments} posts={posts} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} openContext={openContext} />}
       {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} openContext={openContext} />}
@@ -1087,10 +1087,12 @@ export default function EngagePage() {
    ────────────────────────────────────────────────────────────── */
 
 function ReplyQueueView({
-  comments, updateComment, openContext,
+  comments, posts, updateComment, addReply, openContext,
 }: {
   comments: (Comment & { post: Post })[];
+  posts: Post[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
+  addReply: (parentId: string, text: string) => void;
   openContext: (commentId: string, postId: string) => void;
 }) {
   const queue = useMemo(
@@ -1099,82 +1101,49 @@ function ReplyQueueView({
   );
   const [activeId, setActiveId] = useState<string | null>(queue[0]?.id ?? null);
 
-  // Re-sync active card when the queue changes (e.g. platform filter / spam / approve)
-  const active = queue.find((c) => c.id === activeId) ?? queue[0];
+  // Re-sync active card if the current one leaves the queue.
+  const active = queue.find((c) => c.id === activeId) ?? queue[0] ?? null;
   const effectiveActiveId = active?.id ?? null;
 
-  const [draft, setDraft] = useState(active?.aiDraft ?? "");
-  const [lastDraftFor, setLastDraftFor] = useState<string | null>(effectiveActiveId);
-  if (effectiveActiveId !== lastDraftFor) {
-    // Active card swapped out from under us — refresh draft to match.
-    setLastDraftFor(effectiveActiveId);
-    setDraft(active?.aiDraft ?? "");
-  }
+  // Look up the live post (so newly added replies show up in the thread).
+  const activePost = useMemo(
+    () => (active ? posts.find((p) => p.id === active.post.id) ?? active.post : null),
+    [active, posts],
+  );
 
-  const switchTo = (id: string) => {
-    setActiveId(id);
-    const next = comments.find((c) => c.id === id);
-    setDraft(next?.aiDraft ?? "");
-    setLastDraftFor(id);
-  };
+  const selected = useMemo(
+    () => (activePost ? { post: activePost, ...computePostStats(activePost) } : null),
+    [activePost],
+  );
 
   const advance = () => {
-    const next = queue.find((c) => c.id !== active?.id);
-    if (next) switchTo(next.id);
-    else setActiveId(null);
-  };
-
-  const approve = () => {
-    if (!active) return;
-    updateComment(active.id, { stage: "replied" });
-    toast.success("Reply approved & sent");
-    advance();
-  };
-
-  const escalate = () => {
-    if (!active) return;
-    updateComment(active.id, { stage: "escalated" });
-    toast.warning("Escalated to senior ORM");
-    advance();
-  };
-
-  const markSpam = () => {
-    if (!active) return;
-    updateComment(active.id, { isSpam: true });
-    toast.success("Marked as spam");
-    advance();
-  };
-
-  const regenerate = () => {
-    if (!active) return;
-    const variants = [
-      `Hey ${active.author.split(" ")[0]}! Thanks for reaching out — really appreciate you taking the time. Let me look into this for you.`,
-      `Thanks ${active.author.split(" ")[0]} 🙌 Great point — we'll get back to you with details shortly.`,
-      `Hi ${active.author.split(" ")[0]}! Love hearing from you. Quick reply incoming with everything you need.`,
-    ];
-    setDraft(variants[Math.floor(Math.random() * variants.length)]);
-    toast.success("New AI variant generated");
+    const next = queue.find((c) => c.id !== effectiveActiveId);
+    setActiveId(next?.id ?? null);
   };
 
   return (
-    <div className="grid grid-cols-12 gap-4 h-[calc(100vh-380px)] min-h-[520px]">
-      {/* Left: queue */}
-      <div className="col-span-5 bg-card rounded-xl border border-border overflow-y-auto">
+    <div className="grid grid-cols-12 gap-4 h-[calc(100vh-380px)] min-h-[560px]">
+      {/* Left: queue list */}
+      <div className="col-span-4 bg-card rounded-xl border border-border overflow-y-auto">
         <div className="px-4 py-2.5 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
-          <span className="text-xs font-semibold text-foreground">Awaiting review</span>
+          <div className="flex items-center gap-2">
+            <Bot className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-semibold text-foreground">AI Reply Queue</span>
+          </div>
           <span className="text-[10px] text-muted-foreground">
-            <span className="font-bold text-foreground tabular-nums">{fmt(queue.length)}</span> comments
+            <span className="font-bold text-foreground tabular-nums">{fmt(queue.length)}</span> awaiting
           </span>
         </div>
         {queue.map((c) => {
           const sm = sentimentMeta[c.sentiment];
+          const isActive = effectiveActiveId === c.id;
           return (
             <button
               key={c.id}
-              onClick={() => switchTo(c.id)}
+              onClick={() => setActiveId(c.id)}
               className={cn(
                 "w-full text-left px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors",
-                active?.id === c.id && "bg-primary/5 border-l-2 border-l-primary",
+                isActive && "bg-primary/5 border-l-2 border-l-primary",
               )}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -1221,100 +1190,24 @@ function ReplyQueueView({
         )}
       </div>
 
-      {/* Right: AI draft review */}
-      <div className="col-span-7 bg-card rounded-xl border border-border flex flex-col overflow-hidden">
-        {!active ? (
-          <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Select a comment to review</div>
-        ) : (
-          <>
-            {/* Post context */}
-            <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-card border border-border flex items-center justify-center text-lg">
-                {active.post.thumbnail}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <PlatformIcon name={active.post.platform} />
-                  <p className="text-xs font-semibold text-foreground truncate">{active.post.title}</p>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {active.post.commentCount} comments · {active.post.newCount} new · {active.post.publishedAt}
-                </p>
-              </div>
-              {active.post.platform === "GBP" && (
-                <span className="text-[10px] px-2 py-1 rounded-full bg-warning/15 text-warning font-medium flex items-center gap-1">
-                  <Zap className="w-3 h-3" /> Local SEO impact
-                </span>
-              )}
-            </div>
-
-            {/* Comment */}
-            <div className="p-4 border-b border-border">
-              <div className="flex gap-3">
-                <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-foreground flex-shrink-0">
-                  {active.avatar}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold text-foreground">{active.author}</span>
-                    <span className="text-[10px] text-muted-foreground">· {active.at} ago</span>
-                    {active.trigger && (
-                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                        {triggerLabel[active.trigger]}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-foreground">{active.text}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* AI draft */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                  <Bot className="w-3.5 h-3.5 text-primary" /> AI-drafted reply
-                  <span className="text-[10px] font-normal text-muted-foreground">· edit before sending</span>
-                </div>
-                <button onClick={regenerate} className="text-[11px] text-primary inline-flex items-center gap-1 hover:underline">
-                  <RefreshCw className="w-3 h-3" /> Regenerate
-                </button>
-              </div>
-              <textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                rows={5}
-                className="w-full px-3 py-2 rounded-lg border border-input text-sm bg-background outline-none focus:ring-2 focus:ring-ring resize-none"
-              />
-              <div className="flex flex-wrap gap-1.5">
-                {["More empathetic", "Shorter", "More formal", "Add emoji"].map((p) => (
-                  <button key={p} onClick={() => toast.success(`Tone adjusted: ${p}`)}
-                    className="text-[11px] px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
-                    <Sparkles className="w-2.5 h-2.5 inline mr-1" />{p}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="p-3 border-t border-border flex items-center gap-2 bg-muted/30">
-              <Button variant="outline" size="sm" onClick={escalate} className="gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-error" /> Escalate
-              </Button>
-              <Button variant="ghost" size="sm" onClick={markSpam} className="gap-1.5 text-muted-foreground">
-                <Trash2 className="w-3.5 h-3.5" /> Mark spam
-              </Button>
-              <div className="ml-auto flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Edit3 className="w-3.5 h-3.5" /> Save draft
-                </Button>
-                <Button size="sm" onClick={approve} className="gap-1.5">
-                  <Check className="w-3.5 h-3.5" /> Approve & send
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
+      {/* Right: same thread view as Comment Threads, with this comment highlighted */}
+      <div className="col-span-8 min-h-0">
+        <ThreadDetailColumn
+          selected={selected}
+          updateComment={(id, patch) => {
+            updateComment(id, patch);
+            // When the active card transitions out of the queue (e.g. replied/escalated),
+            // automatically advance to the next awaiting item.
+            if (id === effectiveActiveId && patch.stage && patch.stage !== "pending" && patch.stage !== "in_review") {
+              setTimeout(advance, 0);
+            }
+          }}
+          addReply={(parentId, text) => {
+            addReply(parentId, text);
+            if (parentId === effectiveActiveId) setTimeout(advance, 0);
+          }}
+          highlightCommentId={effectiveActiveId}
+        />
       </div>
     </div>
   );
@@ -1855,11 +1748,12 @@ function platformBgClass(p: Platform) {
 const PAGE_SIZE = 30;
 
 function ThreadDetailColumn({
-  selected, updateComment, addReply,
+  selected, updateComment, addReply, highlightCommentId,
 }: {
   selected: { post: Post; items: Comment[]; isNewById: Set<string>; isUrgentById: Set<string>; stats: PostOrmStats } | null;
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
+  highlightCommentId?: string | null;
 }) {
   const [filter, setFilter] = useState<ThreadOrmFilter>("all");
   const [sortMode, setSortMode] = useState<"top" | "newest">("newest");
@@ -1869,6 +1763,24 @@ function ThreadDetailColumn({
   const [showAi, setShowAi] = useState(false);
   const [showSpam, setShowSpam] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const highlightRef = useRef<HTMLDivElement | null>(null);
+
+  // When the queue swaps the highlighted comment, scroll it into view,
+  // auto-target it for reply, and pre-load its AI draft.
+  useEffect(() => {
+    if (highlightCommentId && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    if (highlightCommentId && selected) {
+      const target = selected.items.find((c) => c.id === highlightCommentId);
+      if (target) {
+        setReplyTarget(target);
+        setReply(target.aiDraft ?? "");
+        setShowAi(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightCommentId, selected?.post.id]);
 
   if (!selected) {
     return (
@@ -2004,20 +1916,28 @@ function ThreadDetailColumn({
               </div>
             )}
 
-            {visible.map((c) => (
-              <CommentItem
-                key={c.id}
-                comment={c}
-                isNew={isNewById.has(c.id)}
-                isUrgent={isUrgentById.has(c.id)}
-                expanded={expandedReplies.has(c.id)}
-                onToggleReplies={() => toggleReplies(c.id)}
-                onReply={() => { setReplyTarget(c); setReply(""); }}
-                onAssign={() => { updateComment(c.id, { stage: "in_review", assignee: "Priya S." }); toast.success("Assigned to Priya S."); }}
-                onMarkReplied={() => { updateComment(c.id, { stage: "replied" }); toast.success("Marked as replied"); }}
-                onFlag={() => { updateComment(c.id, { isSpam: true }); toast.success("Flagged"); }}
-              />
-            ))}
+            {visible.map((c) => {
+              const isHighlighted = highlightCommentId === c.id;
+              return (
+                <div
+                  key={c.id}
+                  ref={isHighlighted ? highlightRef : undefined}
+                  className={cn(isHighlighted && "ring-2 ring-primary/60 ring-inset bg-primary/5 transition-colors")}
+                >
+                  <CommentItem
+                    comment={c}
+                    isNew={isNewById.has(c.id)}
+                    isUrgent={isUrgentById.has(c.id)}
+                    expanded={expandedReplies.has(c.id)}
+                    onToggleReplies={() => toggleReplies(c.id)}
+                    onReply={() => { setReplyTarget(c); setReply(""); }}
+                    onAssign={() => { updateComment(c.id, { stage: "in_review", assignee: "Priya S." }); toast.success("Assigned to Priya S."); }}
+                    onMarkReplied={() => { updateComment(c.id, { stage: "replied" }); toast.success("Marked as replied"); }}
+                    onFlag={() => { updateComment(c.id, { isSpam: true }); toast.success("Flagged"); }}
+                  />
+                </div>
+              );
+            })}
 
             {remaining > 0 && (
               <div className="py-3 flex justify-center">
