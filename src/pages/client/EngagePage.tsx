@@ -1498,6 +1498,29 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
     }
     const ageHours = i + 1;
     const age = ageHours < 24 ? `${ageHours}h` : `${Math.floor(ageHours / 24)}d`;
+
+    // Every 5th filler comment becomes a "hot" thread with 12–18 nested replies
+    // so the >10 replies UX is visible.
+    let replies: Comment[] | undefined;
+    if (i > 0 && i % 5 === 0) {
+      const replyCount = 12 + (i % 7); // 12–18
+      replies = Array.from({ length: replyCount }, (_, j) => {
+        const rs = FILLER_SAMPLES[(i + j + 3) % FILLER_SAMPLES.length];
+        return {
+          id: `${id}-R-${j}`,
+          author: rs.author,
+          avatar: rs.avatar,
+          text: rs.text,
+          at: `${j + 1}h`,
+          sentiment: rs.sentiment,
+          likes: ((j * 3) % 22),
+          stage: "replied" as Stage,
+          priority: "low",
+          sla: { dueIn: "—", breached: false },
+        };
+      });
+    }
+
     return {
       id,
       author: s.author, avatar: s.avatar, text: s.text,
@@ -1508,6 +1531,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
       assignee: undefined,
       priority: "low",
       sla: { dueIn: stage === "replied" ? "—" : `${1 + (i % 6)}h ${(i * 7) % 60}m`, breached: false },
+      replies,
     };
   });
   return { items: [...real, ...filler], isNewById };
