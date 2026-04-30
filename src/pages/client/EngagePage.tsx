@@ -2208,6 +2208,50 @@ function platformBgClass(p: Platform) {
   }
 }
 
+/** Image-style post preview with platform pin badge.
+ *  Renders the post's thumbnail emoji as the "photo subject" over a soft
+ *  platform-tinted gradient so it reads like a real image preview, not an icon. */
+function PostThumb({ post, size = "md", className }: { post: Post; size?: "sm" | "md" | "lg"; className?: string }) {
+  const sz =
+    size === "sm" ? "w-12 h-12 text-xl"
+    : size === "lg" ? "w-20 h-20 text-4xl"
+    : "w-14 h-14 text-2xl";
+  const badge =
+    size === "sm" ? "w-4 h-4" : size === "lg" ? "w-6 h-6" : "w-5 h-5";
+  const badgeIcon =
+    size === "sm" ? "w-2.5 h-2.5" : size === "lg" ? "w-3.5 h-3.5" : "w-3 h-3";
+  const hasMedia = !!post.thumbnail && post.thumbnail.trim() !== "";
+
+  return (
+    <div className={cn("relative flex-shrink-0", className)}>
+      <div
+        className={cn(
+          "rounded-lg overflow-hidden border border-border flex items-center justify-center shadow-sm",
+          sz,
+          platformBgClass(post.platform),
+        )}
+        style={{
+          backgroundImage: hasMedia
+            ? "linear-gradient(135deg, hsl(var(--background)) 0%, transparent 60%)"
+            : undefined,
+        }}
+      >
+        {hasMedia ? (
+          <span aria-hidden className="drop-shadow-sm">{post.thumbnail}</span>
+        ) : (
+          <PlatformIcon name={post.platform} className="w-4 h-4 text-muted-foreground" />
+        )}
+      </div>
+      <div className={cn(
+        "absolute -bottom-1 -right-1 rounded-full bg-card border border-border flex items-center justify-center",
+        badge,
+      )}>
+        <PlatformIcon name={post.platform} className={badgeIcon} />
+      </div>
+    </div>
+  );
+}
+
 /* ── Right column ──────────────────────────────────────────────── */
 
 const PAGE_SIZE = 30;
