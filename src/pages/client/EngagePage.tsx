@@ -1506,6 +1506,38 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
       const replyCount = 12 + (i % 7); // 12–18
       replies = Array.from({ length: replyCount }, (_, j) => {
         const rs = FILLER_SAMPLES[(i + j + 3) % FILLER_SAMPLES.length];
+        // Some replies (every 3rd) get their own nested replies (depth 2),
+        // and the first nested reply itself gets depth-3 children — to
+        // demonstrate recursive threads at every level.
+        let nested: Comment[] | undefined;
+        if (j > 0 && j % 3 === 0) {
+          const nestedCount = 8 + (j % 6); // 8–13 (some > 10 to show pagination)
+          nested = Array.from({ length: nestedCount }, (_, k) => {
+            const ns = FILLER_SAMPLES[(i + j + k + 5) % FILLER_SAMPLES.length];
+            let deep: Comment[] | undefined;
+            if (k === 0) {
+              const deepCount = 4 + (k % 3);
+              deep = Array.from({ length: deepCount }, (_, m) => {
+                const ds = FILLER_SAMPLES[(i + j + k + m + 7) % FILLER_SAMPLES.length];
+                return {
+                  id: `${id}-R-${j}-N-${k}-D-${m}`,
+                  author: ds.author, avatar: ds.avatar, text: ds.text,
+                  at: `${m + 1}m`, sentiment: ds.sentiment,
+                  likes: ((m * 2) % 9), stage: "replied" as Stage,
+                  priority: "low", sla: { dueIn: "—", breached: false },
+                };
+              });
+            }
+            return {
+              id: `${id}-R-${j}-N-${k}`,
+              author: ns.author, avatar: ns.avatar, text: ns.text,
+              at: `${k + 1}m`, sentiment: ns.sentiment,
+              likes: ((k * 2) % 14), stage: "replied" as Stage,
+              priority: "low", sla: { dueIn: "—", breached: false },
+              replies: deep,
+            };
+          });
+        }
         return {
           id: `${id}-R-${j}`,
           author: rs.author,
@@ -1517,6 +1549,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
           stage: "replied" as Stage,
           priority: "low",
           sla: { dueIn: "—", breached: false },
+          replies: nested,
         };
       });
     }
@@ -1696,25 +1729,7 @@ function PostListColumn({
         </DropdownMenu>
       </div>
 
-      <div className="px-3 py-2 border-b border-border overflow-x-auto">
-        <div className="flex items-center gap-1.5 min-w-max">
-          {PLATFORM_PILLS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPlatformFilter(p)}
-              className={cn(
-                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors whitespace-nowrap",
-                platformFilter === p
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-card text-muted-foreground border-border hover:text-foreground",
-              )}
-            >
-              {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
-              {p === "all" ? "All" : p === "GBP" ? "Google" : p === "Twitter" ? "Twitter/X" : p}
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       <div className="overflow-y-auto flex-1">
         {posts.length === 0 ? (
@@ -2170,19 +2185,7 @@ function CommentItem({
               ) : (
                 <div className="mt-2 pl-4 border-l border-border space-y-2.5">
                   {shownReplies.map((r) => (
-                    <div key={r.id} className="flex gap-2">
-                      <div className="w-6 h-6 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">{r.avatar}</div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-foreground">{r.author}</span>
-                          <span className="text-[10px] text-muted-foreground">{r.at}</span>
-                        </div>
-                        <p className="text-[13px] text-foreground">{r.text}</p>
-                        <div className="text-[10px] text-muted-foreground mt-0.5 inline-flex items-center gap-1">
-                          <ThumbsUp className="w-2.5 h-2.5" /> {r.likes}
-                        </div>
-                      </div>
-                    </div>
+                    <NestedReply key={r.id} reply={r} depth={1} />
                   ))}
                   {remainingReplies > 0 && (
                     <button
@@ -2220,6 +2223,80 @@ function CommentItem({
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Recursive nested reply — renders one reply and its own children with
+ *  paginated "View N more" controls at every depth. */
+function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
+  const children = reply.replies ?? [];
+  const hasChildren = children.length > 0;
+  const INITIAL = 3;
+  const STEP = 10;
+  const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(INITIAL);
+  const shown = children.slice(0, visible);
+  const remaining = Math.max(0, children.length - visible);
+  const maxDepth = 4;
+
+  return (
+    <div className="flex gap-2">
+      <div className="w-6 h-6 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">
+        {reply.avatar}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-foreground">{reply.author}</span>
+          <span className="text-[10px] text-muted-foreground">{reply.at}</span>
+        </div>
+        <p className="text-[13px] text-foreground">{reply.text}</p>
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5">
+          <span className="inline-flex items-center gap-1">
+            <ThumbsUp className="w-2.5 h-2.5" /> {reply.likes}
+          </span>
+          <button className="hover:text-foreground font-medium">Reply</button>
+        </div>
+
+        {hasChildren && depth < maxDepth && (
+          <div className="mt-2">
+            {!open ? (
+              <button
+                onClick={() => setOpen(true)}
+                className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+              >
+                ─── View {children.length} {children.length === 1 ? "reply" : "replies"} ▾
+              </button>
+            ) : (
+              <div className="mt-1.5 pl-3 border-l border-border space-y-2.5">
+                {shown.map((c) => (
+                  <NestedReply key={c.id} reply={c} depth={depth + 1} />
+                ))}
+                {remaining > 0 && (
+                  <button
+                    onClick={() => setVisible((v) => v + STEP)}
+                    className="text-[11px] text-primary hover:underline font-medium"
+                  >
+                    ─── View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"} ({remaining} remaining) ▾
+                  </button>
+                )}
+                <button
+                  onClick={() => { setOpen(false); setVisible(INITIAL); }}
+                  className="text-[11px] text-muted-foreground hover:text-foreground font-medium block"
+                >
+                  Hide replies ▴
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {hasChildren && depth >= maxDepth && (
+          <button className="mt-1 text-[11px] text-primary hover:underline font-medium">
+            Continue this thread →
+          </button>
+        )}
       </div>
     </div>
   );
