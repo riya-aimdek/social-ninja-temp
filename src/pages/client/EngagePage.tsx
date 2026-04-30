@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Inbox, KanbanSquare, MessageSquare, AlertTriangle, Clock, CheckCircle2,
   Facebook, Instagram, Linkedin, Twitter, Send, Sparkles, Filter, Search,
