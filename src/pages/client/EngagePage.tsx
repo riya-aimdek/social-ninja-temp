@@ -552,7 +552,7 @@ const REPLY_TEMPLATES: ReplyTemplate[] = [
 type Tab = "board" | "threads" | "sentiment" | "spam" | "variants";
 
 const TABS: { id: Tab; label: string; Icon: typeof Inbox; description: string }[] = [
-  { id: "board", label: "ORM Board", Icon: KanbanSquare, description: "Jira-style workload view" },
+  { id: "board", label: "Comment Board", Icon: KanbanSquare, description: "Unified list view of all comments" },
   { id: "threads", label: "Posts", Icon: ListTree, description: "Browse posts and their comment threads" },
   { id: "sentiment", label: "Sentiment Review", Icon: Smile, description: "Audit & correct AI sentiment tags" },
   { id: "spam", label: "Spam Queue", Icon: Shield, description: "Filtered comments awaiting review" },
