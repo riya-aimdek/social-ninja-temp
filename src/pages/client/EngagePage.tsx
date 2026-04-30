@@ -2228,6 +2228,80 @@ function CommentItem({
   );
 }
 
+/** Recursive nested reply — renders one reply and its own children with
+ *  paginated "View N more" controls at every depth. */
+function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
+  const children = reply.replies ?? [];
+  const hasChildren = children.length > 0;
+  const INITIAL = 3;
+  const STEP = 10;
+  const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(INITIAL);
+  const shown = children.slice(0, visible);
+  const remaining = Math.max(0, children.length - visible);
+  const maxDepth = 4;
+
+  return (
+    <div className="flex gap-2">
+      <div className="w-6 h-6 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">
+        {reply.avatar}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-foreground">{reply.author}</span>
+          <span className="text-[10px] text-muted-foreground">{reply.at}</span>
+        </div>
+        <p className="text-[13px] text-foreground">{reply.text}</p>
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5">
+          <span className="inline-flex items-center gap-1">
+            <ThumbsUp className="w-2.5 h-2.5" /> {reply.likes}
+          </span>
+          <button className="hover:text-foreground font-medium">Reply</button>
+        </div>
+
+        {hasChildren && depth < maxDepth && (
+          <div className="mt-2">
+            {!open ? (
+              <button
+                onClick={() => setOpen(true)}
+                className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+              >
+                ─── View {children.length} {children.length === 1 ? "reply" : "replies"} ▾
+              </button>
+            ) : (
+              <div className="mt-1.5 pl-3 border-l border-border space-y-2.5">
+                {shown.map((c) => (
+                  <NestedReply key={c.id} reply={c} depth={depth + 1} />
+                ))}
+                {remaining > 0 && (
+                  <button
+                    onClick={() => setVisible((v) => v + STEP)}
+                    className="text-[11px] text-primary hover:underline font-medium"
+                  >
+                    ─── View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"} ({remaining} remaining) ▾
+                  </button>
+                )}
+                <button
+                  onClick={() => { setOpen(false); setVisible(INITIAL); }}
+                  className="text-[11px] text-muted-foreground hover:text-foreground font-medium block"
+                >
+                  Hide replies ▴
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {hasChildren && depth >= maxDepth && (
+          <button className="mt-1 text-[11px] text-primary hover:underline font-medium">
+            Continue this thread →
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ──────────────────────────────────────────────────────────────
    View 4 — Sentiment review & correction
    ────────────────────────────────────────────────────────────── */
