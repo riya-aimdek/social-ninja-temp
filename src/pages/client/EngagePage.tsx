@@ -1154,7 +1154,7 @@ function ReplyQueueView({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 h-[calc(100vh-380px)] min-h-[600px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 h-[calc(100vh-200px)] min-h-[760px]">
         <PostListColumn
           posts={visiblePosts}
           totalCount={enriched.length}
@@ -1549,7 +1549,7 @@ function ThreadsView({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 h-[calc(100vh-380px)] min-h-[600px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 h-[calc(100vh-200px)] min-h-[760px]">
         <PostListColumn
           posts={visiblePosts}
           totalCount={enriched.length}
