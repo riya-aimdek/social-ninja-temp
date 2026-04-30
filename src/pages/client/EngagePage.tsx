@@ -1719,81 +1719,53 @@ function PostListCard({
   selected: boolean;
   onClick: () => void;
 }) {
-  // Decide which pills to show (max 3, awaiting first)
-  const pills: { key: string; label: string; cls: string }[] = [];
-  if (stats.awaiting > 0) pills.push({ key: "awaiting", label: `Awaiting reply ${stats.awaiting}`, cls: "bg-warning/15 text-warning" });
-  if (stats.urgent > 0) pills.push({ key: "urgent", label: `Urgent`, cls: "bg-error/15 text-error" });
-  if (stats.newCount > 0) pills.push({ key: "new", label: `New ${stats.newCount}`, cls: "bg-info/15 text-info" });
-  if (stats.inReview > 0) pills.push({ key: "review", label: `In review ${stats.inReview}`, cls: "bg-warning/10 text-warning" });
-  if (stats.spam > 0) pills.push({ key: "spam", label: `Spam ${stats.spam}`, cls: "bg-muted text-muted-foreground" });
-  if (stats.allReplied) {
-    pills.length = 0;
-    pills.push({ key: "done", label: "All replied", cls: "bg-success/15 text-success" });
-  }
-  const visible = pills.slice(0, 3);
-  const overflow = Math.max(0, pills.length - 3);
-
   const isTextOnly = !post.thumbnail || post.thumbnail.trim() === "";
+  const hasUnreplied = stats.awaiting + stats.inReview > 0;
+  const dotCls = stats.urgent > 0
+    ? "bg-error"
+    : hasUnreplied
+      ? "bg-warning"
+      : "bg-success";
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        "w-full text-left px-4 py-3 border-b border-border transition-colors relative",
+        "w-full text-left px-3 py-3 border-b border-border transition-colors flex gap-3 items-start",
         selected
-          ? "bg-primary/5 border-l-[3px] border-l-primary pl-[13px]"
+          ? "bg-primary/5 border-l-[3px] border-l-primary pl-[9px]"
           : "hover:bg-muted/40 border-l-[3px] border-l-transparent",
       )}
     >
-      {stats.newCount > 0 && !selected && (
-        <span className="absolute left-1 top-4 w-1.5 h-1.5 rounded-full bg-primary" aria-label="Has new comments" />
-      )}
-
-      {/* Row 1 — identity */}
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
-        <PlatformIcon name={post.platform} className="w-3.5 h-3.5" />
-        <span className="font-medium">@yourbrand</span>
-        <span className="ml-auto inline-flex items-center gap-1">
-          <Clock className="w-3 h-3" /> {post.publishedAt}
-        </span>
-      </div>
-
-      {/* Row 2 — content */}
+      {/* Thumbnail */}
       {isTextOnly ? (
-        <div className="border-l-2 border-primary/40 pl-3 mb-2">
-          <p className="text-[13px] italic text-foreground line-clamp-2 leading-snug">{post.title}</p>
+        <div className="w-12 h-12 rounded-md flex-shrink-0 bg-muted/60 flex items-center justify-center">
+          <PlatformIcon name={post.platform} className="w-4 h-4 text-muted-foreground" />
         </div>
       ) : (
-        <div className="flex gap-2.5 mb-2">
-          <div className={cn(
-            "w-14 h-14 rounded-md flex-shrink-0 border border-border flex items-center justify-center text-2xl overflow-hidden",
-            platformBgClass(post.platform),
-          )}>
-            <span>{post.thumbnail}</span>
-          </div>
-          <p className="text-[13px] text-foreground line-clamp-2 leading-snug flex-1 min-w-0">{post.title}</p>
+        <div className={cn(
+          "w-12 h-12 rounded-md flex-shrink-0 border border-border flex items-center justify-center text-xl overflow-hidden",
+          platformBgClass(post.platform),
+        )}>
+          <span>{post.thumbnail}</span>
         </div>
       )}
 
-      {/* Row 3 — pills */}
-      {visible.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap mb-2">
-          {visible.map((p) => (
-            <span key={p.key} className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", p.cls)}>
-              {p.label}
-            </span>
-          ))}
-          {overflow > 0 && (
-            <span className="text-[10px] text-muted-foreground">+{overflow} more</span>
+      {/* Body */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-0.5">
+          <PlatformIcon name={post.platform} className="w-3 h-3" />
+          <span>{post.publishedAt}</span>
+          <span className={cn("ml-auto w-1.5 h-1.5 rounded-full", dotCls)} aria-hidden />
+        </div>
+        <p className="text-[13px] text-foreground line-clamp-2 leading-snug mb-1">{post.title}</p>
+        <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+          <MessageSquare className="w-3 h-3" />
+          {fmt(stats.total)} comments
+          {hasUnreplied && (
+            <span className="ml-1 text-warning font-medium">· {stats.awaiting + stats.inReview} pending</span>
           )}
         </div>
-      )}
-
-      {/* Row 4 — stats */}
-      <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" />{fmt(stats.total)}</span>
-        <span>·</span>
-        <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{fmt(post.commentCount * 8 + 124)}</span>
       </div>
     </button>
   );
