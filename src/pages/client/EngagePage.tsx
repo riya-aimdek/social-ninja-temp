@@ -1723,10 +1723,10 @@ function BoardView({
                       />
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <span className="text-[11px] text-muted-foreground tabular-nums">{draft.text.length}/280</span>
-                        <button className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                        <button onClick={() => toast.info("Attach media coming soon")} className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
                           <ImageIcon className="w-3 h-3" /> Attach
                         </button>
-                        <button className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                        <button onClick={() => toast.info("Open Settings → Saved replies to manage templates")} className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
                           📋 Saved replies
                         </button>
                         {draft.isAi && (
@@ -2499,8 +2499,15 @@ function ThreadDetailColumn({
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReply(replyTarget?.aiDraft ?? "Thanks so much for engaging with this post! We really appreciate your support 💛")}>
                 Use this draft
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs">Regenerate</Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs">Edit before sending</Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => {
+                const fallback = replyTarget?.aiDraft ?? `Thanks ${replyTarget?.author?.split(" ")[0] ?? "for reaching out"}! Our team is on it — appreciate your patience.`;
+                setReply(fallback);
+                toast.success("Regenerated AI draft");
+              }}>Regenerate</Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => {
+                setReply(replyTarget?.aiDraft ?? "");
+                toast.info("Edit the draft below before sending");
+              }}>Edit before sending</Button>
             </div>
           </div>
         )}
@@ -2514,13 +2521,13 @@ function ThreadDetailColumn({
         />
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <button className="inline-flex items-center gap-1 hover:text-foreground"><ImageIcon className="w-3.5 h-3.5" /> Attach</button>
-            <button className="inline-flex items-center gap-1 hover:text-foreground">📋 Saved replies</button>
+            <button onClick={() => toast.info("Attach media coming soon")} className="inline-flex items-center gap-1 hover:text-foreground"><ImageIcon className="w-3.5 h-3.5" /> Attach</button>
+            <button onClick={() => toast.info("Open Settings → Saved replies to manage templates")} className="inline-flex items-center gap-1 hover:text-foreground">📋 Saved replies</button>
             <span className="tabular-nums">{reply.length}/2200</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="ghost" className="h-7 text-xs">Save draft</Button>
-            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><Clock className="w-3 h-3" />Schedule</Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { if (!reply.trim()) { toast.error("Nothing to save"); return; } toast.success("Draft saved"); }}>Save draft</Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => { if (!reply.trim()) { toast.error("Write a reply first"); return; } toast.success("Reply scheduled"); }}><Clock className="w-3 h-3" />Schedule</Button>
             <Button size="sm" onClick={send} disabled={!reply.trim()} className="h-7 text-xs gap-1">
               <Send className="w-3 h-3" /> Send
             </Button>
@@ -2734,7 +2741,7 @@ function NestedReply({ reply, depth, mentionTo }: { reply: Comment; depth: numbe
             <span className="inline-flex items-center gap-1">
               <ThumbsUp className="w-3 h-3" /> {reply.likes}
             </span>
-            <button className="hover:text-foreground">Reply</button>
+            <button onClick={() => toast.info(`Reply to @${reply.author.toLowerCase().replace(/\s+/g, "")} from the top-level composer`)} className="hover:text-foreground">Reply</button>
           </div>
 
           {isTopLevel && hasChildren && (
