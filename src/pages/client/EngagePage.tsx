@@ -2308,7 +2308,7 @@ function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
                     onClick={() => setVisible((v) => v + STEP)}
                     className="text-[11px] text-primary hover:underline font-medium"
                   >
-                    ─── View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"} ({remaining} remaining) ▾
+                    ─── View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"} ▾
                   </button>
                 )}
                 <button
