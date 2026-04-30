@@ -2169,7 +2169,7 @@ function CommentItem({
 
   const replies = comment.replies ?? [];
   const hasReplies = replies.length > 0;
-  const REPLIES_INITIAL = 3;
+  const REPLIES_INITIAL = 10;
   const REPLIES_STEP = 10;
   const [visibleReplies, setVisibleReplies] = useState(REPLIES_INITIAL);
   const shownReplies = replies.slice(0, visibleReplies);
