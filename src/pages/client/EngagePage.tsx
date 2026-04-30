@@ -2263,7 +2263,7 @@ function CommentItem({
 function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
   const children = reply.replies ?? [];
   const hasChildren = children.length > 0;
-  const INITIAL = 3;
+  const INITIAL = 10;
   const STEP = 10;
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(INITIAL);
