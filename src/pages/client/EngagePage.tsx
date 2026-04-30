@@ -1498,6 +1498,29 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
     }
     const ageHours = i + 1;
     const age = ageHours < 24 ? `${ageHours}h` : `${Math.floor(ageHours / 24)}d`;
+
+    // Every 5th filler comment becomes a "hot" thread with 12–18 nested replies
+    // so the >10 replies UX is visible.
+    let replies: Comment[] | undefined;
+    if (i > 0 && i % 5 === 0) {
+      const replyCount = 12 + (i % 7); // 12–18
+      replies = Array.from({ length: replyCount }, (_, j) => {
+        const rs = FILLER_SAMPLES[(i + j + 3) % FILLER_SAMPLES.length];
+        return {
+          id: `${id}-R-${j}`,
+          author: rs.author,
+          avatar: rs.avatar,
+          text: rs.text,
+          at: `${j + 1}h`,
+          sentiment: rs.sentiment,
+          likes: ((j * 3) % 22),
+          stage: "replied" as Stage,
+          priority: "low",
+          sla: { dueIn: "—", breached: false },
+        };
+      });
+    }
+
     return {
       id,
       author: s.author, avatar: s.avatar, text: s.text,
@@ -1508,6 +1531,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
       assignee: undefined,
       priority: "low",
       sla: { dueIn: stage === "replied" ? "—" : `${1 + (i % 6)}h ${(i * 7) % 60}m`, breached: false },
+      replies,
     };
   });
   return { items: [...real, ...filler], isNewById };
@@ -2100,6 +2124,11 @@ function CommentItem({
 
   const replies = comment.replies ?? [];
   const hasReplies = replies.length > 0;
+  const REPLIES_INITIAL = 3;
+  const REPLIES_STEP = 10;
+  const [visibleReplies, setVisibleReplies] = useState(REPLIES_INITIAL);
+  const shownReplies = replies.slice(0, visibleReplies);
+  const remainingReplies = Math.max(0, replies.length - visibleReplies);
 
   return (
     <div className={cn("px-4 py-3", isUrgent && "border-l-[3px] border-l-error bg-error/5")}>
@@ -2140,7 +2169,7 @@ function CommentItem({
                 </button>
               ) : (
                 <div className="mt-2 pl-4 border-l border-border space-y-2.5">
-                  {replies.slice(0, 3).map((r) => (
+                  {shownReplies.map((r) => (
                     <div key={r.id} className="flex gap-2">
                       <div className="w-6 h-6 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">{r.avatar}</div>
                       <div className="min-w-0 flex-1">
@@ -2155,9 +2184,20 @@ function CommentItem({
                       </div>
                     </div>
                   ))}
-                  {replies.length > 3 && (
-                    <button className="text-[11px] text-muted-foreground hover:text-foreground font-medium">
-                      Load {replies.length - 3} more {replies.length - 3 === 1 ? "reply" : "replies"}
+                  {remainingReplies > 0 && (
+                    <button
+                      onClick={() => setVisibleReplies((v) => v + REPLIES_STEP)}
+                      className="text-[11px] text-primary hover:underline font-medium inline-flex items-center gap-1"
+                    >
+                      ─── View {Math.min(remainingReplies, REPLIES_STEP)} more {remainingReplies === 1 ? "reply" : "replies"} ({remainingReplies} remaining) ▾
+                    </button>
+                  )}
+                  {visibleReplies > REPLIES_INITIAL && remainingReplies === 0 && (
+                    <button
+                      onClick={() => setVisibleReplies(REPLIES_INITIAL)}
+                      className="text-[11px] text-muted-foreground hover:text-foreground font-medium block"
+                    >
+                      Show fewer replies ▴
                     </button>
                   )}
                   <button onClick={onToggleReplies} className="text-[11px] text-muted-foreground hover:text-foreground font-medium block">
