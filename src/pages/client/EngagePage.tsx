@@ -1858,15 +1858,6 @@ function ThreadDetailColumn({
     setShowAi(false);
   };
 
-  const FILTER_PILLS: { id: ThreadOrmFilter; label: string; count: number; dot?: string }[] = [
-    { id: "all", label: "All", count: stats.total },
-    { id: "new", label: "New", count: stats.newCount, dot: "bg-info" },
-    { id: "awaiting", label: "Awaiting reply", count: stats.awaiting, dot: "bg-warning" },
-    { id: "urgent", label: "Urgent", count: stats.urgent, dot: "bg-error" },
-    { id: "in_review", label: "In review", count: stats.inReview, dot: "bg-warning" },
-    { id: "replied", label: "Replied", count: stats.replied, dot: "bg-success" },
-    { id: "spam", label: "Spam", count: stats.spam, dot: "bg-muted-foreground" },
-  ];
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
