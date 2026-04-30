@@ -1065,7 +1065,7 @@ export default function EngagePage() {
 
 
       {tab === "queue" && <ReplyQueueView comments={allComments} posts={posts} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
-      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} openContext={openContext} />}
+      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
       {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} openContext={openContext} />}
       {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} openContext={openContext} />}
