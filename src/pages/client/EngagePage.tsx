@@ -1719,81 +1719,53 @@ function PostListCard({
   selected: boolean;
   onClick: () => void;
 }) {
-  // Decide which pills to show (max 3, awaiting first)
-  const pills: { key: string; label: string; cls: string }[] = [];
-  if (stats.awaiting > 0) pills.push({ key: "awaiting", label: `Awaiting reply ${stats.awaiting}`, cls: "bg-warning/15 text-warning" });
-  if (stats.urgent > 0) pills.push({ key: "urgent", label: `Urgent`, cls: "bg-error/15 text-error" });
-  if (stats.newCount > 0) pills.push({ key: "new", label: `New ${stats.newCount}`, cls: "bg-info/15 text-info" });
-  if (stats.inReview > 0) pills.push({ key: "review", label: `In review ${stats.inReview}`, cls: "bg-warning/10 text-warning" });
-  if (stats.spam > 0) pills.push({ key: "spam", label: `Spam ${stats.spam}`, cls: "bg-muted text-muted-foreground" });
-  if (stats.allReplied) {
-    pills.length = 0;
-    pills.push({ key: "done", label: "All replied", cls: "bg-success/15 text-success" });
-  }
-  const visible = pills.slice(0, 3);
-  const overflow = Math.max(0, pills.length - 3);
-
   const isTextOnly = !post.thumbnail || post.thumbnail.trim() === "";
+  const hasUnreplied = stats.awaiting + stats.inReview > 0;
+  const dotCls = stats.urgent > 0
+    ? "bg-error"
+    : hasUnreplied
+      ? "bg-warning"
+      : "bg-success";
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        "w-full text-left px-4 py-3 border-b border-border transition-colors relative",
+        "w-full text-left px-3 py-3 border-b border-border transition-colors flex gap-3 items-start",
         selected
-          ? "bg-primary/5 border-l-[3px] border-l-primary pl-[13px]"
+          ? "bg-primary/5 border-l-[3px] border-l-primary pl-[9px]"
           : "hover:bg-muted/40 border-l-[3px] border-l-transparent",
       )}
     >
-      {stats.newCount > 0 && !selected && (
-        <span className="absolute left-1 top-4 w-1.5 h-1.5 rounded-full bg-primary" aria-label="Has new comments" />
-      )}
-
-      {/* Row 1 — identity */}
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
-        <PlatformIcon name={post.platform} className="w-3.5 h-3.5" />
-        <span className="font-medium">@yourbrand</span>
-        <span className="ml-auto inline-flex items-center gap-1">
-          <Clock className="w-3 h-3" /> {post.publishedAt}
-        </span>
-      </div>
-
-      {/* Row 2 — content */}
+      {/* Thumbnail */}
       {isTextOnly ? (
-        <div className="border-l-2 border-primary/40 pl-3 mb-2">
-          <p className="text-[13px] italic text-foreground line-clamp-2 leading-snug">{post.title}</p>
+        <div className="w-12 h-12 rounded-md flex-shrink-0 bg-muted/60 flex items-center justify-center">
+          <PlatformIcon name={post.platform} className="w-4 h-4 text-muted-foreground" />
         </div>
       ) : (
-        <div className="flex gap-2.5 mb-2">
-          <div className={cn(
-            "w-14 h-14 rounded-md flex-shrink-0 border border-border flex items-center justify-center text-2xl overflow-hidden",
-            platformBgClass(post.platform),
-          )}>
-            <span>{post.thumbnail}</span>
-          </div>
-          <p className="text-[13px] text-foreground line-clamp-2 leading-snug flex-1 min-w-0">{post.title}</p>
+        <div className={cn(
+          "w-12 h-12 rounded-md flex-shrink-0 border border-border flex items-center justify-center text-xl overflow-hidden",
+          platformBgClass(post.platform),
+        )}>
+          <span>{post.thumbnail}</span>
         </div>
       )}
 
-      {/* Row 3 — pills */}
-      {visible.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap mb-2">
-          {visible.map((p) => (
-            <span key={p.key} className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", p.cls)}>
-              {p.label}
-            </span>
-          ))}
-          {overflow > 0 && (
-            <span className="text-[10px] text-muted-foreground">+{overflow} more</span>
+      {/* Body */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-0.5">
+          <PlatformIcon name={post.platform} className="w-3 h-3" />
+          <span>{post.publishedAt}</span>
+          <span className={cn("ml-auto w-1.5 h-1.5 rounded-full", dotCls)} aria-hidden />
+        </div>
+        <p className="text-[13px] text-foreground line-clamp-2 leading-snug mb-1">{post.title}</p>
+        <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+          <MessageSquare className="w-3 h-3" />
+          {fmt(stats.total)} comments
+          {hasUnreplied && (
+            <span className="ml-1 text-warning font-medium">· {stats.awaiting + stats.inReview} pending</span>
           )}
         </div>
-      )}
-
-      {/* Row 4 — stats */}
-      <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" />{fmt(stats.total)}</span>
-        <span>·</span>
-        <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{fmt(post.commentCount * 8 + 124)}</span>
       </div>
     </button>
   );
@@ -1886,106 +1858,69 @@ function ThreadDetailColumn({
     setShowAi(false);
   };
 
-  const FILTER_PILLS: { id: ThreadOrmFilter; label: string; count: number; dot?: string }[] = [
-    { id: "all", label: "All", count: stats.total },
-    { id: "new", label: "New", count: stats.newCount, dot: "bg-info" },
-    { id: "awaiting", label: "Awaiting reply", count: stats.awaiting, dot: "bg-warning" },
-    { id: "urgent", label: "Urgent", count: stats.urgent, dot: "bg-error" },
-    { id: "in_review", label: "In review", count: stats.inReview, dot: "bg-warning" },
-    { id: "replied", label: "Replied", count: stats.replied, dot: "bg-success" },
-    { id: "spam", label: "Spam", count: stats.spam, dot: "bg-muted-foreground" },
-  ];
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
-      {/* Sticky post context header */}
+      {/* Post context header (with inline status pills) */}
       <div className="border-b border-border bg-muted/20 p-4 flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <PlatformIcon name={post.platform} />
-            <span className="font-medium text-foreground">@yourbrand</span>
-            <span>·</span>
-            <Clock className="w-3 h-3" />
-            <span>{post.publishedAt}</span>
-          </div>
-          <button className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-            Open original <ExternalLink className="w-3 h-3" />
-          </button>
-        </div>
+        <div className="flex items-start gap-3 mb-3">
+          {post.thumbnail ? (
+            <div className={cn(
+              "w-20 h-20 rounded-lg border border-border flex items-center justify-center overflow-hidden flex-shrink-0",
+              platformBgClass(post.platform),
+            )}>
+              <span className="text-4xl">{post.thumbnail}</span>
+            </div>
+          ) : (
+            <div className="w-20 h-20 rounded-lg border border-border bg-muted/60 flex items-center justify-center flex-shrink-0">
+              <PlatformIcon name={post.platform} className="w-6 h-6 text-muted-foreground" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-1">
+              <PlatformIcon name={post.platform} className="w-3.5 h-3.5" />
+              <span className="font-medium text-foreground">@yourbrand</span>
+              <span>·</span>
+              <Clock className="w-3 h-3" />
+              <span>{post.publishedAt}</span>
+              <button className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
+                Open <ExternalLink className="w-3 h-3" />
+              </button>
+            </div>
+            <p className="text-sm text-foreground leading-snug line-clamp-3 mb-2">{post.title}</p>
 
-        {post.thumbnail ? (
-          <div className={cn(
-            "w-full rounded-lg border border-border flex items-center justify-center overflow-hidden mb-3",
-            platformBgClass(post.platform),
-          )} style={{ maxHeight: 200, height: 160 }}>
-            <span className="text-7xl">{post.thumbnail}</span>
-          </div>
-        ) : (
-          <div className="border-l-2 border-primary/40 pl-3 mb-3">
-            <p className="text-sm italic text-foreground">{post.title}</p>
-          </div>
-        )}
-
-        {post.thumbnail && (
-          <p className="text-sm text-foreground leading-snug line-clamp-3 mb-2">{post.title}</p>
-        )}
-
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
-          <span className="inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" />{fmt(stats.total)} comments</span>
-          <span>·</span>
-          <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{fmt(post.commentCount * 8 + 124)} likes</span>
-          <span>·</span>
-          <span>{fmt(post.commentCount * 2 + 18)} shares</span>
-          <span>·</span>
-          <span>{fmt(post.commentCount * 38 + 1240)} reach</span>
-        </div>
-      </div>
-
-      {/* Sticky triage bar */}
-      <div className="border-b border-border px-4 py-2.5 flex-shrink-0 flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-          {FILTER_PILLS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => { setFilter(f.id); setVisibleCount(PAGE_SIZE); }}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors",
-                filter === f.id
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-card text-muted-foreground border-border hover:text-foreground",
+            {/* Status pills inside the post */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-foreground">
+                <MessageSquare className="w-3 h-3" /> {fmt(stats.total)}
+              </span>
+              {stats.urgent > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-error/15 text-error">
+                  Urgent {stats.urgent}
+                </span>
               )}
-            >
-              {f.dot && <span className={cn("w-1.5 h-1.5 rounded-full", f.dot)} />}
-              {f.label}
-              <span className="tabular-nums opacity-70">{fmt(f.count)}</span>
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm" variant="outline" className="h-7 text-xs"
-            onClick={() => {
-              nonSpam.forEach((c) => { if (c.stage === "pending") updateComment(c.id, { stage: "in_review", assignee: "Priya S." }); });
-              toast.success("All pending comments assigned");
-            }}
-          >Assign all pending</Button>
-          <Button
-            size="sm" variant="ghost" className="h-7 text-xs"
-            onClick={() => {
-              nonSpam.forEach((c) => { if (c.stage !== "replied") updateComment(c.id, { stage: "replied" }); });
-              toast.success("All comments marked replied");
-            }}
-          >Mark all replied</Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-7 w-7"><MoreVertical className="w-3.5 h-3.5" /></Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Export comments</DropdownMenuItem>
-              <DropdownMenuItem>Hide post from inbox</DropdownMenuItem>
-              <DropdownMenuItem className="text-error">Report post</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              {stats.awaiting > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning/15 text-warning">
+                  Awaiting reply {stats.awaiting}
+                </span>
+              )}
+              {stats.inReview > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning/10 text-warning">
+                  In review {stats.inReview}
+                </span>
+              )}
+              {stats.replied > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success">
+                  Replied {stats.replied}
+                </span>
+              )}
+              {stats.allReplied && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success">
+                  All replied
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
