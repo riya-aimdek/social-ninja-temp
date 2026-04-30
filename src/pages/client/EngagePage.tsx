@@ -2025,7 +2025,7 @@ function ThreadDetailColumn({
                   className="text-sm text-muted-foreground hover:text-foreground font-medium"
                   onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
                 >
-                  Load 30 more comments {remaining < PAGE_SIZE ? `(${remaining} remaining)` : `(${remaining} remaining)`}
+                  Load {Math.min(remaining, PAGE_SIZE)} more {remaining === 1 ? "comment" : "comments"}
                 </button>
               </div>
             )}
