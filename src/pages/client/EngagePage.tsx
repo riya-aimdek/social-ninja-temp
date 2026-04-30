@@ -2013,20 +2013,28 @@ function ThreadDetailColumn({
               </div>
             )}
 
-            {visible.map((c) => (
-              <CommentItem
-                key={c.id}
-                comment={c}
-                isNew={isNewById.has(c.id)}
-                isUrgent={isUrgentById.has(c.id)}
-                expanded={expandedReplies.has(c.id)}
-                onToggleReplies={() => toggleReplies(c.id)}
-                onReply={() => { setReplyTarget(c); setReply(""); }}
-                onAssign={() => { updateComment(c.id, { stage: "in_review", assignee: "Priya S." }); toast.success("Assigned to Priya S."); }}
-                onMarkReplied={() => { updateComment(c.id, { stage: "replied" }); toast.success("Marked as replied"); }}
-                onFlag={() => { updateComment(c.id, { isSpam: true }); toast.success("Flagged"); }}
-              />
-            ))}
+            {visible.map((c) => {
+              const isHighlighted = highlightCommentId === c.id;
+              return (
+                <div
+                  key={c.id}
+                  ref={isHighlighted ? highlightRef : undefined}
+                  className={cn(isHighlighted && "ring-2 ring-primary/60 ring-inset bg-primary/5 transition-colors")}
+                >
+                  <CommentItem
+                    comment={c}
+                    isNew={isNewById.has(c.id)}
+                    isUrgent={isUrgentById.has(c.id)}
+                    expanded={expandedReplies.has(c.id)}
+                    onToggleReplies={() => toggleReplies(c.id)}
+                    onReply={() => { setReplyTarget(c); setReply(""); }}
+                    onAssign={() => { updateComment(c.id, { stage: "in_review", assignee: "Priya S." }); toast.success("Assigned to Priya S."); }}
+                    onMarkReplied={() => { updateComment(c.id, { stage: "replied" }); toast.success("Marked as replied"); }}
+                    onFlag={() => { updateComment(c.id, { isSpam: true }); toast.success("Flagged"); }}
+                  />
+                </div>
+              );
+            })}
 
             {remaining > 0 && (
               <div className="py-3 flex justify-center">
