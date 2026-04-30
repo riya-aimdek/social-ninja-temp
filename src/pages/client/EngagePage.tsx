@@ -2395,10 +2395,17 @@ function ThreadDetailColumn({
                     isUrgent={isUrgentById.has(c.id)}
                     expanded={expandedReplies.has(c.id)}
                     onToggleReplies={() => toggleReplies(c.id)}
-                    onReply={() => { setReplyTarget(c); setReply(""); }}
-                    onAssign={() => { updateComment(c.id, { stage: "in_review", assignee: "Priya S." }); toast.success("Assigned to Priya S."); }}
-                    onMarkReplied={() => { updateComment(c.id, { stage: "replied" }); toast.success("Marked as replied"); }}
-                    onFlag={() => { updateComment(c.id, { isSpam: true }); toast.success("Flagged"); }}
+                    onReply={() => { setReplyTarget(c); setReply(""); setShowAi(false); }}
+                    onAiReply={() => {
+                      setReplyTarget(c);
+                      setReply(c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`);
+                      setShowAi(true);
+                      toast.success("AI draft loaded — review before sending");
+                    }}
+                    onAssignTo={(member) => {
+                      updateComment(c.id, { stage: "in_review", assignee: member });
+                      toast.success(`Assigned to ${member}`);
+                    }}
                   />
                 </div>
               );
@@ -2526,7 +2533,7 @@ function ThreadEmptyState({ filter, stats, onClear }: { filter: ThreadOrmFilter;
 }
 
 function CommentItem({
-  comment, isNew, isUrgent, expanded, onToggleReplies, onReply, onAssign, onMarkReplied, onFlag,
+  comment, isNew, isUrgent, expanded, onToggleReplies, onReply, onAiReply, onAssignTo,
 }: {
   comment: Comment;
   isNew: boolean;
@@ -2534,9 +2541,8 @@ function CommentItem({
   expanded: boolean;
   onToggleReplies: () => void;
   onReply: () => void;
-  onAssign: () => void;
-  onMarkReplied: () => void;
-  onFlag: () => void;
+  onAiReply: () => void;
+  onAssignTo: (member: string) => void;
 }) {
   const sm = sentimentMeta[comment.sentiment];
   const stageCls =
@@ -2585,9 +2591,25 @@ function CommentItem({
           {/* Row 3 — actions */}
           <div className="flex items-center gap-3 mt-2 text-[11px] font-medium text-muted-foreground">
             <button onClick={onReply} className="hover:text-foreground inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" />Reply</button>
-            <button onClick={onAssign} className="hover:text-foreground inline-flex items-center gap-1"><Users className="w-3 h-3" />Assign</button>
-            <button onClick={onMarkReplied} className="hover:text-foreground inline-flex items-center gap-1"><Check className="w-3 h-3" />Status</button>
-            <button onClick={onFlag} className="hover:text-foreground inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Flag</button>
+            <button onClick={onAiReply} className="hover:text-primary text-primary inline-flex items-center gap-1"><Sparkles className="w-3 h-3" />AI reply</button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="hover:text-foreground inline-flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {comment.assignee ? `Assigned: ${comment.assignee}` : "Assign"}
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Assign to</DropdownMenuLabel>
+                {TEAM_MEMBERS.map((m) => (
+                  <DropdownMenuItem key={m} className="text-xs" onClick={() => onAssignTo(m)}>
+                    <Users className="w-3 h-3 mr-2" />{m}
+                    {comment.assignee === m && <Check className="w-3 h-3 ml-auto text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Replies (Instagram-style) */}
