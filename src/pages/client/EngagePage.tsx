@@ -2616,32 +2616,27 @@ function CommentItem({
           {hasReplies && (
             <div className="mt-2">
               {!expanded ? (
-                <button onClick={onToggleReplies} className="text-[11px] text-muted-foreground hover:text-foreground font-medium">
-                  ─── View {replies.length} {replies.length === 1 ? "reply" : "replies"} ▾
+                <button onClick={onToggleReplies} className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2">
+                  <span className="inline-block w-6 h-px bg-muted-foreground/40" />
+                  View {replies.length} {replies.length === 1 ? "reply" : "replies"}
                 </button>
               ) : (
-                <div className="mt-2 pl-4 border-l border-border space-y-2.5">
+                <div className="mt-2 pl-7 space-y-3">
                   {shownReplies.map((r) => (
                     <NestedReply key={r.id} reply={r} depth={1} />
                   ))}
                   {remainingReplies > 0 && (
                     <button
                       onClick={() => setVisibleReplies((v) => v + REPLIES_STEP)}
-                      className="text-[11px] text-primary hover:underline font-medium inline-flex items-center gap-1"
+                      className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
                     >
-                      ─── View {Math.min(remainingReplies, REPLIES_STEP)} more {remainingReplies === 1 ? "reply" : "replies"} ▾
+                      <span className="inline-block w-6 h-px bg-muted-foreground/40" />
+                      View {Math.min(remainingReplies, REPLIES_STEP)} more {remainingReplies === 1 ? "reply" : "replies"}
                     </button>
                   )}
-                  {visibleReplies > REPLIES_INITIAL && remainingReplies === 0 && (
-                    <button
-                      onClick={() => setVisibleReplies(REPLIES_INITIAL)}
-                      className="text-[11px] text-muted-foreground hover:text-foreground font-medium block"
-                    >
-                      Show fewer replies ▴
-                    </button>
-                  )}
-                  <button onClick={onToggleReplies} className="text-[11px] text-muted-foreground hover:text-foreground font-medium block">
-                    Hide replies ▴
+                  <button onClick={onToggleReplies} className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2">
+                    <span className="inline-block w-6 h-px bg-muted-foreground/40" />
+                    Hide replies
                   </button>
                 </div>
               )}
@@ -2679,21 +2674,21 @@ function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
   const maxDepth = 4;
 
   return (
-    <div className="flex gap-2">
-      <div className="w-6 h-6 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">
+    <div className="flex gap-2.5">
+      <div className="w-7 h-7 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">
         {reply.avatar}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-semibold text-foreground">{reply.author}</span>
-          <span className="text-[10px] text-muted-foreground">{reply.at}</span>
+          <span className="text-[13px] font-semibold text-foreground">{reply.author}</span>
+          <span className="text-[11px] text-muted-foreground">{reply.at}</span>
         </div>
-        <p className="text-[13px] text-foreground">{reply.text}</p>
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5">
+        <p className="text-[13px] text-foreground leading-snug">{reply.text}</p>
+        <div className="flex items-center gap-4 text-[11px] text-muted-foreground mt-1 font-medium">
           <span className="inline-flex items-center gap-1">
-            <ThumbsUp className="w-2.5 h-2.5" /> {reply.likes}
+            <ThumbsUp className="w-3 h-3" /> {reply.likes}
           </span>
-          <button className="hover:text-foreground font-medium">Reply</button>
+          <button className="hover:text-foreground">Reply</button>
         </div>
 
         {hasChildren && depth < maxDepth && (
@@ -2701,28 +2696,31 @@ function NestedReply({ reply, depth }: { reply: Comment; depth: number }) {
             {!open ? (
               <button
                 onClick={() => setOpen(true)}
-                className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+                className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
               >
-                ─── View {children.length} {children.length === 1 ? "reply" : "replies"} ▾
+                <span className="inline-block w-6 h-px bg-muted-foreground/40" />
+                View {children.length} {children.length === 1 ? "reply" : "replies"}
               </button>
             ) : (
-              <div className="mt-1.5 pl-3 border-l border-border space-y-2.5">
+              <div className="mt-2 pl-7 space-y-3">
                 {shown.map((c) => (
                   <NestedReply key={c.id} reply={c} depth={depth + 1} />
                 ))}
                 {remaining > 0 && (
                   <button
                     onClick={() => setVisible((v) => v + STEP)}
-                    className="text-[11px] text-primary hover:underline font-medium"
+                    className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
                   >
-                    ─── View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"} ▾
+                    <span className="inline-block w-6 h-px bg-muted-foreground/40" />
+                    View {Math.min(remaining, STEP)} more {remaining === 1 ? "reply" : "replies"}
                   </button>
                 )}
                 <button
                   onClick={() => { setOpen(false); setVisible(INITIAL); }}
-                  className="text-[11px] text-muted-foreground hover:text-foreground font-medium block"
+                  className="text-[12px] text-muted-foreground hover:text-foreground font-semibold inline-flex items-center gap-2"
                 >
-                  Hide replies ▴
+                  <span className="inline-block w-6 h-px bg-muted-foreground/40" />
+                  Hide replies
                 </button>
               </div>
             )}
