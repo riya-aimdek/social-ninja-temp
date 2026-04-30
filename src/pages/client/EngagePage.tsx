@@ -1531,10 +1531,10 @@ function BoardView({
                       <div className="flex items-center gap-2 mt-1 text-[11px]">
                         <button
                           onClick={() => openContext(c.id, c.post.id)}
-                          className="text-muted-foreground italic truncate hover:text-foreground hover:underline max-w-[60%]"
-                          title={c.post.title}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium border border-border text-foreground bg-muted/50 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
+                          title={`View thread: ${c.post.title}`}
                         >
-                          on "{c.post.title}"
+                          <MessageSquare className="w-2.5 h-2.5" /> View thread
                         </button>
                         <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
                           <sm.Icon className="w-2.5 h-2.5" /> {sm.label}
