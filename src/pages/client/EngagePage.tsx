@@ -1696,25 +1696,7 @@ function PostListColumn({
         </DropdownMenu>
       </div>
 
-      <div className="px-3 py-2 border-b border-border overflow-x-auto">
-        <div className="flex items-center gap-1.5 min-w-max">
-          {PLATFORM_PILLS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPlatformFilter(p)}
-              className={cn(
-                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors whitespace-nowrap",
-                platformFilter === p
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-card text-muted-foreground border-border hover:text-foreground",
-              )}
-            >
-              {p !== "all" && <PlatformIcon name={p as Platform} className="w-3 h-3" />}
-              {p === "all" ? "All" : p === "GBP" ? "Google" : p === "Twitter" ? "Twitter/X" : p}
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       <div className="overflow-y-auto flex-1">
         {posts.length === 0 ? (
