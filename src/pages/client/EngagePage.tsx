@@ -549,10 +549,9 @@ const REPLY_TEMPLATES: ReplyTemplate[] = [
    Page
    ────────────────────────────────────────────────────────────── */
 
-type Tab = "queue" | "board" | "threads" | "sentiment" | "spam" | "variants";
+type Tab = "board" | "threads" | "sentiment" | "spam" | "variants";
 
 const TABS: { id: Tab; label: string; Icon: typeof Inbox; description: string }[] = [
-  { id: "queue", label: "AI Reply Queue", Icon: Bot, description: "Review AI-drafted replies and send" },
   { id: "board", label: "ORM Board", Icon: KanbanSquare, description: "Jira-style workload view" },
   { id: "threads", label: "Comment Threads", Icon: ListTree, description: "Threaded comments grouped by post" },
   { id: "sentiment", label: "Sentiment Review", Icon: Smile, description: "Audit & correct AI sentiment tags" },
@@ -561,7 +560,7 @@ const TABS: { id: Tab; label: string; Icon: typeof Inbox; description: string }[
 ];
 
 export default function EngagePage() {
-  const [tab, setTab] = useState<Tab>("queue");
+  const [tab, setTab] = useState<Tab>("board");
   const [posts, setPosts] = useState<Post[]>(POSTS);
   const [templates, setTemplates] = useState<ReplyTemplate[]>(REPLY_TEMPLATES);
   const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
@@ -806,9 +805,6 @@ export default function EngagePage() {
               <t.Icon className="w-3.5 h-3.5" /> {t.label}
               {t.id === "spam" && summary.spam > 0 && (
                 <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{fmt(summary.spam)}</span>
-              )}
-              {t.id === "queue" && summary.pending > 0 && (
-                <span className="ml-0.5 text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">{fmt(summary.pending)}</span>
               )}
             </button>
           ))}
@@ -1064,7 +1060,7 @@ export default function EngagePage() {
       </Dialog>
 
 
-      {tab === "queue" && <ReplyQueueView comments={allComments} posts={posts} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
+      
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
       {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} openContext={openContext} />}
