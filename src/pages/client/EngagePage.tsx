@@ -1860,6 +1860,50 @@ function ThreadDetailColumn({
         </div>
       </div>
 
+      {/* AI review banner - visible only when launched from the AI Reply Queue */}
+      {highlightCommentId && (() => {
+        const target = selected.items.find((c) => c.id === highlightCommentId);
+        if (!target) return null;
+        return (
+          <div className="px-4 py-2.5 border-b border-border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent flex-shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  AI draft ready for <span className="text-primary">@{target.author}</span>
+                  {target.trigger && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-medium">
+                      {triggerLabel[target.trigger]}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground line-clamp-1">{target.aiDraft ?? "Generating reply..."}</p>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1"
+                  onClick={() => { updateComment(target.id, { isSpam: true }); toast.success("Marked as spam"); }}>
+                  <Trash2 className="w-3 h-3" /> Spam
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1"
+                  onClick={() => { updateComment(target.id, { stage: "escalated" }); toast.warning("Escalated"); }}>
+                  <AlertTriangle className="w-3 h-3 text-error" /> Escalate
+                </Button>
+                <Button size="sm" className="h-7 text-[11px] gap-1"
+                  onClick={() => {
+                    addReply(target.id, target.aiDraft ?? "Thanks so much!");
+                    updateComment(target.id, { stage: "replied" });
+                    toast.success("AI reply approved & sent");
+                  }}>
+                  <Check className="w-3 h-3" /> Approve & send
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Comment thread */}
       <div className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
