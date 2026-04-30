@@ -1513,11 +1513,6 @@ function BoardView({
                           </span>
                         )}
                         <div className="ml-auto flex items-center gap-2">
-                          {overdue && c.stage !== "replied" && (
-                            <span className="text-[10px] font-semibold text-error tabular-nums">
-                              OVERDUE {c.sla.dueIn}
-                            </span>
-                          )}
                           {stageMeta && (
                             <span className={cn(
                               "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
