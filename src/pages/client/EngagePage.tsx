@@ -141,10 +141,38 @@ const POSTS: Post[] = [
         aiDraft: "Thank you so much, Sarah! 💛 Five years has flown by — couldn't have done it without supporters like you. Here's to many more!",
         stage: "pending", priority: "low",
         sla: { dueIn: "3h 48m", breached: false },
-        replies: [
-          { id: "C-1a", author: "Mike Chen", avatar: "MC", text: "Seconded! Such an inspiring journey.", at: "8m",
-            sentiment: "positive", likes: 1, stage: "pending", priority: "low", sla: { dueIn: "3h", breached: false } },
-        ],
+        replies: (() => {
+          const seeds: Array<{ a: string; av: string; t: string; s: "positive" | "neutral" | "negative" }> = [
+            { a: "Mike Chen", av: "MC", t: "Seconded! Such an inspiring journey.", s: "positive" },
+            { a: "Lara Petrov", av: "LP", t: "Huge congrats — been following since the beta days 🙌", s: "positive" },
+            { a: "Noah Kimura", av: "NK", t: "5 years already? Insane growth, well deserved.", s: "positive" },
+            { a: "Priya Shah", av: "PS", t: "Cheers to the team behind the scenes 🥂", s: "positive" },
+            { a: "Diego Alvarez", av: "DA", t: "What a milestone — onto the next chapter!", s: "positive" },
+            { a: "Sofia Rossi", av: "SR", t: "Confetti everywhere 🎊 congrats!!", s: "positive" },
+            { a: "Ahmed Karim", av: "AK", t: "Quality has only gone up year over year. Respect.", s: "positive" },
+            { a: "Yuki Tanaka", av: "YT", t: "Five years of consistency is no small feat 👏", s: "positive" },
+            { a: "Ben Carter", av: "BC", t: "Will there be an anniversary drop? 👀", s: "neutral" },
+            { a: "Zara Hussain", av: "ZH", t: "Love the team, love the brand. Keep going!", s: "positive" },
+            { a: "Marco Bianchi", av: "MB", t: "Toasting from Milan tonight 🍷", s: "positive" },
+            { a: "Hannah Becker", av: "HB", t: "Such an inspiring story — congrats team!", s: "positive" },
+            { a: "Tariq Mensah", av: "TM", t: "5 down, 50 to go 🚀", s: "positive" },
+            { a: "Elena Voss", av: "EV", t: "Can we get a behind-the-scenes anniversary post? 🙏", s: "neutral" },
+            { a: "Ravi Iyer", av: "RI", t: "Watching from day one — super proud.", s: "positive" },
+            { a: "Camille Dubois", av: "CD", t: "Bravo 👏 the brand has only gotten better.", s: "positive" },
+            { a: "Jonas Lindberg", av: "JL", t: "Anniversary giveaway? Asking for a friend 😄", s: "neutral" },
+            { a: "Isabela Costa", av: "IC", t: "Sending love from São Paulo 💛", s: "positive" },
+            { a: "Owen Walsh", av: "OW", t: "Thanks for 5 years of great products!", s: "positive" },
+            { a: "Mei Lin", av: "ML", t: "Here's to many more — proud customer ❤️", s: "positive" },
+          ];
+          return seeds.map((r, i) => ({
+            id: `C-1-r${i + 1}`,
+            author: r.a, avatar: r.av, text: r.t, at: `${i + 2}m`,
+            sentiment: r.s, likes: (i * 2) % 7,
+            stage: (i % 6 === 0 ? "pending" : "replied") as Stage,
+            priority: "low" as const,
+            sla: { dueIn: i % 6 === 0 ? `${2 + i}h` : "—", breached: false },
+          }));
+        })(),
       },
       {
         id: "C-2", author: "Emma Wilson", avatar: "EW",
