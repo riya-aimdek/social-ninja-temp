@@ -3190,7 +3190,7 @@ function PostThreadContextSheet({
                 <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{post.publishedAt}</span>
                 <span>·</span>
                 <span>{fmt(post.commentCount)} comments</span>
-                <button className="ml-2 inline-flex items-center gap-1 text-primary hover:underline">
+                <button onClick={() => toast.info(`Opening on ${post.platform} (mock)`)} className="ml-2 inline-flex items-center gap-1 text-primary hover:underline">
                   Open original <ExternalLink className="w-3 h-3" />
                 </button>
               </div>
