@@ -2222,7 +2222,7 @@ function CommentItem({
                       onClick={() => setVisibleReplies((v) => v + REPLIES_STEP)}
                       className="text-[11px] text-primary hover:underline font-medium inline-flex items-center gap-1"
                     >
-                      ─── View {Math.min(remainingReplies, REPLIES_STEP)} more {remainingReplies === 1 ? "reply" : "replies"} ({remainingReplies} remaining) ▾
+                      ─── View {Math.min(remainingReplies, REPLIES_STEP)} more {remainingReplies === 1 ? "reply" : "replies"} ▾
                     </button>
                   )}
                   {visibleReplies > REPLIES_INITIAL && remainingReplies === 0 && (
