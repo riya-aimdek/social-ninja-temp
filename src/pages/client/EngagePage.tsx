@@ -1506,6 +1506,38 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
       const replyCount = 12 + (i % 7); // 12–18
       replies = Array.from({ length: replyCount }, (_, j) => {
         const rs = FILLER_SAMPLES[(i + j + 3) % FILLER_SAMPLES.length];
+        // Some replies (every 3rd) get their own nested replies (depth 2),
+        // and the first nested reply itself gets depth-3 children — to
+        // demonstrate recursive threads at every level.
+        let nested: Comment[] | undefined;
+        if (j > 0 && j % 3 === 0) {
+          const nestedCount = 8 + (j % 6); // 8–13 (some > 10 to show pagination)
+          nested = Array.from({ length: nestedCount }, (_, k) => {
+            const ns = FILLER_SAMPLES[(i + j + k + 5) % FILLER_SAMPLES.length];
+            let deep: Comment[] | undefined;
+            if (k === 0) {
+              const deepCount = 4 + (k % 3);
+              deep = Array.from({ length: deepCount }, (_, m) => {
+                const ds = FILLER_SAMPLES[(i + j + k + m + 7) % FILLER_SAMPLES.length];
+                return {
+                  id: `${id}-R-${j}-N-${k}-D-${m}`,
+                  author: ds.author, avatar: ds.avatar, text: ds.text,
+                  at: `${m + 1}m`, sentiment: ds.sentiment,
+                  likes: ((m * 2) % 9), stage: "replied" as Stage,
+                  priority: "low", sla: { dueIn: "—", breached: false },
+                };
+              });
+            }
+            return {
+              id: `${id}-R-${j}-N-${k}`,
+              author: ns.author, avatar: ns.avatar, text: ns.text,
+              at: `${k + 1}m`, sentiment: ns.sentiment,
+              likes: ((k * 2) % 14), stage: "replied" as Stage,
+              priority: "low", sla: { dueIn: "—", breached: false },
+              replies: deep,
+            };
+          });
+        }
         return {
           id: `${id}-R-${j}`,
           author: rs.author,
@@ -1517,6 +1549,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
           stage: "replied" as Stage,
           priority: "low",
           sla: { dueIn: "—", breached: false },
+          replies: nested,
         };
       });
     }
