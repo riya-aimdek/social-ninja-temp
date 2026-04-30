@@ -2169,7 +2169,7 @@ function CommentItem({
                 </button>
               ) : (
                 <div className="mt-2 pl-4 border-l border-border space-y-2.5">
-                  {replies.slice(0, 3).map((r) => (
+                  {shownReplies.map((r) => (
                     <div key={r.id} className="flex gap-2">
                       <div className="w-6 h-6 rounded-full bg-accent text-foreground text-[10px] font-semibold flex items-center justify-center flex-shrink-0">{r.avatar}</div>
                       <div className="min-w-0 flex-1">
@@ -2184,9 +2184,20 @@ function CommentItem({
                       </div>
                     </div>
                   ))}
-                  {replies.length > 3 && (
-                    <button className="text-[11px] text-muted-foreground hover:text-foreground font-medium">
-                      Load {replies.length - 3} more {replies.length - 3 === 1 ? "reply" : "replies"}
+                  {remainingReplies > 0 && (
+                    <button
+                      onClick={() => setVisibleReplies((v) => v + REPLIES_STEP)}
+                      className="text-[11px] text-primary hover:underline font-medium inline-flex items-center gap-1"
+                    >
+                      ─── View {Math.min(remainingReplies, REPLIES_STEP)} more {remainingReplies === 1 ? "reply" : "replies"} ({remainingReplies} remaining) ▾
+                    </button>
+                  )}
+                  {visibleReplies > REPLIES_INITIAL && remainingReplies === 0 && (
+                    <button
+                      onClick={() => setVisibleReplies(REPLIES_INITIAL)}
+                      className="text-[11px] text-muted-foreground hover:text-foreground font-medium block"
+                    >
+                      Show fewer replies ▴
                     </button>
                   )}
                   <button onClick={onToggleReplies} className="text-[11px] text-muted-foreground hover:text-foreground font-medium block">
