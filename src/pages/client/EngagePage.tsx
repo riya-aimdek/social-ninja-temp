@@ -1417,7 +1417,7 @@ function BoardView({
 
       {/* Bulk action bar — only when something selected */}
       {someSelected && (
-        <div className="flex flex-wrap items-center gap-2 bg-primary/5 border border-primary/30 rounded-xl px-3 py-2 animate-fade-in">
+        <div className="flex flex-wrap items-center gap-2 bg-primary/5 border-b border-primary/30 px-3 py-2 animate-fade-in">
           <span className="text-xs font-semibold text-foreground inline-flex items-center gap-2">
             <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 tabular-nums">{selected.size}</span>
             selected
@@ -1462,8 +1462,8 @@ function BoardView({
         </div>
       )}
 
-      {/* List */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* List (inside shared card) */}
+      <div>
         {filtered.length === 0 ? (
           <BoardEmptyState filter={filter} />
         ) : (
