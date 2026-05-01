@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, FolderOpen, Users, Link2, Sparkles, CalendarDays, MessageSquare,
-  BarChart3, Megaphone, Ear, Settings, Search, Bell, ChevronDown, ChevronUp,
+  BarChart3, Megaphone, Ear, Settings, Bell, ChevronDown, ChevronUp,
   LogOut, Globe, Palette
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
@@ -214,10 +214,6 @@ export default function ClientLayout() {
             <span className="text-sm text-foreground font-medium">{breadcrumbLabel}</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-accent/50 rounded-lg px-3 py-2 w-64">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <input className="text-sm outline-none bg-transparent w-full placeholder:text-muted-foreground" placeholder="Search anything..." />
-            </div>
             <button className="relative p-2 rounded-lg hover:bg-accent transition-colors">
               <Bell className="w-[18px] h-[18px] text-muted-foreground" />
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
