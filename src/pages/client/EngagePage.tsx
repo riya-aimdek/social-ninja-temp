@@ -907,6 +907,12 @@ export default function EngagePage() {
             <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mr-1">
               {fmt(allComments.length)} result{allComments.length === 1 ? "" : "s"}
             </span>
+            {categoryTab !== "all" && (
+              <button onClick={() => setCategoryTab("all")}
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70 capitalize">
+                {categoryTab === "dms" ? "DMs" : categoryTab} <X className="w-3 h-3" />
+              </button>
+            )}
             {[...statusFilter].map((s) => (
               <button key={`s-${s}`} onClick={() => { const n = new Set(statusFilter); n.delete(s); setStatusFilter(n); }}
                 className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
