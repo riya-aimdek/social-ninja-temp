@@ -848,46 +848,7 @@ export default function EngagePage() {
       {tab !== "variants" && (
       <div className="bg-card rounded-xl border border-border p-2">
         <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
-          {/* Category pills */}
-          {([
-            { id: "all", label: "All", Icon: Inbox },
-            { id: "comments", label: "Comments", Icon: MessageSquare },
-            { id: "mentions", label: "Mentions", Icon: AtSign },
-            { id: "dms", label: "DMs", Icon: Mail },
-            { id: "reviews", label: "Reviews", Icon: Star },
-          ] as const).map((c) => {
-            const active = categoryTab === c.id;
-            const count =
-              c.id === "all" ? platformMatched.length :
-              c.id === "comments" ? platformMatched.length :
-              c.id === "mentions" ? platformMatched.filter((x) => x.text.includes("@")).length :
-              c.id === "dms" ? 0 :
-              c.id === "reviews" ? platformMatched.filter((x) => x.post.platform === "GBP").length : 0;
-            return (
-              <button
-                key={c.id}
-                onClick={() => setCategoryTab(c.id)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-xs font-medium transition-colors shrink-0",
-                  active
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                )}
-              >
-                <c.Icon className="w-3.5 h-3.5" />
-                {c.label}
-                <span className={cn(
-                  "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
-                  active ? "bg-background/20" : "bg-muted text-muted-foreground",
-                )}>
-                  {fmt(count)}
-                </span>
-              </button>
-            );
-          })}
-
-          {/* Divider */}
-          <div className="h-6 w-px bg-border mx-1 shrink-0" />
+          {/* Category moved into Filters dialog */}
 
           {/* Prominent search */}
           <div className="relative flex-1 min-w-[240px]">
