@@ -680,7 +680,7 @@ export default function EngagePage() {
     });
   }, [filteredPosts, allComments, searchQuery, statusFilter, tagFilter, categoryTab]);
 
-  const activeFilterCount = statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0);
+  const activeFilterCount = statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0) + (categoryTab !== "all" ? 1 : 0);
   const hasAnyFilter = activeFilterCount > 0 || searchQuery.trim().length > 0 || categoryTab !== "all";
   const clearAllFilters = () => {
     setSearchQuery(""); setCategoryTab("all"); setStatusFilter(new Set());
