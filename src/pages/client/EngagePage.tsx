@@ -1053,7 +1053,7 @@ export default function EngagePage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setStatusFilter(new Set()); setTagFilter(new Set()); setDateRange("all"); }}
+              onClick={() => { setCategoryTab("all"); setStatusFilter(new Set()); setTagFilter(new Set()); setDateRange("all"); }}
             >
               Clear All
             </Button>
