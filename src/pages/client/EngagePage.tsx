@@ -1372,8 +1372,10 @@ function BoardView({
 
   return (
     <div className="space-y-3">
-      {/* Status filter bar */}
-      <div className="flex flex-wrap items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
+      {/* Shared card: tabs on top, list below */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {/* Status filter tabs (top of shared card) */}
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border">
         <div className="flex flex-wrap items-center gap-1.5">
           {FILTER_TABS.map((t) => {
             const active = filter === t.id;
