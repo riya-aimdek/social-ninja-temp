@@ -1764,6 +1764,7 @@ function BoardView({
           </ul>
         )}
       </div>
+      </div>
 
       {/* Bulk AI review modal */}
       <Dialog open={bulkAiOpen} onOpenChange={(o) => { setBulkAiOpen(o); if (!o) setBulkDrafts({}); }}>
