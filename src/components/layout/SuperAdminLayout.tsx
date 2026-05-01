@@ -24,7 +24,6 @@ interface SuperAdminLayoutProps {
 const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [globalSearch, setGlobalSearch] = useState("");
   const notificationCount = 3;
 
   return (
@@ -61,15 +60,6 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
           <h1 className="text-base font-semibold text-foreground">{title}</h1>
-          <div className="relative w-[280px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              className="w-full h-9 pl-9 pr-3 rounded-lg border border-border bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-              placeholder="Search agencies, clients, users..."
-              value={globalSearch}
-              onChange={e => setGlobalSearch(e.target.value)}
-            />
-          </div>
           <div className="flex items-center gap-3">
             {notificationCount > 0 && (
               <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">

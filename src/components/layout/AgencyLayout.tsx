@@ -260,10 +260,6 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
             )}
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input className="h-9 pl-9 pr-4 w-[240px] border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search anything..." />
-            </div>
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
               <Bell className="h-4 w-4 text-muted-foreground" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
