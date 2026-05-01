@@ -2119,8 +2119,6 @@ function PostListColumn({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      </div>
-
 
 
       <div className="overflow-y-auto flex-1">
