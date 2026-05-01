@@ -943,6 +943,48 @@ export default function EngagePage() {
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div>
+              <p className="text-xs font-semibold text-foreground mb-2">Category</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {([
+                  { id: "all", label: "All", Icon: Inbox },
+                  { id: "comments", label: "Comments", Icon: MessageSquare },
+                  { id: "mentions", label: "Mentions", Icon: AtSign },
+                  { id: "dms", label: "DMs", Icon: Mail },
+                  { id: "reviews", label: "Reviews", Icon: Star },
+                ] as const).map((c) => {
+                  const active = categoryTab === c.id;
+                  const count =
+                    c.id === "all" ? platformMatched.length :
+                    c.id === "comments" ? platformMatched.length :
+                    c.id === "mentions" ? platformMatched.filter((x) => x.text.includes("@")).length :
+                    c.id === "dms" ? 0 :
+                    c.id === "reviews" ? platformMatched.filter((x) => x.post.platform === "GBP").length : 0;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setCategoryTab(c.id)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                        active
+                          ? "bg-foreground text-background border-foreground"
+                          : "bg-card text-foreground border-border hover:border-foreground/40",
+                      )}
+                    >
+                      <c.Icon className="w-3.5 h-3.5" />
+                      {c.label}
+                      <span className={cn(
+                        "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
+                        active ? "bg-background/20" : "bg-muted text-muted-foreground",
+                      )}>
+                        {fmt(count)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+
               <p className="text-xs font-semibold text-foreground mb-2">Status</p>
               <div className="flex items-center gap-2 flex-wrap">
                 {(["open", "in_progress", "completed"] as const).map((s) => {
