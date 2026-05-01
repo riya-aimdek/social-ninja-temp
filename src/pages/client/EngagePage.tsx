@@ -3179,27 +3179,14 @@ function PostThreadContextSheet({
   return (
     <Sheet open={!!pair} onOpenChange={(o) => { if (!o) onClose(); }}>
       <SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col">
-        <SheetHeader className="px-5 py-3 border-b border-border flex-row items-center gap-3 space-y-0">
-          {post && <PostThumb post={post} size="sm" />}
-          <div className="min-w-0 flex-1">
-            <SheetTitle className="text-sm font-semibold truncate">
-              {post?.title ?? "Post & comment thread"}
-            </SheetTitle>
-            {post && (
-              <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
-                <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{post.publishedAt}</span>
-                <span>·</span>
-                <span>{fmt(post.commentCount)} comments</span>
-                <button onClick={() => toast.info(`Opening on ${post.platform} (mock)`)} className="ml-2 inline-flex items-center gap-1 text-primary hover:underline">
-                  Open original <ExternalLink className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-          </div>
+        {/* Accessible title — visually hidden so we don't duplicate the post header
+            already rendered inside ThreadDetailColumn. */}
+        <SheetHeader className="sr-only">
+          <SheetTitle>{post?.title ?? "Post & comment thread"}</SheetTitle>
         </SheetHeader>
 
         {selected && pair ? (
-          <div className="flex-1 min-h-0 p-3">
+          <div className="flex-1 min-h-0">
             <ThreadDetailColumn
               key={pair.commentId}
               selected={selected}
