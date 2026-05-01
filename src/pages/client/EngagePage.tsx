@@ -680,7 +680,7 @@ export default function EngagePage() {
     });
   }, [filteredPosts, allComments, searchQuery, statusFilter, tagFilter, categoryTab]);
 
-  const activeFilterCount = statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0);
+  const activeFilterCount = statusFilter.size + tagFilter.size + (dateRange !== "all" ? 1 : 0) + (categoryTab !== "all" ? 1 : 0);
   const hasAnyFilter = activeFilterCount > 0 || searchQuery.trim().length > 0 || categoryTab !== "all";
   const clearAllFilters = () => {
     setSearchQuery(""); setCategoryTab("all"); setStatusFilter(new Set());
@@ -848,46 +848,7 @@ export default function EngagePage() {
       {tab !== "variants" && (
       <div className="bg-card rounded-xl border border-border p-2">
         <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
-          {/* Category pills */}
-          {([
-            { id: "all", label: "All", Icon: Inbox },
-            { id: "comments", label: "Comments", Icon: MessageSquare },
-            { id: "mentions", label: "Mentions", Icon: AtSign },
-            { id: "dms", label: "DMs", Icon: Mail },
-            { id: "reviews", label: "Reviews", Icon: Star },
-          ] as const).map((c) => {
-            const active = categoryTab === c.id;
-            const count =
-              c.id === "all" ? platformMatched.length :
-              c.id === "comments" ? platformMatched.length :
-              c.id === "mentions" ? platformMatched.filter((x) => x.text.includes("@")).length :
-              c.id === "dms" ? 0 :
-              c.id === "reviews" ? platformMatched.filter((x) => x.post.platform === "GBP").length : 0;
-            return (
-              <button
-                key={c.id}
-                onClick={() => setCategoryTab(c.id)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-xs font-medium transition-colors shrink-0",
-                  active
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                )}
-              >
-                <c.Icon className="w-3.5 h-3.5" />
-                {c.label}
-                <span className={cn(
-                  "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
-                  active ? "bg-background/20" : "bg-muted text-muted-foreground",
-                )}>
-                  {fmt(count)}
-                </span>
-              </button>
-            );
-          })}
-
-          {/* Divider */}
-          <div className="h-6 w-px bg-border mx-1 shrink-0" />
+          {/* Category moved into Filters dialog */}
 
           {/* Prominent search */}
           <div className="relative flex-1 min-w-[240px]">
@@ -946,6 +907,12 @@ export default function EngagePage() {
             <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mr-1">
               {fmt(allComments.length)} result{allComments.length === 1 ? "" : "s"}
             </span>
+            {categoryTab !== "all" && (
+              <button onClick={() => setCategoryTab("all")}
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70 capitalize">
+                {categoryTab === "dms" ? "DMs" : categoryTab} <X className="w-3 h-3" />
+              </button>
+            )}
             {[...statusFilter].map((s) => (
               <button key={`s-${s}`} onClick={() => { const n = new Set(statusFilter); n.delete(s); setStatusFilter(n); }}
                 className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
@@ -982,6 +949,48 @@ export default function EngagePage() {
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div>
+              <p className="text-xs font-semibold text-foreground mb-2">Category</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {([
+                  { id: "all", label: "All", Icon: Inbox },
+                  { id: "comments", label: "Comments", Icon: MessageSquare },
+                  { id: "mentions", label: "Mentions", Icon: AtSign },
+                  { id: "dms", label: "DMs", Icon: Mail },
+                  { id: "reviews", label: "Reviews", Icon: Star },
+                ] as const).map((c) => {
+                  const active = categoryTab === c.id;
+                  const count =
+                    c.id === "all" ? platformMatched.length :
+                    c.id === "comments" ? platformMatched.length :
+                    c.id === "mentions" ? platformMatched.filter((x) => x.text.includes("@")).length :
+                    c.id === "dms" ? 0 :
+                    c.id === "reviews" ? platformMatched.filter((x) => x.post.platform === "GBP").length : 0;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setCategoryTab(c.id)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                        active
+                          ? "bg-foreground text-background border-foreground"
+                          : "bg-card text-foreground border-border hover:border-foreground/40",
+                      )}
+                    >
+                      <c.Icon className="w-3.5 h-3.5" />
+                      {c.label}
+                      <span className={cn(
+                        "text-[10px] tabular-nums px-1.5 rounded-full font-semibold",
+                        active ? "bg-background/20" : "bg-muted text-muted-foreground",
+                      )}>
+                        {fmt(count)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+
               <p className="text-xs font-semibold text-foreground mb-2">Status</p>
               <div className="flex items-center gap-2 flex-wrap">
                 {(["open", "in_progress", "completed"] as const).map((s) => {
@@ -1050,7 +1059,7 @@ export default function EngagePage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setStatusFilter(new Set()); setTagFilter(new Set()); setDateRange("all"); }}
+              onClick={() => { setCategoryTab("all"); setStatusFilter(new Set()); setTagFilter(new Set()); setDateRange("all"); }}
             >
               Clear All
             </Button>
@@ -1363,8 +1372,10 @@ function BoardView({
 
   return (
     <div className="space-y-3">
-      {/* Status filter bar */}
-      <div className="flex flex-wrap items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
+      {/* Shared card: tabs on top, list below */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {/* Status filter tabs (top of shared card) */}
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border">
         <div className="flex flex-wrap items-center gap-1.5">
           {FILTER_TABS.map((t) => {
             const active = filter === t.id;
@@ -1406,7 +1417,7 @@ function BoardView({
 
       {/* Bulk action bar — only when something selected */}
       {someSelected && (
-        <div className="flex flex-wrap items-center gap-2 bg-primary/5 border border-primary/30 rounded-xl px-3 py-2 animate-fade-in">
+        <div className="flex flex-wrap items-center gap-2 bg-primary/5 border-b border-primary/30 px-3 py-2 animate-fade-in">
           <span className="text-xs font-semibold text-foreground inline-flex items-center gap-2">
             <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 tabular-nums">{selected.size}</span>
             selected
@@ -1451,8 +1462,8 @@ function BoardView({
         </div>
       )}
 
-      {/* List */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* List (inside shared card) */}
+      <div>
         {filtered.length === 0 ? (
           <BoardEmptyState filter={filter} />
         ) : (
@@ -1752,6 +1763,7 @@ function BoardView({
             })}
           </ul>
         )}
+      </div>
       </div>
 
       {/* Bulk AI review modal */}
@@ -2108,7 +2120,6 @@ function PostListColumn({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
 
 
       <div className="overflow-y-auto flex-1">
