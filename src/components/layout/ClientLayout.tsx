@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, FolderOpen, Users, Link2, Sparkles, CalendarDays, MessageSquare,
-  BarChart3, Megaphone, Ear, Settings, Search, Bell, ChevronDown, ChevronUp,
+  BarChart3, Megaphone, Ear, Settings, Bell, ChevronDown, ChevronUp,
   LogOut, Globe, Palette
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";

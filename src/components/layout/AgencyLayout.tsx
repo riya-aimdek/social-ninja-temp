@@ -2,7 +2,7 @@ import { ReactNode, useState, useRef, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Globe, Users, ChevronDown, ChevronUp,
-  Bell, Check, LogOut, Search, FolderOpen, Sparkles, CalendarDays,
+  Bell, Check, LogOut, FolderOpen, Sparkles, CalendarDays,
   MessageSquare, BarChart3, Megaphone, Ear, Settings, Palette, Link2 as LinkIcon,
   Receipt,
 } from "lucide-react";
