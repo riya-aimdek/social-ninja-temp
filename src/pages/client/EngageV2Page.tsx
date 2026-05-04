@@ -248,7 +248,7 @@ const PRIMARY_TABS: { id: PrimaryTab; label: string; Icon: typeof Inbox; count?:
   { id: "threads", label: "Comment Threads", Icon: ListTree },
   { id: "sentiment", label: "Sentiment Review", Icon: Smile },
   { id: "spam", label: "Spam Queue", Icon: Shield, count: 29 },
-  { id: "variants", label: "Reply Variants", Icon: Shuffle },
+  { id: "variants", label: "Auto Replies", Icon: Shuffle },
 ];
 
 const CATEGORY_TABS: { id: CategoryTab; label: string; Icon: typeof Inbox; count: number }[] = [

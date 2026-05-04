@@ -58,6 +58,7 @@ interface Post {
   platform: Platform;
   title: string;
   thumbnail: string;
+  imageUrl?: string;
   publishedAt: string;
   commentCount: number;
   newCount: number;
@@ -131,7 +132,7 @@ const POSTS: Post[] = [
   {
     id: "P-201", platform: "Instagram",
     title: "🎉 Celebrating 5 years of building together!",
-    thumbnail: "🎂", publishedAt: "2h ago",
+    thumbnail: "🎂", imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop", publishedAt: "2h ago",
     commentCount: 247, newCount: 32,
     comments: [
       {
@@ -314,7 +315,7 @@ const POSTS: Post[] = [
   {
     id: "P-198", platform: "Facebook",
     title: "New product launch — Spring Collection ‘26",
-    thumbnail: "🌸", publishedAt: "1d ago",
+    thumbnail: "🌸", imageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=400&fit=crop", publishedAt: "1d ago",
     commentCount: 96, newCount: 15,
     comments: [
       {
@@ -378,7 +379,7 @@ const POSTS: Post[] = [
   {
     id: "P-196", platform: "Instagram",
     title: "Behind the scenes — our packaging redesign ✂️",
-    thumbnail: "📦", publishedAt: "2d ago",
+    thumbnail: "📦", imageUrl: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=400&fit=crop", publishedAt: "2d ago",
     commentCount: 421, newCount: 53,
     comments: [
       {
@@ -458,7 +459,7 @@ const POSTS: Post[] = [
   {
     id: "P-193", platform: "Facebook",
     title: "Customer story: how Acme Co cut onboarding time by 60%",
-    thumbnail: "📈", publishedAt: "3d ago",
+    thumbnail: "📈", imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop", publishedAt: "3d ago",
     commentCount: 142, newCount: 11,
     comments: [
       {
@@ -482,7 +483,7 @@ const POSTS: Post[] = [
   {
     id: "P-192", platform: "Instagram",
     title: "Giveaway 🎁 — win a year of our Pro plan",
-    thumbnail: "🎁", publishedAt: "4d ago",
+    thumbnail: "🎁", imageUrl: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&h=400&fit=crop", publishedAt: "4d ago",
     commentCount: 1284, newCount: 87,
     comments: [
       {
@@ -556,7 +557,7 @@ const TABS: { id: Tab; label: string; Icon: typeof Inbox; description: string }[
   { id: "threads", label: "Posts", Icon: ListTree, description: "Browse posts and their comment threads" },
   { id: "sentiment", label: "Sentiment Review", Icon: Smile, description: "Audit & correct AI sentiment tags" },
   { id: "spam", label: "Spam Queue", Icon: Shield, description: "Filtered comments awaiting review" },
-  { id: "variants", label: "Reply Variants", Icon: Shuffle, description: "Manage humanized auto-reply templates" },
+  { id: "variants", label: "Auto Replies", Icon: Shuffle, description: "Manage humanized auto-reply templates" },
 ];
 
 export default function EngagePage() {
@@ -1256,11 +1257,15 @@ function BoardView({
   addReply: (parentId: string, text: string) => void;
   openContext: (commentId: string, postId: string) => void;
 }) {
+  const PAGE_SIZE = 10;
   const [filter, setFilter] = useState<BoardFilter>("pending");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drafts, setDrafts] = useState<Record<string, ReplyDraftState>>({});
   const [bulkAiOpen, setBulkAiOpen] = useState(false);
   const [bulkDrafts, setBulkDrafts] = useState<Record<string, string>>({});
+  const [bulkManualOpen, setBulkManualOpen] = useState(false);
+  const [bulkManualDrafts, setBulkManualDrafts] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // Counts (exclude escalated entirely — treat as urgent flag in pending/in_review)
@@ -1395,6 +1400,29 @@ function BoardView({
     setBulkAiOpen(true);
   };
 
+  const bulkManualReply = () => {
+    const drafts: Record<string, string> = {};
+    selected.forEach((id) => { drafts[id] = ""; });
+    setBulkManualDrafts(drafts);
+    setBulkManualOpen(true);
+  };
+
+  const bulkManualSendAll = () => {
+    let sent = 0;
+    Object.entries(bulkManualDrafts).forEach(([id, text]) => {
+      const t = text.trim();
+      if (!t) return;
+      addReply(id, t);
+      updateComment(id, { stage: "replied" });
+      sent++;
+    });
+    if (sent === 0) { toast.error("Add at least one reply before sending"); return; }
+    toast.success(`Sent ${sent} repl${sent === 1 ? "y" : "ies"}`);
+    setBulkManualOpen(false);
+    setBulkManualDrafts({});
+    clearSelection();
+  };
+
   const bulkSendAll = () => {
     Object.entries(bulkDrafts).forEach(([id, text]) => {
       const t = text.trim();
@@ -1422,6 +1450,8 @@ function BoardView({
     { id: "replied", label: "Replied", count: counts.replied, dot: "bg-success" },
   ];
 
+  const changeFilter = (f: BoardFilter) => { setFilter(f); setVisibleCount(PAGE_SIZE); };
+
   return (
     <div className="space-y-3">
       {/* Shared card: tabs on top, list below */}
@@ -1434,7 +1464,7 @@ function BoardView({
             return (
               <button
                 key={t.id}
-                onClick={() => setFilter(t.id)}
+                onClick={() => changeFilter(t.id)}
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
                   active
@@ -1481,6 +1511,9 @@ function BoardView({
           <Button size="sm" className="h-7 text-xs" onClick={bulkAiReply}>
             <Sparkles className="w-3 h-3 mr-1" /> Reply with AI
           </Button>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={bulkManualReply}>
+            <Edit3 className="w-3 h-3 mr-1" /> Reply manually
+          </Button>
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => bulkMoveInReview()}>
             <Users className="w-3 h-3 mr-1" /> Move to In Review
           </Button>
@@ -1520,15 +1553,14 @@ function BoardView({
           <BoardEmptyState filter={filter} />
         ) : (
           <ul className="divide-y divide-border">
-            {filtered.map((c) => {
-              const sm = sentimentMeta[c.sentiment];
+            {filtered.slice(0, visibleCount).map((c) => {
               const isUrgent = c.priority === "urgent" && c.stage !== "replied";
-              const overdue = isOverdue(c);
               const isSelected = selected.has(c.id);
               const draft = drafts[c.id];
               const isLong = c.text.length > 280;
               const isExpanded = expanded.has(c.id);
               const stageMeta = STAGES.find((s) => s.id === c.stage);
+              const triggerTagLabel = c.trigger ? triggerLabel[c.trigger] : null;
 
               return (
                 <li
@@ -1539,9 +1571,9 @@ function BoardView({
                     isUrgent && "border-l-[3px] border-l-error",
                   )}
                 >
-                  <div className="flex gap-3 p-3">
+                  <div className="flex gap-3 px-4 py-3.5">
                     {/* Checkbox */}
-                    <div className="flex-shrink-0 pt-1">
+                    <div className="flex-shrink-0 pt-0.5">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
@@ -1551,34 +1583,39 @@ function BoardView({
                       />
                     </div>
 
-                    {/* Post thumbnail (image-style preview) */}
-                    <button
-                      onClick={() => openContext(c.id, c.post.id)}
-                      title={`View thread: ${c.post.title}`}
-                      className="group/thumb"
-                    >
-                      <PostThumb post={c.post} size="md" />
-                    </button>
+                    {/* Author avatar */}
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                      {c.avatar}
+                    </div>
 
-                    {/* Center content */}
+                    {/* Content */}
                     <div className="flex-1 min-w-0">
-                      {/* Row 1 */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0">
-                          {c.avatar}
-                        </div>
+
+                      {/* Row 1: author · time · urgent + status right */}
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <span className="text-[13px] font-semibold text-foreground truncate">{c.author}</span>
-                        <span className="text-[12px] text-muted-foreground">·</span>
-                        <span className="text-[12px] text-muted-foreground tabular-nums">{c.at}</span>
+                        <span className="text-muted-foreground text-xs shrink-0">· {c.at}</span>
                         {isUrgent && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-error/15 text-error">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-error/15 text-error shrink-0">
                             <span className="w-1.5 h-1.5 rounded-full bg-error" /> Urgent
                           </span>
                         )}
-                        <div className="ml-auto flex items-center gap-2">
+                        {triggerTagLabel && (
+                          <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground shrink-0">
+                            {triggerTagLabel}
+                          </span>
+                        )}
+                        <div className="ml-auto flex items-center gap-2 shrink-0">
+                          {/* View thread */}
+                          <button
+                            onClick={() => openContext(c.id, c.post.id)}
+                            className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border border-border bg-muted/50 text-foreground hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
+                          >
+                            <MessageSquare className="w-2.5 h-2.5 shrink-0" /> View thread
+                          </button>
                           {stageMeta && (
                             <span className={cn(
-                              "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
+                              "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0",
                               c.stage === "pending" && "bg-info/15 text-info",
                               c.stage === "in_review" && "bg-warning/15 text-warning",
                               c.stage === "replied" && "bg-success/15 text-success",
@@ -1590,24 +1627,10 @@ function BoardView({
                         </div>
                       </div>
 
-                      {/* Row 2 */}
-                      <div className="flex items-center gap-2 mt-1 text-[11px]">
-                        <button
-                          onClick={() => openContext(c.id, c.post.id)}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium border border-border text-foreground bg-muted/50 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
-                          title={`View thread: ${c.post.title}`}
-                        >
-                          <MessageSquare className="w-2.5 h-2.5" /> View thread
-                        </button>
-                        <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium", sm.bg, sm.color)}>
-                          <sm.Icon className="w-2.5 h-2.5" /> {sm.label}
-                        </span>
-                      </div>
-
-                      {/* Row 3 — full comment */}
+                      {/* Row 2: comment text */}
                       <p className={cn(
-                        "mt-2 text-[13px] text-foreground whitespace-pre-wrap",
-                        !isExpanded && isLong && "line-clamp-4",
+                        "mt-1.5 text-[13px] text-foreground leading-relaxed whitespace-pre-wrap",
+                        !isExpanded && isLong && "line-clamp-3",
                       )}>
                         {c.text}
                       </p>
@@ -1618,48 +1641,33 @@ function BoardView({
                             if (next.has(c.id)) next.delete(c.id); else next.add(c.id);
                             return next;
                           })}
-                          className="mt-1 text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+                          className="mt-0.5 text-[11px] text-primary hover:underline inline-flex items-center gap-0.5"
                         >
                           {isExpanded ? "Show less" : "Show more"}
                           <ChevronDown className={cn("w-3 h-3 transition-transform", isExpanded && "rotate-180")} />
                         </button>
                       )}
 
-                      {/* Row 4 — inline actions */}
-                      <div className="mt-2.5 flex items-center gap-1 flex-wrap">
+                      {/* Row 4: actions */}
+                      <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
                         {c.stage === "pending" && (
                           <>
-                            <Button
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => openDraft(c.id, true, c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`)}
-                            >
-                              <Sparkles className="w-3 h-3 mr-1" /> Reply with AI
+                            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => openDraft(c.id, true, c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`)}>
+                              <Sparkles className="w-3 h-3" /> Reply with AI
                             </Button>
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openDraft(c.id, false)}>
-                              <Edit3 className="w-3 h-3 mr-1" /> Write reply
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 text-xs"
-                              onClick={() => updateComment(c.id, { stage: "in_review", assignee: c.assignee ?? "Sarah C." })}
-                            >
-                              <Users className="w-3 h-3 mr-1" /> Move to In Review
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => openDraft(c.id, false)}>
+                              <Edit3 className="w-3 h-3" /> Write reply
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button size="sm" variant="ghost" className="h-7 text-xs">
-                                  Assign to <ChevronDown className="w-3 h-3 ml-1" />
+                                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1">
+                                  <Users className="w-3 h-3" /> Assign <ChevronDown className="w-3 h-3" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start">
+                                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Assign to</DropdownMenuLabel>
                                 {TEAM_MEMBERS.map((m) => (
-                                  <DropdownMenuItem
-                                    key={m}
-                                    className="text-xs"
-                                    onClick={() => { updateComment(c.id, { assignee: m }); toast.success(`Assigned to ${m}`); }}
-                                  >
+                                  <DropdownMenuItem key={m} className="text-xs" onClick={() => { updateComment(c.id, { assignee: m, stage: "in_review" }); toast.success(`Assigned to ${m}`); }}>
                                     {m}
                                   </DropdownMenuItem>
                                 ))}
@@ -1670,19 +1678,16 @@ function BoardView({
 
                         {c.stage === "in_review" && (
                           <>
-                            <Button
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => openDraft(c.id, true, c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`)}
-                            >
-                              <Sparkles className="w-3 h-3 mr-1" /> Reply with AI
+                            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => openDraft(c.id, true, c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`)}>
+                              <Sparkles className="w-3 h-3" /> Reply with AI
                             </Button>
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openDraft(c.id, false, c.aiDraft ?? "")}>
-                              <Edit3 className="w-3 h-3 mr-1" /> Write reply
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => openDraft(c.id, false, c.aiDraft ?? "")}>
+                              <Edit3 className="w-3 h-3" /> Write reply
                             </Button>
                             {c.assignee && (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground px-2">
-                                <Users className="w-3 h-3" /> Assigned to <strong className="text-foreground font-medium">{c.assignee}</strong>
+                              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                                <Users className="w-3 h-3 shrink-0" />
+                                Assigned to <span className="font-medium text-foreground">{c.assignee}</span>
                               </span>
                             )}
                             <DropdownMenu>
@@ -1691,11 +1696,7 @@ function BoardView({
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start">
                                 {TEAM_MEMBERS.map((m) => (
-                                  <DropdownMenuItem
-                                    key={m}
-                                    className="text-xs"
-                                    onClick={() => { updateComment(c.id, { assignee: m }); toast.success(`Reassigned to ${m}`); }}
-                                  >
+                                  <DropdownMenuItem key={m} className="text-xs" onClick={() => { updateComment(c.id, { assignee: m }); toast.success(`Reassigned to ${m}`); }}>
                                     {m}
                                   </DropdownMenuItem>
                                 ))}
@@ -1706,16 +1707,11 @@ function BoardView({
 
                         {c.stage === "replied" && (
                           <>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 text-xs"
-                              onClick={() => openContext(c.id, c.post.id)}
-                            >
-                              <ExternalLink className="w-3 h-3 mr-1" /> View reply
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => openContext(c.id, c.post.id)}>
+                              <ExternalLink className="w-3 h-3" /> View reply
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openDraft(c.id, false)}>
-                              <Edit3 className="w-3 h-3 mr-1" /> Reply again
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => openDraft(c.id, false)}>
+                              <Edit3 className="w-3 h-3" /> Reply again
                             </Button>
                           </>
                         )}
@@ -1736,17 +1732,11 @@ function BoardView({
                             <DropdownMenuItem className="text-xs gap-2" onClick={() => toast.success("Comment hidden")}>
                               <X className="w-3 h-3" /> Hide
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-xs gap-2 text-error focus:text-error"
-                              onClick={() => { updateComment(c.id, { isSpam: true }); toast.success("Marked as spam"); }}
-                            >
+                            <DropdownMenuItem className="text-xs gap-2 text-error focus:text-error" onClick={() => { updateComment(c.id, { isSpam: true }); toast.success("Marked as spam"); }}>
                               <Shield className="w-3 h-3" /> Mark as spam
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-xs gap-2"
-                              onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/comment/${c.id}`); toast.success("Link copied"); }}
-                            >
+                            <DropdownMenuItem className="text-xs gap-2" onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/comment/${c.id}`); toast.success("Link copied"); }}>
                               <ExternalLink className="w-3 h-3" /> Copy link
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -1815,6 +1805,31 @@ function BoardView({
             })}
           </ul>
         )}
+
+        {/* Load more */}
+        {filtered.length > visibleCount && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
+            <span className="text-xs text-muted-foreground">
+              Showing <span className="font-medium text-foreground">{visibleCount}</span> of <span className="font-medium text-foreground">{filtered.length}</span> comments
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            >
+              Load {Math.min(PAGE_SIZE, filtered.length - visibleCount)} more
+              <ChevronDown className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        )}
+
+        {/* All loaded indicator */}
+        {filtered.length > 0 && filtered.length <= visibleCount && filtered.length > PAGE_SIZE && (
+          <div className="px-4 py-2.5 border-t border-border text-center text-xs text-muted-foreground">
+            All {filtered.length} comments loaded
+          </div>
+        )}
       </div>
       </div>
 
@@ -1822,46 +1837,124 @@ function BoardView({
       <Dialog open={bulkAiOpen} onOpenChange={(o) => { setBulkAiOpen(o); if (!o) setBulkDrafts({}); }}>
         <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>AI replies for {Object.keys(bulkDrafts).length} selected comment{Object.keys(bulkDrafts).length === 1 ? "" : "s"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              AI replies for {Object.keys(bulkDrafts).length} selected comment{Object.keys(bulkDrafts).length === 1 ? "" : "s"}
+            </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-3 -mx-2 px-2">
             {Object.entries(bulkDrafts).map(([id, text]) => {
               const c = visibleAll.find((x) => x.id === id);
               if (!c) return null;
+              const regenerate = () => {
+                const variants = [
+                  c.aiDraft,
+                  `Hey ${c.author.split(" ")[0]}! Thanks for reaching out — our team will get back to you very soon. 🙏`,
+                  `Thanks for your message, ${c.author.split(" ")[0]}! We really appreciate you taking the time. We'll follow up shortly.`,
+                  `Hi ${c.author.split(" ")[0]}! We saw your comment and we're on it — stay tuned! ✨`,
+                ].filter(Boolean) as string[];
+                const current = variants.indexOf(text);
+                const next = variants[(current + 1) % variants.length];
+                setBulkDrafts((prev) => ({ ...prev, [id]: next }));
+                toast.success("Reply regenerated");
+              };
               return (
                 <div key={id} className="border border-border rounded-lg p-3 space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-semibold flex items-center justify-center">{c.avatar}</div>
-                    <span className="text-xs font-semibold">{c.author}</span>
-                    <PlatformIcon name={c.post.platform} className="w-3 h-3 ml-auto" />
+                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-semibold flex items-center justify-center shrink-0">{c.avatar}</div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-semibold">{c.author}</span>
+                      <p className="text-[11px] text-muted-foreground italic truncate">"{c.text}"</p>
+                    </div>
+                    <PlatformIcon name={c.post.platform} className="w-3.5 h-3.5 shrink-0" />
                   </div>
-                  <p className="text-xs text-muted-foreground italic line-clamp-2">"{c.text}"</p>
                   <textarea
                     value={text}
                     onChange={(e) => setBulkDrafts((prev) => ({ ...prev, [id]: e.target.value }))}
                     rows={2}
                     className="w-full text-xs bg-muted/40 border border-border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{text.length}/280</span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={regenerate} className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors">
+                        <Sparkles className="w-3 h-3" />
+                        Regenerate
+                      </button>
+                      <div className="w-px h-3 bg-border" />
+                      <button
+                        onClick={() => {
+                          const t = text.trim();
+                          if (!t) { toast.error("Reply is empty"); return; }
+                          addReply(id, t);
+                          updateComment(id, { stage: "replied" });
+                          setBulkDrafts((prev) => { const n = { ...prev }; delete n[id]; return n; });
+                          toast.success(`Replied to ${c.author.split(" ")[0]}`);
+                        }}
+                        title="Send this reply"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+                      >
+                        <Send className="w-3 h-3" />
+                        Send
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
           <DialogFooter className="gap-2">
             <Button variant="ghost" size="sm" onClick={() => { setBulkAiOpen(false); setBulkDrafts({}); }}>Cancel</Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              // Send individually — same as send all but with toast per item
-              Object.entries(bulkDrafts).forEach(([id, text]) => {
-                const t = text.trim();
-                if (!t) return;
-                addReply(id, t);
-                updateComment(id, { stage: "replied" });
-              });
-              toast.success("Sent individually");
-              setBulkAiOpen(false);
-              setBulkDrafts({});
-              clearSelection();
-            }}>Send individually</Button>
             <Button size="sm" onClick={bulkSendAll}>
+              <Send className="w-3 h-3 mr-1" /> Send all replies
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk manual reply modal */}
+      <Dialog open={bulkManualOpen} onOpenChange={(o) => { setBulkManualOpen(o); if (!o) setBulkManualDrafts({}); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit3 className="w-4 h-4" />
+              Manual replies for {Object.keys(bulkManualDrafts).length} selected comment{Object.keys(bulkManualDrafts).length === 1 ? "" : "s"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-3 -mx-2 px-2">
+            {Object.entries(bulkManualDrafts).map(([id, text]) => {
+              const c = visibleAll.find((x) => x.id === id);
+              if (!c) return null;
+              return (
+                <div key={id} className="border border-border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-muted text-foreground text-[10px] font-semibold flex items-center justify-center shrink-0">{c.avatar}</div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-semibold">{c.author}</span>
+                      <p className="text-[11px] text-muted-foreground italic truncate">"{c.text}"</p>
+                    </div>
+                    <PlatformIcon name={c.post.platform} className="w-3.5 h-3.5 shrink-0" />
+                  </div>
+                  <textarea
+                    value={text}
+                    onChange={(e) => setBulkManualDrafts((prev) => ({ ...prev, [id]: e.target.value }))}
+                    rows={2}
+                    placeholder={`Reply to ${c.author.split(" ")[0]}…`}
+                    className="w-full text-xs bg-background border border-border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/60"
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{text.length}/280</span>
+                    {text.trim().length === 0 && (
+                      <span className="text-[10px] text-muted-foreground italic">Leave empty to skip this comment</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" size="sm" onClick={() => { setBulkManualOpen(false); setBulkManualDrafts({}); }}>Cancel</Button>
+            <Button size="sm" onClick={bulkManualSendAll}>
               <Send className="w-3 h-3 mr-1" /> Send all replies
             </Button>
           </DialogFooter>
@@ -2264,7 +2357,8 @@ function PostThumb({ post, size = "md", className }: { post: Post; size?: "sm" |
     size === "sm" ? "w-4 h-4" : size === "lg" ? "w-6 h-6" : "w-5 h-5";
   const badgeIcon =
     size === "sm" ? "w-2.5 h-2.5" : size === "lg" ? "w-3.5 h-3.5" : "w-3 h-3";
-  const hasMedia = !!post.thumbnail && post.thumbnail.trim() !== "";
+  const hasImage = !!post.imageUrl;
+  const hasEmoji = !!post.thumbnail && post.thumbnail.trim() !== "";
 
   return (
     <div className={cn("relative flex-shrink-0", className)}>
@@ -2272,15 +2366,12 @@ function PostThumb({ post, size = "md", className }: { post: Post; size?: "sm" |
         className={cn(
           "rounded-lg overflow-hidden border border-border flex items-center justify-center shadow-sm",
           sz,
-          platformBgClass(post.platform),
+          !hasImage && platformBgClass(post.platform),
         )}
-        style={{
-          backgroundImage: hasMedia
-            ? "linear-gradient(135deg, hsl(var(--background)) 0%, transparent 60%)"
-            : undefined,
-        }}
       >
-        {hasMedia ? (
+        {hasImage ? (
+          <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+        ) : hasEmoji ? (
           <span aria-hidden className="drop-shadow-sm">{post.thumbnail}</span>
         ) : (
           <PlatformIcon name={post.platform} className="w-4 h-4 text-muted-foreground" />
@@ -2398,18 +2489,7 @@ function ThreadDetailColumn({
       {/* Post context header (with inline status pills) */}
       <div className="border-b border-border bg-muted/20 p-4 flex-shrink-0">
         <div className="flex items-start gap-3 mb-3">
-          {post.thumbnail ? (
-            <div className={cn(
-              "w-20 h-20 rounded-lg border border-border flex items-center justify-center overflow-hidden flex-shrink-0",
-              platformBgClass(post.platform),
-            )}>
-              <span className="text-4xl">{post.thumbnail}</span>
-            </div>
-          ) : (
-            <div className="w-20 h-20 rounded-lg border border-border bg-muted/60 flex items-center justify-center flex-shrink-0">
-              <PlatformIcon name={post.platform} className="w-6 h-6 text-muted-foreground" />
-            </div>
-          )}
+          <PostThumb post={post} size="lg" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-1">
               <PlatformIcon name={post.platform} className="w-3.5 h-3.5" />
@@ -2639,7 +2719,7 @@ function CommentItem({
   onAiReply: () => void;
   onAssignTo: (member: string) => void;
 }) {
-  const sm = sentimentMeta[comment.sentiment];
+  const triggerTag = comment.trigger ? triggerLabel[comment.trigger] : null;
   const stageCls =
     comment.stage === "replied" ? "bg-success/15 text-success"
     : comment.stage === "in_review" ? "bg-warning/15 text-warning"
@@ -2669,14 +2749,20 @@ function CommentItem({
         </div>
         <div className="min-w-0 flex-1">
           {/* Row 1 */}
-          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
             <span className="text-[13px] font-semibold text-foreground">{comment.author}</span>
-            <span className="text-[11px] text-muted-foreground">@{comment.author.toLowerCase().replace(/\s+/g, "")}</span>
-            <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium", sm.bg, sm.color)}>
-              <sm.Icon className="w-3 h-3" /> {sm.label}
-            </span>
-            <span className="text-[11px] text-muted-foreground ml-auto">{comment.at}</span>
-            <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold", stageCls)}>{stageLabel}</span>
+            <span className="text-[11px] text-muted-foreground">· {comment.at}</span>
+            {isUrgent && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-error/15 text-error shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-error" /> Urgent
+              </span>
+            )}
+            {triggerTag && (
+              <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground">
+                {triggerTag}
+              </span>
+            )}
+            <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-semibold ml-auto", stageCls)}>{stageLabel}</span>
           </div>
           {/* Row 2 */}
           <p className="text-sm text-foreground leading-snug">{comment.text}</p>
@@ -2684,14 +2770,19 @@ function CommentItem({
             <ThumbsUp className="w-3 h-3" /> {comment.likes}
           </div>
           {/* Row 3 — actions */}
-          <div className="flex items-center gap-3 mt-2 text-[11px] font-medium text-muted-foreground">
-            <button onClick={onReply} className="hover:text-foreground inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" />Reply</button>
-            <button onClick={onAiReply} className="hover:text-primary text-primary inline-flex items-center gap-1"><Sparkles className="w-3 h-3" />AI reply</button>
+          <div className="flex items-center gap-3 mt-2 text-[11px] font-medium text-muted-foreground flex-wrap">
+            <button onClick={onReply} className="hover:text-foreground inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Reply</button>
+            <button onClick={onAiReply} className="hover:text-primary text-primary inline-flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI reply</button>
+            {comment.assignee && (
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <Users className="w-3 h-3" /> Assigned to <span className="font-semibold text-foreground">{comment.assignee}</span>
+              </span>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="hover:text-foreground inline-flex items-center gap-1">
                   <Users className="w-3 h-3" />
-                  {comment.assignee ? `Assigned: ${comment.assignee}` : "Assign"}
+                  {comment.assignee ? "Reassign" : "Assign"}
                   <ChevronDown className="w-3 h-3" />
                 </button>
               </DropdownMenuTrigger>
