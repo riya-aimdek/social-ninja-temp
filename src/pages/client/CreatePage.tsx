@@ -285,10 +285,10 @@ export default function CreatePage() {
                 className="w-full min-h-[180px] resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent leading-relaxed"
               />
 
-              {/* Character meters — single-line inline chips */}
+              {/* Character counter pills */}
               {selectedPlatforms.length > 0 && (
-                <div className="flex items-center gap-x-1.5 pt-2 border-t border-border min-w-0">
-                  {selectedPlatforms.map((p, idx) => {
+                <div className="flex items-center gap-2 pt-2 border-t border-border flex-wrap">
+                  {selectedPlatforms.map((p) => {
                     const meta = PLATFORMS[p];
                     const text = getCaptionFor(p);
                     const len = text.length;
@@ -297,32 +297,22 @@ export default function CreatePage() {
                     const near = !over && pct >= 85;
                     const Icon = meta.icon;
                     return (
-                      <div key={p} className="flex items-center gap-1.5 min-w-0 flex-1">
-                        {idx > 0 && <span className="text-border select-none shrink-0">|</span>}
-                        <div
-                          className="group flex items-center gap-1 text-[11px] min-w-0 flex-1"
-                          title={`${meta.name}: ${len.toLocaleString()} / ${meta.charLimit.toLocaleString()} characters`}
-                        >
-                          <Icon className="w-3 h-3 text-muted-foreground shrink-0" />
-                          <span className="text-muted-foreground shrink-0">{meta.name}</span>
-                          <div className="h-1 rounded-full bg-accent overflow-hidden flex-1 min-w-[16px]">
-                            <div
-                              className={cn(
-                                "h-full rounded-full transition-all",
-                                over ? "bg-destructive" : near ? "bg-amber-500" : "gradient-coral"
-                              )}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span
-                            className={cn(
-                              "tabular-nums shrink-0",
-                              over ? "text-destructive font-semibold" : near ? "text-amber-600" : "text-muted-foreground"
-                            )}
-                          >
-                            {len.toLocaleString()}/{meta.charLimit.toLocaleString()}
-                          </span>
-                        </div>
+                      <div
+                        key={p}
+                        title={`${meta.name}: ${len.toLocaleString()} / ${meta.charLimit.toLocaleString()} characters`}
+                        className={cn(
+                          "flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border text-xs font-medium transition-colors select-none",
+                          over
+                            ? "border-destructive/40 bg-destructive/5 text-destructive"
+                            : near
+                            ? "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700"
+                            : "border-border bg-background text-muted-foreground"
+                        )}
+                      >
+                        <span className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0", meta.color)}>
+                          <Icon className="w-3 h-3 text-white" />
+                        </span>
+                        <span className="tabular-nums">{len.toLocaleString()}/{meta.charLimit.toLocaleString()}</span>
                       </div>
                     );
                   })}

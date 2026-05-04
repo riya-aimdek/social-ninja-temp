@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, Building, Users, CreditCard, ScrollText,
-  Bell, Settings,
+  Bell, Settings, ChevronRight,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
@@ -58,12 +58,32 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
         </div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <h1 className="text-base font-semibold text-foreground">{title}</h1>
-          <div className="flex items-center gap-3">
+        <header className="py-5 shrink-0 border-b border-border bg-card flex items-center px-6 gap-5">
+          {/* Context identifier */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Building2 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">Platform</p>
+              <p className="text-sm font-semibold text-foreground">Super Admin</p>
+            </div>
+          </div>
+          <div className="w-px self-stretch bg-border shrink-0" />
+          {/* Page title + breadcrumb */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <h1 className="text-xl font-bold text-foreground truncate">{title}</h1>
+            <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+              <span className="text-xs text-muted-foreground shrink-0">Super Admin</span>
+              <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+              <span className="text-xs text-foreground font-medium truncate">{title}</span>
+            </div>
+          </div>
+          {/* Notifications */}
+          <div className="flex items-center gap-2 shrink-0">
             {notificationCount > 0 && (
               <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
-                <Bell className="h-4 w-4 text-muted-foreground" />
+                <Bell className="h-5 w-5 text-muted-foreground" />
                 <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-primary rounded-full text-[10px] font-semibold text-primary-foreground flex items-center justify-center px-1">
                   {notificationCount}
                 </span>

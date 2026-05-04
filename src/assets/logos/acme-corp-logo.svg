@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <defs>
+    <linearGradient id="ac" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="40" height="40" rx="10" fill="url(#ac)"/>
+  <polygon points="20,8 28,14 28,26 20,32 12,26 12,14" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/>
+  <text x="20" y="26" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle" letter-spacing="0.5">ACME</text>
+</svg>

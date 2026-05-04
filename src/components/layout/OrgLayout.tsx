@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Users, Wifi, BarChart3, MessageSquare, Settings,
-  Bell, ExternalLink,
+  Bell, ExternalLink, ChevronRight,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
@@ -51,17 +51,33 @@ const OrgLayout = ({ children, title }: OrgLayoutProps) => {
         </div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            {title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}
+        <header className="py-5 shrink-0 border-b border-border bg-card flex items-center px-6 gap-5">
+          {/* Context identifier */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-10 h-10 rounded-full bg-client flex items-center justify-center text-white text-sm font-semibold shrink-0">RC</div>
+            <div>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">Business</p>
+              <p className="text-sm font-semibold text-foreground">RetailCo</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <a href="https://social-ninja.lovable.app?org=1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 h-9 px-3 border border-border rounded-lg text-sm text-foreground hover:bg-muted transition-colors">
-              Open in SocialNinja <ExternalLink className="h-3.5 w-3.5" />
+          <div className="w-px self-stretch bg-border shrink-0" />
+          {/* Page title + breadcrumbs */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            {title && <h1 className="text-xl font-bold text-foreground truncate">{title}</h1>}
+            <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+              <span className="text-xs text-muted-foreground shrink-0">Business</span>
+              <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+              <span className="text-xs text-foreground font-medium truncate">{title}</span>
+            </div>
+          </div>
+          {/* Right */}
+          <div className="flex items-center gap-2 shrink-0">
+            <a href="https://social-ninja.lovable.app?org=1" target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-2 h-9 px-3 border border-border rounded-lg text-sm text-foreground hover:bg-muted transition-colors whitespace-nowrap">
+              Open in SocialNinja <ExternalLink className="h-3.5 w-3.5 shrink-0" />
             </a>
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
-              <Bell className="h-4 w-4 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
             </button>
           </div>
         </header>

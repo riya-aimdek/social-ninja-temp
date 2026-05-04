@@ -1,12 +1,18 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Globe, Users, ChevronDown, ChevronUp,
+  LayoutDashboard, Globe, Users, ChevronDown, ChevronUp, ChevronRight,
   Bell, Check, LogOut, FolderOpen, Sparkles, CalendarDays,
   MessageSquare, BarChart3, Megaphone, Ear, Settings, Palette, Link2 as LinkIcon,
   Receipt,
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
+import agencyLogoSrc from "@/assets/logos/agency-logo.svg";
+import acmeCorpLogoSrc from "@/assets/logos/acme-corp-logo.svg";
+import client1LogoSrc from "@/assets/logos/client-1-logo.svg";
+import socialCampaignLogoSrc from "@/assets/logos/social-campaign-logo.svg";
+import websiteRedesignLogoSrc from "@/assets/logos/website-redesign-logo.svg";
+import brandLaunchLogoSrc from "@/assets/logos/brand-launch-logo.svg";
 
 const agencyNavItems = [
   { title: "Dashboard", path: "/agency/dashboard", icon: LayoutDashboard },
@@ -37,21 +43,21 @@ const projectNavItems = [
 ];
 
 const mockAgencies = [
-  { id: "1", name: "Agency", icon: "🏢" },
+  { id: "1", name: "Agency", icon: "🏢", logo: agencyLogoSrc },
 ];
 
 const mockClients = [
-  { id: "1", name: "client-1", initials: "C" },
-  { id: "2", name: "Acme Corp", initials: "A" },
+  { id: "1", name: "client-1", initials: "C", logo: client1LogoSrc },
+  { id: "2", name: "Acme Corp", initials: "A", logo: acmeCorpLogoSrc },
 ];
 
-const mockProjectsByClient: Record<string, { id: string; name: string }[]> = {
+const mockProjectsByClient: Record<string, { id: string; name: string; logo: string }[]> = {
   "1": [
-    { id: "p1", name: "Social Campaign" },
-    { id: "p2", name: "Website Redesign" },
+    { id: "p1", name: "Social Campaign", logo: socialCampaignLogoSrc },
+    { id: "p2", name: "Website Redesign", logo: websiteRedesignLogoSrc },
   ],
   "2": [
-    { id: "p3", name: "Brand Launch" },
+    { id: "p3", name: "Brand Launch", logo: brandLaunchLogoSrc },
   ],
 };
 
@@ -66,7 +72,7 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
   const [selectedAgency] = useState(mockAgencies[0]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<typeof mockClients[0] | null>(null);
-  const [selectedProject, setSelectedProject] = useState<{ id: string; name: string } | null>(null);
+  const [selectedProject, setSelectedProject] = useState<{ id: string; name: string; logo: string } | null>(null);
   const switcherRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -233,51 +239,74 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <div className="flex items-center gap-2">
-            {isClientContext ? (
-              <>
-                <span className="text-sm text-muted-foreground">Client</span>
-                <span className="text-sm text-muted-foreground">{'>'}</span>
-                {isProjectContext ? (
-                  <>
-                    <button onClick={handleBackToClient} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                      {selectedClient!.name}
-                    </button>
-                    <span className="text-sm text-muted-foreground">{'>'}</span>
-                    <span className="text-sm text-muted-foreground">{selectedProject!.name}</span>
-                    <span className="text-sm text-muted-foreground">{'>'}</span>
-                  </>
-                ) : null}
-                <span className="text-sm text-foreground font-medium">{breadcrumbLabel}</span>
-              </>
-            ) : (
-              <>
-                <span className="text-sm text-muted-foreground">Agency</span>
-                <span className="text-sm text-muted-foreground">{'>'}</span>
-                <span className="text-sm text-foreground font-medium">{breadcrumbLabel}</span>
-              </>
-            )}
+        <header className="py-5 shrink-0 border-b border-border bg-card flex items-center px-6 gap-5">
+          {/* Context identifier */}
+          <div className="flex items-center gap-3 shrink-0 min-w-0 max-w-[200px]">
+            <img
+              src={
+                isProjectContext
+                  ? selectedProject!.logo
+                  : isClientContext
+                  ? selectedClient!.logo
+                  : selectedAgency.logo
+              }
+              alt={switcherLabel}
+              className="w-10 h-10 rounded-xl object-cover shrink-0"
+            />
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">
+                {isProjectContext ? 'Project' : isClientContext ? 'Client' : 'Agency'}
+              </p>
+              <p className="text-sm font-semibold text-foreground truncate">{switcherLabel}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="w-px self-stretch bg-border shrink-0" />
+          {/* Page title + breadcrumbs */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <h1 className="text-xl font-bold text-foreground truncate">{breadcrumbLabel}</h1>
+            <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+              {isClientContext ? (
+                <>
+                  <span className="text-xs text-muted-foreground shrink-0">Client</span>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                  {isProjectContext ? (
+                    <>
+                      <button onClick={handleBackToClient} className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">{selectedClient!.name}</button>
+                      <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                      <span className="text-xs text-muted-foreground truncate">{selectedProject!.name}</span>
+                      <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                    </>
+                  ) : null}
+                  <span className="text-xs text-foreground font-medium truncate">{breadcrumbLabel}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-xs text-muted-foreground shrink-0">Agency</span>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-foreground font-medium truncate">{breadcrumbLabel}</span>
+                </>
+              )}
+            </div>
+          </div>
+          {/* Right: user + notifications */}
+          <div className="flex items-center gap-2 shrink-0">
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
-              <Bell className="h-4 w-4 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
             </button>
-            <div className="flex items-center gap-2">
-              <div className="text-right">
-                <p className="text-sm font-medium text-foreground">{selectedAgency.name.toLowerCase()}</p>
+            <div className="flex items-center gap-2 pl-3 border-l border-border">
+              <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">A</div>
+              <div className="hidden lg:block text-left">
+                <p className="text-sm font-medium text-foreground">{selectedAgency.name}</p>
                 <p className="text-[11px] text-muted-foreground">Agency</p>
               </div>
-              <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold">A</div>
-              <button onClick={() => navigate("/login")} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+              <button onClick={() => navigate("/login")} className="p-1.5 hover:bg-muted rounded-lg transition-colors ml-1">
                 <LogOut className="h-4 w-4 text-muted-foreground" />
               </button>
             </div>
           </div>
         </header>
         <main className="flex-1 p-6 overflow-auto bg-muted/30">
-          {title && <h1 className="text-xl font-semibold text-foreground mb-6">{breadcrumbLabel}</h1>}
           {children}
         </main>
       </div>

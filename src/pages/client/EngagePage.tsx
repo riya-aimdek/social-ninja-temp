@@ -765,27 +765,79 @@ export default function EngagePage() {
     toast.success("Reply posted");
   };
 
+  const [statsOpen, setStatsOpen] = useState(true);
+
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {[
-          { I: MessageSquare, label: "Pending review", value: summary.pending, tone: "text-info bg-info/10" },
-          { I: AlertTriangle, label: "Urgent", value: summary.urgent, tone: "text-error bg-error/10" },
-          { I: Clock, label: "SLA breached", value: summary.breached, tone: "text-warning bg-warning/10" },
-          { I: CheckCircle2, label: "Replied today", value: summary.replied, tone: "text-success bg-success/10" },
-          { I: Shield, label: "Spam filtered", value: summary.spam, tone: "text-muted-foreground bg-muted" },
-        ].map((s) => (
-          <div key={s.label} className="bg-card rounded-xl border border-border p-4">
-            <div className="flex items-center justify-between">
-              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", s.tone)}>
-                <s.I className="w-4 h-4" />
+      {/* Summary — collapsible */}
+      <div className="border border-border rounded-xl bg-card overflow-hidden">
+        <button
+          onClick={() => setStatsOpen(o => !o)}
+          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Overview</span>
+            {!statsOpen && (
+              <div className="flex items-center gap-3 ml-2">
+                {[
+                  { label: "Pending", value: summary.pending, tone: "text-info" },
+                  { label: "Urgent", value: summary.urgent, tone: "text-error" },
+                  { label: "SLA breached", value: summary.breached, tone: "text-warning" },
+                  { label: "Replied", value: summary.replied, tone: "text-success" },
+                ].map(s => (
+                  <span key={s.label} className={cn("text-xs font-semibold tabular-nums", s.tone)}>
+                    {s.value} <span className="font-normal text-muted-foreground">{s.label}</span>
+                  </span>
+                ))}
               </div>
-              <span className="text-2xl font-bold text-foreground tabular-nums">{s.value}</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-2">{s.label}</div>
+            )}
           </div>
-        ))}
+          <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", statsOpen && "rotate-180")} />
+        </button>
+        {statsOpen && (
+          <div className="border-t border-border">
+            {/* desktop: single row with dividers */}
+            <div className="hidden md:flex divide-x divide-border">
+              {[
+                { I: MessageSquare, label: "Pending review", value: summary.pending, iconTone: "text-info bg-info/10", valueTone: "text-info" },
+                { I: AlertTriangle, label: "Urgent", value: summary.urgent, iconTone: "text-error bg-error/10", valueTone: "text-error" },
+                { I: Clock, label: "SLA breached", value: summary.breached, iconTone: "text-warning bg-warning/10", valueTone: "text-warning" },
+                { I: CheckCircle2, label: "Replied today", value: summary.replied, iconTone: "text-success bg-success/10", valueTone: "text-success" },
+                { I: Shield, label: "Spam filtered", value: summary.spam, iconTone: "text-muted-foreground bg-muted", valueTone: "text-foreground" },
+              ].map((s) => (
+                <div key={s.label} className="flex-1 flex items-center gap-4 px-5 py-4">
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", s.iconTone)}>
+                    <s.I className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className={cn("text-2xl font-bold tabular-nums leading-none", s.valueTone)}>{s.value}</div>
+                    <div className="text-xs text-muted-foreground mt-1 whitespace-nowrap">{s.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* mobile: 2-col grid */}
+            <div className="grid grid-cols-2 divide-x divide-y divide-border md:hidden">
+              {[
+                { I: MessageSquare, label: "Pending review", value: summary.pending, iconTone: "text-info bg-info/10", valueTone: "text-info" },
+                { I: AlertTriangle, label: "Urgent", value: summary.urgent, iconTone: "text-error bg-error/10", valueTone: "text-error" },
+                { I: Clock, label: "SLA breached", value: summary.breached, iconTone: "text-warning bg-warning/10", valueTone: "text-warning" },
+                { I: CheckCircle2, label: "Replied today", value: summary.replied, iconTone: "text-success bg-success/10", valueTone: "text-success" },
+                { I: Shield, label: "Spam filtered", value: summary.spam, iconTone: "text-muted-foreground bg-muted", valueTone: "text-foreground" },
+              ].map((s) => (
+                <div key={s.label} className="flex items-center gap-3 px-4 py-4">
+                  <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", s.iconTone)}>
+                    <s.I className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className={cn("text-xl font-bold tabular-nums leading-none", s.valueTone)}>{s.value}</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">{s.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs row with platform filter + refresh */}

@@ -68,8 +68,10 @@ export const MOCK_POSTS: PostDraft[] = [
       { id: "c1", author: "Priya Sharma", text: "Hero shot uses the approved lifestyle imagery.", at: iso(-1, 9, 31) },
     ],
     audit: [
-      { id: "a1", at: iso(-1, 9, 30), actor: "Priya Sharma", actorRole: "agency", action: "Created draft" },
-      { id: "a2", at: iso(-1, 9, 35), actor: "Priya Sharma", actorRole: "agency", action: "Sent for approval", detail: "Notified 1 reviewer" },
+      { id: "a1", at: iso(-3, 9, 30), actor: "Priya Sharma", actorRole: "agency", action: "Created draft" },
+      { id: "a2", at: iso(-3, 9, 35), actor: "Priya Sharma", actorRole: "agency", action: "Sent for approval", detail: "Notified 1 reviewer" },
+      { id: "a3", at: iso(-2, 15, 10), actor: "Anita Rao (Client)", actorRole: "client-reviewer", action: "Rejected", detail: "Please use a brighter hero image and reduce hashtags" },
+      { id: "a4", at: iso(-1, 9, 30), actor: "Priya Sharma", actorRole: "agency", action: "Edited & resubmitted", detail: "Swapped hero image, trimmed hashtags, updated caption tone" },
     ],
   },
   {
@@ -88,9 +90,10 @@ export const MOCK_POSTS: PostDraft[] = [
     reviewers: ["client.lead@retailco.com"],
     comments: [],
     audit: [
-      { id: "a1", at: iso(-2, 11, 0), actor: "Priya Sharma", actorRole: "agency", action: "Created draft" },
-      { id: "a2", at: iso(-2, 11, 5), actor: "Priya Sharma", actorRole: "agency", action: "Sent for approval" },
-      { id: "a3", at: iso(-1, 16, 12), actor: "Anita Rao (Client)", actorRole: "client-reviewer", action: "Approved", detail: "Approved via public link" },
+      { id: "a1", at: iso(-2, 11, 0),  actor: "Priya Sharma",          actorRole: "agency",           action: "Created draft" },
+      { id: "a2", at: iso(-2, 11, 5),  actor: "Priya Sharma",          actorRole: "agency",           action: "Sent for approval", detail: "Notified 1 reviewer" },
+      { id: "a3", at: iso(-1, 16, 12), actor: "Anita Rao (Client)",    actorRole: "client-reviewer",  action: "Approved", detail: "Approved via public link" },
+      { id: "a4", at: iso(-1, 16, 13), actor: "System",                actorRole: "system",           action: "Scheduled", detail: "Queued for scheduled time" },
     ],
   },
   {
@@ -112,9 +115,11 @@ export const MOCK_POSTS: PostDraft[] = [
       { id: "c1", author: "Chef Daniela", text: "Love the visual! Caption needs a rework — see brand voice doc §3.", at: iso(0, 8, 22) },
     ],
     audit: [
-      { id: "a1", at: iso(-1, 14, 0), actor: "Mike Torres", actorRole: "agency", action: "Created draft" },
-      { id: "a2", at: iso(-1, 14, 5), actor: "Mike Torres", actorRole: "agency", action: "Sent for approval" },
-      { id: "a3", at: iso(0, 8, 22), actor: "Chef Daniela (Client)", actorRole: "client-reviewer", action: "Rejected", detail: "Caption tone is too casual" },
+      { id: "a1", at: iso(-3, 14, 0),  actor: "Mike Torres",            actorRole: "agency",            action: "Created draft" },
+      { id: "a2", at: iso(-3, 14, 5),  actor: "Mike Torres",            actorRole: "agency",            action: "Sent for approval" },
+      { id: "a3", at: iso(-2, 8, 22),  actor: "Chef Daniela (Client)",  actorRole: "client-reviewer",   action: "Rejected", detail: "Caption tone is too casual — see brand voice guide §3" },
+      { id: "a4", at: iso(-1, 10, 0),  actor: "Mike Torres",            actorRole: "agency",            action: "Edited & resubmitted", detail: "Rewrote caption with formal tone; kept the hook" },
+      { id: "a5", at: iso(0, 8, 22),   actor: "Chef Daniela (Client)",  actorRole: "client-reviewer",   action: "Rejected", detail: "Still doesn't align with brand voice — needs more warmth" },
     ],
   },
   {
@@ -133,10 +138,12 @@ export const MOCK_POSTS: PostDraft[] = [
     reviewers: ["client.lead@retailco.com"],
     comments: [],
     audit: [
-      { id: "a1", at: iso(-3, 10, 0), actor: "Priya Sharma", actorRole: "agency", action: "Created draft" },
-      { id: "a2", at: iso(-3, 10, 2), actor: "Priya Sharma", actorRole: "agency", action: "Sent for approval" },
-      { id: "a3", at: iso(-2, 9, 15), actor: "Anita Rao (Client)", actorRole: "client-reviewer", action: "Approved" },
-      { id: "a4", at: iso(-2, 9, 16), actor: "System", actorRole: "system", action: "Scheduled", detail: "Queued for Mar 27, 1:00 PM" },
+      { id: "a1", at: iso(-5, 10, 0),  actor: "Priya Sharma",          actorRole: "agency",          action: "Created draft" },
+      { id: "a2", at: iso(-5, 10, 2),  actor: "Priya Sharma",          actorRole: "agency",          action: "Sent for approval", detail: "Notified client.lead@retailco.com" },
+      { id: "a3", at: iso(-4, 14, 30), actor: "Anita Rao (Client)",    actorRole: "client-reviewer", action: "Rejected", detail: "Caption feels generic — add UGC credit" },
+      { id: "a4", at: iso(-3, 9, 10),  actor: "Priya Sharma",          actorRole: "agency",          action: "Edited & resubmitted", detail: "Added @mention and updated caption" },
+      { id: "a5", at: iso(-2, 9, 15),  actor: "Anita Rao (Client)",    actorRole: "client-reviewer", action: "Approved" },
+      { id: "a6", at: iso(-2, 9, 16),  actor: "System",                actorRole: "system",          action: "Scheduled", detail: "Queued for Mar 27, 1:00 PM" },
     ],
   },
   {
@@ -155,10 +162,13 @@ export const MOCK_POSTS: PostDraft[] = [
     reviewers: ["chef@foodiehub.com"],
     comments: [],
     audit: [
-      { id: "a1", at: iso(-4, 9, 0), actor: "Mike Torres", actorRole: "agency", action: "Created draft" },
-      { id: "a2", at: iso(-4, 9, 5), actor: "Mike Torres", actorRole: "agency", action: "Sent for approval" },
-      { id: "a3", at: iso(-3, 10, 0), actor: "Chef Daniela (Client)", actorRole: "client-reviewer", action: "Approved" },
-      { id: "a4", at: iso(-1, 11, 0), actor: "System", actorRole: "system", action: "Published", detail: "Published to Facebook + Instagram" },
+      { id: "a1", at: iso(-6, 9, 0),  actor: "Mike Torres",           actorRole: "agency",          action: "Created draft" },
+      { id: "a2", at: iso(-6, 9, 5),  actor: "Mike Torres",           actorRole: "agency",          action: "Sent for approval", detail: "Notified chef@foodiehub.com" },
+      { id: "a3", at: iso(-5, 11, 0), actor: "Chef Daniela (Client)", actorRole: "client-reviewer", action: "Rejected", detail: "Needs a video, not a static image" },
+      { id: "a4", at: iso(-4, 10, 0), actor: "Mike Torres",           actorRole: "agency",          action: "Edited & resubmitted", detail: "Replaced image with video, updated caption" },
+      { id: "a5", at: iso(-3, 10, 0), actor: "Chef Daniela (Client)", actorRole: "client-reviewer", action: "Approved" },
+      { id: "a6", at: iso(-3, 10, 1), actor: "System",                actorRole: "system",          action: "Scheduled", detail: "Queued for publish" },
+      { id: "a7", at: iso(-1, 11, 0), actor: "System",                actorRole: "system",          action: "Published", detail: "Published to Facebook + Instagram" },
     ],
   },
   {
@@ -176,7 +186,10 @@ export const MOCK_POSTS: PostDraft[] = [
     approvalToken: "tok_draft_a6",
     reviewers: [],
     comments: [],
-    audit: [{ id: "a1", at: iso(0, 8, 0), actor: "Priya Sharma", actorRole: "agency", action: "Created draft" }],
+    audit: [
+      { id: "a1", at: iso(0, 8, 0),  actor: "Priya Sharma", actorRole: "agency", action: "Created draft" },
+      { id: "a2", at: iso(0, 8, 45), actor: "Priya Sharma", actorRole: "agency", action: "Edited & resubmitted", detail: "Revised caption, waiting on offer code confirmation" },
+    ],
   },
 ];
 

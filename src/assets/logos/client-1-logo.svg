@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <defs>
+    <linearGradient id="c1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+  </defs>
+  <rect width="40" height="40" rx="10" fill="url(#c1)"/>
+  <!-- building / business icon -->
+  <rect x="13" y="12" width="14" height="16" rx="1" fill="none" stroke="white" stroke-width="1.5"/>
+  <rect x="16" y="15" width="3" height="3" rx="0.5" fill="white" opacity="0.8"/>
+  <rect x="21" y="15" width="3" height="3" rx="0.5" fill="white" opacity="0.8"/>
+  <rect x="16" y="20" width="3" height="3" rx="0.5" fill="white" opacity="0.8"/>
+  <rect x="21" y="20" width="3" height="3" rx="0.5" fill="white" opacity="0.8"/>
+  <rect x="18" y="25" width="4" height="3" rx="0.5" fill="white" opacity="0.9"/>
+</svg>

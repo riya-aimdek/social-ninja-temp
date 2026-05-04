@@ -2,23 +2,28 @@ import { useState } from "react";
 import { Outlet, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, FolderOpen, Users, Link2, Sparkles, CalendarDays, MessageSquare,
-  BarChart3, Megaphone, Ear, Settings, Bell, ChevronDown, ChevronUp,
+  BarChart3, Megaphone, Ear, Settings, Bell, ChevronDown, ChevronUp, ChevronRight,
   LogOut, Globe, Palette
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
+import acmeCorpLogoSrc from "@/assets/logos/acme-corp-logo.svg";
+import sansLogoSrc from "@/assets/logos/sans-logo.svg";
+import socialCampaignLogoSrc from "@/assets/logos/social-campaign-logo.svg";
+import websiteRedesignLogoSrc from "@/assets/logos/website-redesign-logo.svg";
+import brandLaunchLogoSrc from "@/assets/logos/brand-launch-logo.svg";
 
 const mockClients = [
-  { id: "c1", name: "Sans", initial: "S" },
-  { id: "c2", name: "Acme Corp", initial: "A" },
+  { id: "c1", name: "Sans", initial: "S", logo: sansLogoSrc },
+  { id: "c2", name: "Acme Corp", initial: "A", logo: acmeCorpLogoSrc },
 ];
 
-const mockProjectsByClient: Record<string, { id: string; name: string }[]> = {
+const mockProjectsByClient: Record<string, { id: string; name: string; logo: string }[]> = {
   c1: [
-    { id: "p1", name: "123" },
-    { id: "p2", name: "Website Redesign" },
+    { id: "p1", name: "Website Redesign", logo: websiteRedesignLogoSrc },
+    { id: "p2", name: "Social Campaign", logo: socialCampaignLogoSrc },
   ],
   c2: [
-    { id: "p3", name: "Social Campaign" },
+    { id: "p3", name: "Brand Launch", logo: brandLaunchLogoSrc },
   ],
 };
 
@@ -48,7 +53,7 @@ export default function ClientLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [selectedClient, setSelectedClient] = useState(mockClients[0]);
-  const [selectedProject, setSelectedProject] = useState<{ id: string; name: string } | null>(null);
+  const [selectedProject, setSelectedProject] = useState<{ id: string; name: string; logo: string } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const clientProjects = mockProjectsByClient[selectedClient.id] || [];
@@ -197,28 +202,48 @@ export default function ClientLayout() {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-14 border-b border-border bg-card flex items-center justify-between px-6 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Business</span>
-            <span className="text-sm text-muted-foreground">{">"}</span>
-            {selectedProject && (
-              <>
-                <button onClick={handleBackToClient} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  {selectedClient.name}
-                </button>
-                <span className="text-sm text-muted-foreground">{">"}</span>
-                <span className="text-sm text-muted-foreground">{selectedProject.name}</span>
-                <span className="text-sm text-muted-foreground">{">"}</span>
-              </>
-            )}
-            <span className="text-sm text-foreground font-medium">{breadcrumbLabel}</span>
+        <header className="py-5 border-b border-border bg-card flex items-center px-6 gap-5 flex-shrink-0">
+          {/* Context identifier */}
+          <div className="flex items-center gap-3 shrink-0 min-w-0 max-w-[200px]">
+            <img
+              src={selectedProject ? selectedProject.logo : selectedClient.logo}
+              alt={selectedProject ? selectedProject.name : selectedClient.name}
+              className="w-10 h-10 rounded-xl object-cover shrink-0"
+            />
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">
+                {selectedProject ? 'Project' : 'Business'}
+              </p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                {selectedProject ? selectedProject.name : selectedClient.name}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="w-px self-stretch bg-border shrink-0" />
+          {/* Page title + breadcrumbs */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <h1 className="text-xl font-bold text-foreground truncate">{breadcrumbLabel}</h1>
+            <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+              <span className="text-xs text-muted-foreground shrink-0">Business</span>
+              <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+              {selectedProject && (
+                <>
+                  <button onClick={handleBackToClient} className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">{selectedClient.name}</button>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground truncate">{selectedProject.name}</span>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                </>
+              )}
+              <span className="text-xs text-foreground font-medium truncate">{breadcrumbLabel}</span>
+            </div>
+          </div>
+          {/* Right: notifications + logout */}
+          <div className="flex items-center gap-2 shrink-0">
             <button className="relative p-2 rounded-lg hover:bg-accent transition-colors">
-              <Bell className="w-[18px] h-[18px] text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
             </button>
-            <button className="p-2 rounded-lg hover:bg-accent transition-colors" title="Logout">
+            <button className="p-2 rounded-lg hover:bg-accent transition-colors border-l border-border ml-1 pl-3" title="Logout">
               <LogOut className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>

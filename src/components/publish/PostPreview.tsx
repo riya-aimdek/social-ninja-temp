@@ -9,22 +9,32 @@ interface Props {
   brand: { name: string; handle?: string; avatar?: string };
 }
 
-const Avatar = ({ name, src }: { name: string; src?: string }) =>
-  src ? (
-    <img src={src} alt={name} className="w-8 h-8 rounded-full object-cover" />
+const Avatar = ({ name, src, size = "md" }: { name: string; src?: string; size?: "sm" | "md" }) => {
+  const cls = size === "sm" ? "w-7 h-7 text-[10px]" : "w-9 h-9 text-[11px]";
+  return src ? (
+    <img src={src} alt={name} className={cn(cls, "rounded-full object-cover shrink-0")} />
   ) : (
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-[11px] font-semibold text-primary-foreground">
-      {name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+    <div className={cn(cls, "rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center font-semibold text-white shrink-0")}>
+      {name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
     </div>
   );
+};
 
-const MediaBlock = ({ media }: { media: Props["media"] }) => {
-  if (!media.length) return <div className="aspect-square bg-muted flex items-center justify-center text-xs text-muted-foreground">No media</div>;
+const MediaBlock = ({ media, rounded = false }: { media: Props["media"]; rounded?: boolean }) => {
+  if (!media.length) {
+    return (
+      <div className={cn("aspect-square bg-muted flex items-center justify-center text-xs text-muted-foreground", rounded && "rounded-xl overflow-hidden")}>
+        No media
+      </div>
+    );
+  }
   return (
-    <div className="relative aspect-square bg-muted overflow-hidden">
+    <div className={cn("relative bg-muted overflow-hidden", rounded ? "rounded-xl aspect-square" : "aspect-square")}>
       <img src={media[0].url} alt="" className="w-full h-full object-cover" />
       {media.length > 1 && (
-        <span className="absolute top-2 right-2 bg-foreground/70 text-card text-[10px] px-1.5 py-0.5 rounded">1/{media.length}</span>
+        <span className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-md">
+          1/{media.length}
+        </span>
       )}
     </div>
   );
@@ -36,22 +46,28 @@ export default function PostPreview({ platform, caption, media, brand }: Props) 
 
   if (platform === "instagram") {
     return (
-      <div className="w-full max-w-[360px] mx-auto bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-        <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="w-full bg-white dark:bg-zinc-950 font-sans">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 px-3 py-2.5">
           <Avatar name={brand.name} src={brand.avatar} />
-          <span className="text-sm font-semibold text-foreground flex-1">{handle}</span>
-          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+          <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 flex-1 leading-none">{handle}</span>
+          <MoreHorizontal className="w-4 h-4 text-zinc-500" />
         </div>
+        {/* Media */}
         <MediaBlock media={media} />
-        <div className="px-3 py-2 flex items-center gap-3">
-          <Heart className="w-5 h-5 text-foreground" />
-          <MessageCircle className="w-5 h-5 text-foreground" />
-          <Send className="w-5 h-5 text-foreground" />
-          <Bookmark className="w-5 h-5 text-foreground ml-auto" />
+        {/* Actions */}
+        <div className="flex items-center px-3 pt-2.5 pb-1 gap-3.5">
+          <Heart className="w-[22px] h-[22px] text-zinc-900 dark:text-zinc-100" />
+          <MessageCircle className="w-[22px] h-[22px] text-zinc-900 dark:text-zinc-100" />
+          <Send className="w-[22px] h-[22px] text-zinc-900 dark:text-zinc-100" />
+          <Bookmark className="w-[22px] h-[22px] text-zinc-900 dark:text-zinc-100 ml-auto" />
         </div>
-        <div className="px-3 pb-3 text-xs text-foreground">
-          <span className="font-semibold mr-1">{handle}</span>
-          {caption}
+        {/* Caption */}
+        <div className="px-3 pb-3 pt-0.5">
+          <p className="text-[13px] text-zinc-900 dark:text-zinc-100 leading-snug">
+            <span className="font-semibold mr-1">{handle}</span>
+            {caption}
+          </p>
         </div>
       </div>
     );
@@ -59,21 +75,21 @@ export default function PostPreview({ platform, caption, media, brand }: Props) 
 
   if (platform === "facebook") {
     return (
-      <div className="w-full max-w-[420px] mx-auto bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-        <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="w-full bg-white dark:bg-zinc-950 font-sans">
+        <div className="flex items-center gap-2.5 px-3 py-2.5">
           <Avatar name={brand.name} src={brand.avatar} />
-          <div className="flex-1">
-            <div className="text-sm font-semibold text-foreground">{brand.name}</div>
-            <div className="text-[11px] text-muted-foreground">Sponsored · 🌐</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 leading-none">{brand.name}</div>
+            <div className="text-[11px] text-zinc-500 mt-0.5">Just now · 🌐</div>
           </div>
-          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+          <MoreHorizontal className="w-4 h-4 text-zinc-500" />
         </div>
-        <div className="px-3 pb-2 text-sm text-foreground">{caption}</div>
+        <div className="px-3 pb-2.5 text-[13px] text-zinc-900 dark:text-zinc-100 leading-snug">{caption}</div>
         <MediaBlock media={media} />
-        <div className="px-3 py-2 flex items-center gap-4 border-t border-border text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><ThumbsUp className="w-4 h-4" /> Like</span>
-          <span className="flex items-center gap-1"><MessageCircle className="w-4 h-4" /> Comment</span>
-          <span className="flex items-center gap-1"><Send className="w-4 h-4" /> Share</span>
+        <div className="px-3 py-2 flex items-center gap-5 border-t border-zinc-200 dark:border-zinc-800 text-[12px] text-zinc-500 font-medium">
+          <span className="flex items-center gap-1.5"><ThumbsUp className="w-4 h-4" /> Like</span>
+          <span className="flex items-center gap-1.5"><MessageCircle className="w-4 h-4" /> Comment</span>
+          <span className="flex items-center gap-1.5"><Send className="w-4 h-4" /> Share</span>
         </div>
       </div>
     );
@@ -81,20 +97,21 @@ export default function PostPreview({ platform, caption, media, brand }: Props) 
 
   if (platform === "linkedin") {
     return (
-      <div className="w-full max-w-[420px] mx-auto bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-        <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="w-full bg-white dark:bg-zinc-950 font-sans">
+        <div className="flex items-center gap-2.5 px-3 py-2.5">
           <Avatar name={brand.name} src={brand.avatar} />
-          <div className="flex-1">
-            <div className="text-sm font-semibold text-foreground">{brand.name}</div>
-            <div className="text-[11px] text-muted-foreground">Brand Page · Promoted</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 leading-none">{brand.name}</div>
+            <div className="text-[11px] text-zinc-500 mt-0.5">Brand Page · 1st</div>
           </div>
+          <MoreHorizontal className="w-4 h-4 text-zinc-500" />
         </div>
-        <div className="px-3 pb-2 text-sm text-foreground whitespace-pre-line">{caption}</div>
+        <div className="px-3 pb-2.5 text-[13px] text-zinc-900 dark:text-zinc-100 leading-snug whitespace-pre-line">{caption}</div>
         <MediaBlock media={media} />
-        <div className="px-3 py-2 flex items-center gap-4 border-t border-border text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><ThumbsUp className="w-4 h-4" /> Like</span>
-          <span className="flex items-center gap-1"><MessageCircle className="w-4 h-4" /> Comment</span>
-          <span className="flex items-center gap-1"><Repeat2 className="w-4 h-4" /> Repost</span>
+        <div className="px-3 py-2 flex items-center gap-5 border-t border-zinc-200 dark:border-zinc-800 text-[12px] text-zinc-500 font-medium">
+          <span className="flex items-center gap-1.5"><ThumbsUp className="w-4 h-4" /> Like</span>
+          <span className="flex items-center gap-1.5"><MessageCircle className="w-4 h-4" /> Comment</span>
+          <span className="flex items-center gap-1.5"><Repeat2 className="w-4 h-4" /> Repost</span>
         </div>
       </div>
     );
@@ -102,18 +119,18 @@ export default function PostPreview({ platform, caption, media, brand }: Props) 
 
   if (platform === "twitter") {
     return (
-      <div className="w-full max-w-[420px] mx-auto bg-card border border-border rounded-xl p-3 shadow-sm">
-        <div className="flex gap-2">
+      <div className="w-full bg-white dark:bg-zinc-950 font-sans px-3 py-3">
+        <div className="flex gap-2.5">
           <Avatar name={brand.name} src={brand.avatar} />
           <div className="flex-1 min-w-0">
-            <div className="text-sm">
-              <span className="font-semibold text-foreground">{brand.name}</span>{" "}
-              <span className="text-muted-foreground">@{handle}</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100">{brand.name}</span>
+              <span className="text-[12px] text-zinc-500">@{handle}</span>
             </div>
-            <div className="text-sm text-foreground mt-1 whitespace-pre-line">{caption}</div>
+            <p className="text-[13px] text-zinc-900 dark:text-zinc-100 mt-1 leading-snug whitespace-pre-line">{caption}</p>
             {media.length > 0 && (
-              <div className="mt-2 rounded-xl overflow-hidden border border-border">
-                <img src={media[0].url} alt="" className="w-full max-h-72 object-cover" />
+              <div className="mt-2 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                <img src={media[0].url} alt="" className="w-full max-h-64 object-cover" />
               </div>
             )}
           </div>
@@ -122,14 +139,17 @@ export default function PostPreview({ platform, caption, media, brand }: Props) 
     );
   }
 
-  // Generic fallback (TikTok / YouTube)
+  // Generic fallback (TikTok / YouTube / Pinterest)
   return (
-    <div className="w-full max-w-[360px] mx-auto bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-      <div className={cn("h-1.5", meta.bg)} />
+    <div className="w-full bg-white dark:bg-zinc-950 font-sans">
+      <div className={cn("h-1", meta.bg)} />
       <MediaBlock media={media} />
-      <div className="px-3 py-2 text-xs text-foreground">
-        <span className="font-semibold">@{handle}</span> · {meta.label}
-        <p className="mt-1 text-muted-foreground">{caption}</p>
+      <div className="px-3 py-2.5">
+        <p className="text-[12px] font-semibold text-zinc-500 uppercase tracking-wide mb-1">{meta.label}</p>
+        <p className="text-[13px] text-zinc-900 dark:text-zinc-100 leading-snug">
+          <span className="font-semibold">@{handle}</span>{" "}
+          {caption}
+        </p>
       </div>
     </div>
   );
