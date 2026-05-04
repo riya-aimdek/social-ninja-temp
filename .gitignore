@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+ 
+# Claude Code (local AI tooling — not for Lovable sync)
+CLAUDE.md
+.claude/
