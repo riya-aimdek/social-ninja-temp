@@ -15,7 +15,6 @@ const navItems = [
   { id: "security",      label: "Security Settings",     icon: Shield },
   { id: "general",       label: "General Settings",      icon: Settings },
   { id: "queue",         label: "Set Queue Times",        icon: Timer },
-  { id: "team",          label: "Team",                  icon: Users },
   { id: "approvals",     label: "Approvals",             icon: CheckCircle2 },
 ];
 

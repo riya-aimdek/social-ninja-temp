@@ -1,347 +1,191 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Lock, Bell, Globe, Shield, Camera, Mail, Phone, Smartphone } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { useState, useRef } from "react";
+import { Mail, Phone, CheckCircle2, Upload, Building2, Globe } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 
 type Role = "super-admin" | "agency" | "client";
 
-interface ProfileSettingsPageProps {
-  role: Role;
-}
-
-const roleConfig: Record<Role, { name: string; roleLabel: string; initials: string; email: string; backPath: string }> = {
-  "super-admin": {
-    name: "John Doe",
-    roleLabel: "Super Admin",
-    initials: "SA",
-    email: "john.doe@socialninja.com",
-    backPath: "/super-admin/dashboard",
-  },
-  agency: {
-    name: "Agency Admin",
-    roleLabel: "Agency Admin",
-    initials: "A",
-    email: "admin@agency.com",
-    backPath: "/agency/dashboard",
-  },
-  client: {
-    name: "Business Owner",
-    roleLabel: "Business Admin",
-    initials: "B",
-    email: "owner@business.com",
-    backPath: "/client/dashboard",
-  },
+const roleConfig: Record<Role, {
+  name: string; roleLabel: string; initials: string;
+  email: string; colorFrom: string; colorTo: string;
+}> = {
+  "super-admin": { name: "John Doe",       roleLabel: "Super Admin",    initials: "SA", email: "john.doe@socialninja.com", colorFrom: "from-violet-500", colorTo: "to-purple-600" },
+  agency:        { name: "Agency Admin",   roleLabel: "Agency Admin",   initials: "A",  email: "admin@agency.com",        colorFrom: "from-sky-500",    colorTo: "to-blue-600"   },
+  client:        { name: "Business Owner", roleLabel: "Business Admin", initials: "B",  email: "owner@business.com",      colorFrom: "from-rose-500",   colorTo: "to-pink-600"   },
 };
 
-export default function ProfileSettingsPage({ role }: ProfileSettingsPageProps) {
-  const navigate = useNavigate();
+const roleBadge: Record<Role, string> = {
+  "super-admin": "bg-violet-50 text-violet-600 border-violet-200",
+  agency:        "bg-sky-50 text-sky-600 border-sky-200",
+  client:        "bg-rose-50 text-rose-600 border-rose-200",
+};
+
+const industries = [
+  "Technology", "Retail & E-Commerce", "Food & Beverage", "Healthcare",
+  "Finance & Banking", "Education", "Real Estate", "Media & Entertainment",
+  "Travel & Hospitality", "Non-Profit", "Other",
+];
+
+const Field = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
+  <div>
+    <div className="flex items-center justify-between mb-1.5">
+      <label className="text-sm font-medium text-foreground">{label}</label>
+      {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+    </div>
+    {children}
+  </div>
+);
+
+const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+  <input
+    {...props}
+    className={cn(
+      "w-full h-10 px-3.5 rounded-lg border border-border bg-background text-sm text-foreground",
+      "placeholder:text-muted-foreground/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all",
+      props.disabled && "bg-muted/50 cursor-not-allowed text-muted-foreground",
+      props.className,
+    )}
+  />
+);
+
+const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
+  <select
+    {...props}
+    className={cn(
+      "w-full h-10 px-3.5 rounded-lg border border-border bg-background text-sm text-foreground",
+      "outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all",
+      props.className,
+    )}
+  />
+);
+
+
+export default function ProfileSettingsPage({ role }: { role: Role }) {
   const cfg = roleConfig[role];
+  const logoRef = useRef<HTMLInputElement>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [personal, setPersonal] = useState({ fullName: cfg.name, email: cfg.email, phone: "" });
+  const [business, setBusiness] = useState({ name: "Business", industry: "", website: "" });
 
-  const [profile, setProfile] = useState({
-    fullName: cfg.name,
-    email: cfg.email,
-    phone: "+1 (555) 123-4567",
-    timezone: "America/New_York",
-    language: "en",
-    bio: "",
-  });
-
-  const [notifications, setNotifications] = useState({
-    emailUpdates: true,
-    pushAlerts: true,
-    weeklyDigest: false,
-    mentions: true,
-    productNews: false,
-  });
-
-  const [security, setSecurity] = useState({
-    twoFactor: false,
-    sessionAlerts: true,
-  });
-
-  const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
-
-  const handleSaveProfile = () => toast.success("Profile updated successfully");
-  const handleSavePassword = () => {
-    if (!pwd.current || !pwd.next || pwd.next !== pwd.confirm) {
-      toast.error("Please fill all fields and confirm passwords match");
-      return;
-    }
-    toast.success("Password updated");
-    setPwd({ current: "", next: "", confirm: "" });
-  };
-  const handleSaveNotifications = () => toast.success("Notification preferences saved");
-  const handleSaveSecurity = () => toast.success("Security settings updated");
+  const handleSave = () => toast.success("Profile updated successfully");
 
   const content = (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate(cfg.backPath)} className="gap-2">
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
+    <div className="bg-card border border-border rounded-2xl overflow-hidden">
+
+      {/* Top identity row */}
+      <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">{personal.fullName}</p>
+          <p className="text-xs text-muted-foreground">{personal.email}</p>
+        </div>
+        <span className={cn("text-xs font-semibold px-3 py-1 rounded-full border", roleBadge[role])}>
+          {cfg.roleLabel}
+        </span>
       </div>
 
-      {/* Profile header */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-5">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full gradient-coral flex items-center justify-center text-white text-2xl font-bold">
-                {cfg.initials}
+      <div className="px-6 py-6 space-y-8">
+
+        {/* Personal Info */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className={cn("w-1 h-4 rounded-full bg-gradient-to-b", cfg.colorFrom, cfg.colorTo)} />
+            <p className="text-sm font-semibold text-foreground">Personal Information</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Full Name">
+              <Input value={personal.fullName} onChange={e => setPersonal({ ...personal, fullName: e.target.value })} placeholder="Your full name" />
+            </Field>
+            <Field label="Email Address" hint="Read only">
+              <div className="relative">
+                <Input value={personal.email} disabled className="pr-24" />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">
+                  <CheckCircle2 className="w-2.5 h-2.5" /> Verified
+                </span>
               </div>
-              <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-background border border-border shadow flex items-center justify-center hover:bg-muted transition-colors">
-                <Camera className="h-3.5 w-3.5 text-foreground" />
+            </Field>
+            <Field label="Phone Number">
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input value={personal.phone} onChange={e => setPersonal({ ...personal, phone: e.target.value })} placeholder="+1 (555) 000-0000" className="pl-9" />
+              </div>
+            </Field>
+          </div>
+        </div>
+
+        <div className="h-px bg-border" />
+
+        {/* Business Info */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className={cn("w-1 h-4 rounded-full bg-gradient-to-b", cfg.colorFrom, cfg.colorTo)} />
+            <p className="text-sm font-semibold text-foreground">Business Information</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Logo */}
+            <div className="col-span-2">
+              <label className="text-sm font-medium text-foreground block mb-1.5">Business Logo</label>
+              <input ref={logoRef} type="file" accept="image/*" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) setLogoPreview(URL.createObjectURL(f)); }} />
+              <button type="button" onClick={() => logoRef.current?.click()}
+                className="flex items-center gap-3.5 px-4 py-3 w-full rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left">
+                {logoPreview ? (
+                  <>
+                    <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Logo uploaded</p>
+                      <p className="text-xs text-muted-foreground">Click to replace</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <Building2 className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Upload your logo</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG or SVG · Max 2MB</p>
+                    </div>
+                  </>
+                )}
               </button>
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-foreground">{profile.fullName}</h2>
-              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-                <Mail className="h-3.5 w-3.5" /> {profile.email}
-              </p>
-              <Badge variant="secondary" className="mt-2">{cfg.roleLabel}</Badge>
-            </div>
+
+            <Field label="Business Name">
+              <Input value={business.name} onChange={e => setBusiness({ ...business, name: e.target.value })} placeholder="e.g. Acme Corp" />
+            </Field>
+            <Field label="Industry">
+              <Select value={business.industry} onChange={e => setBusiness({ ...business, industry: e.target.value })}>
+                <option value="">Select industry</option>
+                {industries.map(i => <option key={i} value={i}>{i}</option>)}
+              </Select>
+            </Field>
+            <Field label="Website" hint="Optional">
+              <div className="relative">
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input value={business.website} onChange={e => setBusiness({ ...business, website: e.target.value })} placeholder="https://yourwebsite.com" className="pl-9" />
+              </div>
+            </Field>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="profile" className="gap-2"><User className="h-4 w-4" /> Profile</TabsTrigger>
-          <TabsTrigger value="security" className="gap-2"><Lock className="h-4 w-4" /> Security</TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" /> Notifications</TabsTrigger>
-          <TabsTrigger value="preferences" className="gap-2"><Globe className="h-4 w-4" /> Preferences</TabsTrigger>
-        </TabsList>
+      </div>
 
-        {/* PROFILE */}
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Update your personal details and contact information.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input id="fullName" value={profile.fullName} onChange={e => setProfile({ ...profile, fullName: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" value={profile.email} onChange={e => setProfile({ ...profile, email: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Input value={cfg.roleLabel} disabled />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea id="bio" rows={3} placeholder="Tell us a bit about yourself..." value={profile.bio} onChange={e => setProfile({ ...profile, bio: e.target.value })} />
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={handleSaveProfile}>Save Changes</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* SECURITY */}
-        <TabsContent value="security" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>Use a strong password with at least 8 characters, mixing letters, numbers, and symbols.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current">Current Password</Label>
-                <Input id="current" type="password" value={pwd.current} onChange={e => setPwd({ ...pwd, current: e.target.value })} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new">New Password</Label>
-                  <Input id="new" type="password" value={pwd.next} onChange={e => setPwd({ ...pwd, next: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm">Confirm New Password</Label>
-                  <Input id="confirm" type="password" value={pwd.confirm} onChange={e => setPwd({ ...pwd, confirm: e.target.value })} />
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={handleSavePassword}>Update Password</Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> Two-Factor Authentication</CardTitle>
-              <CardDescription>Add an extra layer of security to your account.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                <div className="flex items-start gap-3">
-                  <Smartphone className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Authenticator App</p>
-                    <p className="text-xs text-muted-foreground">Use an app like Google Authenticator or Authy.</p>
-                  </div>
-                </div>
-                <Switch checked={security.twoFactor} onCheckedChange={v => setSecurity({ ...security, twoFactor: v })} />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Login Session Alerts</p>
-                  <p className="text-xs text-muted-foreground">Get notified when a new device signs in.</p>
-                </div>
-                <Switch checked={security.sessionAlerts} onCheckedChange={v => setSecurity({ ...security, sessionAlerts: v })} />
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={handleSaveSecurity}>Save Security Settings</Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Sessions</CardTitle>
-              <CardDescription>Devices currently signed in to your account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">MacBook Pro · Chrome</p>
-                    <p className="text-xs text-muted-foreground">New York, US · Active now</p>
-                  </div>
-                  <Badge variant="secondary">Current</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">iPhone 14 · Safari</p>
-                    <p className="text-xs text-muted-foreground">New York, US · 2 hours ago</p>
-                  </div>
-                  <Button variant="ghost" size="sm">Revoke</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* NOTIFICATIONS */}
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Choose what you want to be notified about.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              {[
-                { key: "emailUpdates", label: "Email Updates", desc: "Receive important account updates via email." },
-                { key: "pushAlerts", label: "Push Alerts", desc: "Real-time alerts in your browser and mobile app." },
-                { key: "mentions", label: "Mentions & Replies", desc: "When someone mentions you or replies to your content." },
-                { key: "weeklyDigest", label: "Weekly Digest", desc: "A weekly summary of activity and performance." },
-                { key: "productNews", label: "Product News", desc: "Announcements about new features and improvements." },
-              ].map((item, i) => (
-                <div key={item.key}>
-                  {i > 0 && <Separator />}
-                  <div className="flex items-center justify-between py-4">
-                    <div className="pr-4">
-                      <p className="text-sm font-medium text-foreground">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">{item.desc}</p>
-                    </div>
-                    <Switch
-                      checked={notifications[item.key as keyof typeof notifications]}
-                      onCheckedChange={v => setNotifications({ ...notifications, [item.key]: v })}
-                    />
-                  </div>
-                </div>
-              ))}
-              <div className="flex justify-end pt-2">
-                <Button onClick={handleSaveNotifications}>Save Preferences</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* PREFERENCES */}
-        <TabsContent value="preferences">
-          <Card>
-            <CardHeader>
-              <CardTitle>Regional Settings</CardTitle>
-              <CardDescription>Customize timezone, language, and formatting.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Timezone</Label>
-                  <Select value={profile.timezone} onValueChange={v => setProfile({ ...profile, timezone: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                      <SelectItem value="Europe/London">London (GMT)</SelectItem>
-                      <SelectItem value="Asia/Kolkata">India (IST)</SelectItem>
-                      <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Language</Label>
-                  <Select value={profile.language} onValueChange={v => setProfile({ ...profile, language: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Español</SelectItem>
-                      <SelectItem value="fr">Français</SelectItem>
-                      <SelectItem value="de">Deutsch</SelectItem>
-                      <SelectItem value="hi">हिन्दी</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={handleSaveProfile}>Save Preferences</Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="mt-4 border-destructive/30">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>Irreversible actions for your account.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">Delete Account</p>
-                <p className="text-xs text-muted-foreground">Permanently remove your account and all associated data.</p>
-              </div>
-              <Button variant="destructive">Delete Account</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Save footer */}
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/30">
+        <p className="text-xs text-muted-foreground">Changes are saved to your account immediately.</p>
+        <button
+          onClick={handleSave}
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 active:scale-[0.98] transition-all"
+        >
+          Save Changes
+        </button>
+      </div>
     </div>
   );
 
   if (role === "super-admin") return <SuperAdminLayout title="My Profile">{content}</SuperAdminLayout>;
   if (role === "agency") return <AgencyLayout title="My Profile">{content}</AgencyLayout>;
-  return content; // client uses ClientLayout via Outlet
+  return content;
 }

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   CalendarDays, List as ListIcon, LayoutGrid, ChevronLeft, ChevronRight, Plus,
-  Clock, CheckCircle2, AlertCircle, Send as SendIcon, Search,
+  Clock, CheckCircle2, AlertCircle, Send as SendIcon, Search, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export default function PublishPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<PostDraft | null>(null);
   const [cursor, setCursor] = useState(() => new Date());
+  const [statsOpen, setStatsOpen] = useState(true);
 
   const filtered = useMemo(() => {
     return posts.filter((p) => {
@@ -150,55 +151,59 @@ export default function PublishPage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-end gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-border overflow-hidden bg-card">
-            {([
-              { id: "calendar" as View, I: CalendarDays, label: "Calendar" },
-              { id: "list" as View, I: ListIcon, label: "List" },
-              { id: "board" as View, I: LayoutGrid, label: "Board" },
-            ]).map((v) => (
+
+      {/* Summary banner — collapsible */}
+      <div className="border border-border rounded-xl bg-card overflow-hidden">
+        <button
+          onClick={() => setStatsOpen(o => !o)}
+          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Overview</span>
+            {!statsOpen && (
+              <div className="flex items-center gap-3 ml-2">
+                {[
+                  { label: "Published", value: summary.published, tone: "text-success" },
+                  { label: "Pending", value: summary.pending, tone: "text-warning" },
+                  { label: "Scheduled", value: summary.scheduled, tone: "text-info" },
+                  { label: "Rejected", value: summary.rejected, tone: "text-error" },
+                ].map(s => (
+                  <span key={s.label} className={cn("text-xs font-semibold tabular-nums", s.tone)}>
+                    {s.value} <span className="font-normal text-muted-foreground">{s.label}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", statsOpen && "rotate-180")} />
+        </button>
+        {statsOpen && (
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-border border-t border-border">
+            {[
+              { label: "Published", value: summary.published, I: CheckCircle2, tone: "text-success bg-success/10", valueTone: "text-success", filter: "published" as Filter },
+              { label: "Awaiting approval", value: summary.pending, I: Clock, tone: "text-warning bg-warning/10", valueTone: "text-warning", filter: "pending_approval" as Filter },
+              { label: "Scheduled", value: summary.scheduled, I: SendIcon, tone: "text-info bg-info/10", valueTone: "text-info", filter: "scheduled" as Filter },
+              { label: "Rejected", value: summary.rejected, I: AlertCircle, tone: "text-error bg-error/10", valueTone: "text-error", filter: "rejected" as Filter },
+            ].map((s) => (
               <button
-                key={v.id}
-                onClick={() => handleViewChange(v.id)}
-                className={cn(
-                  "px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors",
-                  view === v.id ? "bg-foreground text-card" : "text-foreground hover:bg-accent",
-                )}
+                key={s.label}
+                onClick={() => setFilter(s.filter)}
+                className="flex items-center gap-4 px-5 py-4 text-left hover:bg-muted/30 transition-colors"
               >
-                <v.I className="w-3.5 h-3.5" /> {v.label}
+                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", s.tone)}>
+                  <s.I className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className={cn("text-2xl font-bold tabular-nums leading-none", s.valueTone)}>{s.value}</div>
+                  <div className="text-xs text-muted-foreground mt-1 whitespace-nowrap">{s.label}</div>
+                </div>
               </button>
             ))}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Summary banner — Published first, then Awaiting approval, Scheduled, Rejected */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Published", value: summary.published, I: CheckCircle2, tone: "text-success bg-success/10", filter: "published" as Filter },
-          { label: "Awaiting approval", value: summary.pending, I: Clock, tone: "text-warning bg-warning/10", filter: "pending_approval" as Filter },
-          { label: "Scheduled", value: summary.scheduled, I: SendIcon, tone: "text-info bg-info/10", filter: "scheduled" as Filter },
-          { label: "Rejected", value: summary.rejected, I: AlertCircle, tone: "text-error bg-error/10", filter: "rejected" as Filter },
-        ].map((s) => (
-          <button
-            key={s.label}
-            onClick={() => setFilter(s.filter)}
-            className="bg-card rounded-xl border border-border p-4 text-left hover:border-border-hover transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", s.tone)}>
-                <s.I className="w-4 h-4" />
-              </div>
-              <span className="text-2xl font-bold text-foreground tabular-nums">{s.value}</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-2">{s.label}</div>
-          </button>
-        ))}
-      </div>
-
-      {/* Filter tabs + search */}
+      {/* Filter tabs + view switcher + search */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex flex-wrap gap-1.5">
           {visibleFilterTabs.map((t) => (
@@ -217,14 +222,53 @@ export default function PublishPage() {
             </button>
           ))}
         </div>
-        <div className="relative ml-auto">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search caption, client..."
-            className="pl-8 pr-3 py-1.5 text-xs bg-card border border-border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+
+        <div className="flex items-center gap-2 ml-auto">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search caption, client..."
+              className="pl-8 pr-3 py-1.5 text-xs bg-card border border-border rounded-lg w-52 focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          {/* Calendar — standalone */}
+          <div className="flex rounded-lg border border-border overflow-hidden bg-card">
+            <button
+              onClick={() => handleViewChange("calendar")}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors",
+                view === "calendar" ? "bg-foreground text-card" : "text-foreground hover:bg-accent",
+              )}
+            >
+              <CalendarDays className="w-3.5 h-3.5" /> Posts Calendar
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="w-0.5 h-5 bg-border rounded-full" />
+
+          {/* List / Board — grouped */}
+          <div className="flex rounded-lg border border-border overflow-hidden bg-card">
+            {([
+              { id: "list" as View, I: ListIcon, label: "List" },
+              { id: "board" as View, I: LayoutGrid, label: "Board" },
+            ]).map((v) => (
+              <button
+                key={v.id}
+                onClick={() => handleViewChange(v.id)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors border-l border-border first:border-l-0",
+                  view === v.id ? "bg-foreground text-card" : "text-foreground hover:bg-accent",
+                )}
+              >
+                <v.I className="w-3.5 h-3.5" /> {v.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

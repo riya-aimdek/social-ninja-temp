@@ -79,7 +79,11 @@ export default function ClientLayout() {
   };
 
   // Breadcrumb
-  const allNavItems = [...clientNavItems, ...projectNavItems];
+  const allNavItems = [
+    ...clientNavItems,
+    ...projectNavItems,
+    { label: "My Profile", path: "/client/profile" },
+  ];
   const currentNav = allNavItems.find(n => location.pathname === n.path || location.pathname.startsWith(n.path + "/"));
   const breadcrumbLabel = currentNav?.label || "Dashboard";
 
