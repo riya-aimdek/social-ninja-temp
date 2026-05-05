@@ -102,6 +102,67 @@ const sentimentMeta: Record<Sentiment, { color: string; bg: string; Icon: typeof
   negative: { color: "text-error", bg: "bg-error/10", Icon: Frown, label: "Negative" },
 };
 
+function SentimentBadge({ sentiment, onChange }: { sentiment: Sentiment; onChange?: (s: Sentiment) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const sm = sentimentMeta[sentiment];
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  if (!onChange) {
+    return (
+      <span className={cn("inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0", sm.bg, sm.color)}>
+        <sm.Icon className="w-3 h-3" /> {sm.label}
+      </span>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative inline-flex shrink-0">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        className={cn(
+          "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full transition-opacity hover:opacity-80",
+          sm.bg, sm.color,
+        )}
+      >
+        <sm.Icon className="w-3 h-3" />
+        {sm.label}
+        <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[130px]">
+          {(["positive", "neutral", "negative"] as Sentiment[]).map((s) => {
+            const meta = sentimentMeta[s];
+            const active = s === sentiment;
+            return (
+              <button
+                key={s}
+                onClick={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors hover:bg-muted/60",
+                  active ? cn(meta.bg, meta.color) : "text-foreground",
+                )}
+              >
+                <meta.Icon className="w-3.5 h-3.5" />
+                {meta.label}
+                {active && <Check className="w-3 h-3 ml-auto opacity-70" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Canonical tag labels — single source of truth for both comment badges and filter modal
 const TAGS = [
   "Complaint", "Negative Comment", "Praise", "Product Inquiry", "Question",
@@ -1423,6 +1484,7 @@ function ReplyQueueView({
 const TEAM_MEMBERS = ["Sarah C.", "Priya S.", "Mike T.", "Alex R."];
 
 type BoardFilter = "all" | "pending" | "in_review" | "replied";
+type BoardSentiment = "positive" | "neutral" | "negative";
 
 type ReplyDraftState = {
   open: boolean;
@@ -1440,6 +1502,7 @@ function BoardView({
 }) {
   const PAGE_SIZE = 10;
   const [filter, setFilter] = useState<BoardFilter>("all");
+  const [sentimentFilter, setSentimentFilter] = useState<BoardSentiment | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drafts, setDrafts] = useState<Record<string, ReplyDraftState>>({});
@@ -1447,20 +1510,32 @@ function BoardView({
   const [bulkDrafts, setBulkDrafts] = useState<Record<string, string>>({});
   const [bulkManualOpen, setBulkManualOpen] = useState(false);
   const [bulkManualDrafts, setBulkManualDrafts] = useState<Record<string, string>>({});
+  const [bulkManualMode, setBulkManualMode] = useState<"individual" | "same">("individual");
+  const [bulkManualSameText, setBulkManualSameText] = useState("");
+  const [bulkManualExcluded, setBulkManualExcluded] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const visibleAll = useMemo(() => comments, [comments]);
 
-  const counts = useMemo(() => ({
-    all: visibleAll.length,
-    pending: visibleAll.filter((c) => c.stage === "pending").length,
-    in_review: visibleAll.filter((c) => c.stage === "in_review").length,
-    replied: visibleAll.filter((c) => c.stage === "replied").length,
-  }), [visibleAll]);
+  const counts = useMemo(() => {
+    const byStatus = (s: Stage) => visibleAll.filter((c) => c.stage === s).length;
+    const bySentiment = (s: BoardSentiment) => visibleAll.filter((c) => c.sentiment === s).length;
+    return {
+      all:       visibleAll.length,
+      pending:   byStatus("pending"),
+      in_review: byStatus("in_review"),
+      replied:   byStatus("replied"),
+      positive:  bySentiment("positive"),
+      neutral:   bySentiment("neutral"),
+      negative:  bySentiment("negative"),
+    };
+  }, [visibleAll]);
 
   const filtered = useMemo(() => {
-    return filter === "all" ? visibleAll : visibleAll.filter((c) => c.stage === filter);
-  }, [visibleAll, filter]);
+    let out = filter === "all" ? visibleAll : visibleAll.filter((c) => c.stage === filter);
+    if (sentimentFilter) out = out.filter((c) => c.sentiment === sentimentFilter);
+    return out;
+  }, [visibleAll, filter, sentimentFilter]);
 
   // Clear selections that are no longer in the visible filter
   useEffect(() => {
@@ -1575,6 +1650,20 @@ function BoardView({
   };
 
   const bulkManualSendAll = () => {
+    if (bulkManualMode === "same") {
+      const text = bulkManualSameText.trim();
+      if (!text) { toast.error("Write a reply before sending"); return; }
+      const ids = Object.keys(bulkManualDrafts).filter((id) => !bulkManualExcluded.has(id));
+      if (ids.length === 0) { toast.error("All recipients removed — add at least one"); return; }
+      ids.forEach((id) => { addReply(id, text); updateComment(id, { stage: "replied" }); });
+      toast.success(`Sent to ${ids.length} comment${ids.length === 1 ? "" : "s"}`);
+      setBulkManualOpen(false);
+      setBulkManualDrafts({});
+      setBulkManualSameText("");
+      setBulkManualExcluded(new Set());
+      clearSelection();
+      return;
+    }
     let sent = 0;
     Object.entries(bulkManualDrafts).forEach(([id, text]) => {
       const t = text.trim();
@@ -1606,23 +1695,31 @@ function BoardView({
   // SLA / Overdue helpers
   const isOverdue = (c: Comment) => c.sla.breached;
 
-  const FILTER_TABS: { id: BoardFilter; label: string; count: number; dot: string }[] = [
-    { id: "all", label: "All", count: counts.all, dot: "bg-muted-foreground" },
-    { id: "pending", label: "Pending", count: counts.pending, dot: "bg-info" },
+  const STATUS_TABS: { id: BoardFilter; label: string; count: number; dot: string }[] = [
+    { id: "all",       label: "All",       count: counts.all,       dot: "bg-muted-foreground" },
+    { id: "pending",   label: "Pending",   count: counts.pending,   dot: "bg-info" },
     { id: "in_review", label: "In Review", count: counts.in_review, dot: "bg-warning" },
-    { id: "replied", label: "Replied", count: counts.replied, dot: "bg-success" },
+    { id: "replied",   label: "Replied",   count: counts.replied,   dot: "bg-success" },
+  ];
+
+  const SENTIMENT_SEGS: { id: BoardSentiment; Icon: typeof Smile; label: string; count: number; activeClasses: string }[] = [
+    { id: "positive", Icon: Smile, label: "Positive", count: counts.positive, activeClasses: "bg-success/15 text-success" },
+    { id: "neutral",  Icon: Meh,   label: "Neutral",  count: counts.neutral,  activeClasses: "bg-muted text-foreground" },
+    { id: "negative", Icon: Frown, label: "Negative", count: counts.negative, activeClasses: "bg-error/15 text-error" },
   ];
 
   const changeFilter = (f: BoardFilter) => { setFilter(f); setVisibleCount(PAGE_SIZE); };
+  const toggleSentiment = (s: BoardSentiment) => { setSentimentFilter((prev) => prev === s ? null : s); setVisibleCount(PAGE_SIZE); };
 
   return (
     <div className="space-y-3">
       {/* Shared card: tabs on top, list below */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        {/* Status filter tabs (top of shared card) */}
+        {/* Filter tab bar */}
         <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border">
         <div className="flex flex-wrap items-center gap-1.5">
-          {FILTER_TABS.map((t) => {
+          {/* Status tabs */}
+          {STATUS_TABS.map((t) => {
             const active = filter === t.id;
             return (
               <button
@@ -1644,6 +1741,34 @@ function BoardView({
               </button>
             );
           })}
+
+          {/* Separator */}
+          <div className="w-[2px] h-5 bg-border mx-2 shrink-0 rounded-full" />
+
+          {/* Sentiment — single segmented chip */}
+          <div className="inline-flex items-center rounded-full border border-border bg-muted/40 overflow-hidden">
+            {SENTIMENT_SEGS.map((s, i) => {
+              const active = sentimentFilter === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => toggleSentiment(s.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
+                    i > 0 && "border-l border-border",
+                    active ? s.activeClasses : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  <s.Icon className="w-3 h-3" />
+                  {s.label}
+                  <span className={cn(
+                    "tabular-nums text-[10px] px-1.5 py-0.5 rounded-full",
+                    active ? "bg-current/15" : "bg-muted text-muted-foreground",
+                  )}>{fmt(s.count)}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -1740,7 +1865,7 @@ function BoardView({
                     {/* Content */}
                     <div className="flex-1 min-w-0">
 
-                      {/* Row 1: author · time · status right */}
+                      {/* Row 1: author · time · tags · status right */}
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="text-[13px] font-semibold text-foreground truncate">{c.author}</span>
                         <span className="text-muted-foreground text-xs shrink-0">· {c.at}</span>
@@ -1749,6 +1874,7 @@ function BoardView({
                             {triggerTagLabel}
                           </span>
                         )}
+                        <SentimentBadge sentiment={c.sentiment} onChange={(s) => updateComment(c.id, { sentiment: s })} />
                         <div className="ml-auto flex items-center gap-2 shrink-0">
                           {/* View thread */}
                           <button
@@ -1881,58 +2007,94 @@ function BoardView({
                     </div>
                   </div>
 
-                  {/* Inline reply expansion */}
+                  {/* Inline reply — Instagram style */}
                   {draft?.open && (
-                    <div className="bg-muted/40 border-t border-border px-3 py-3 ml-[88px] mr-3 mb-3 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        {draft.isAi ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/15 text-primary">
-                            <Sparkles className="w-3 h-3" /> AI draft
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                            <Edit3 className="w-3 h-3" /> Manual reply
-                          </span>
-                        )}
-                        <span className="text-[11px] text-muted-foreground">Replying to {c.author}</span>
-                        <button
-                          onClick={() => closeDraft(c.id)}
-                          className="ml-auto text-muted-foreground hover:text-foreground"
-                          aria-label="Close reply"
-                        >
-                          <X className="w-3.5 h-3.5" />
+                    <div className="border-t border-border bg-card rounded-b-xl overflow-hidden">
+
+                      {/* AI suggestion card */}
+                      {draft.isAi && draft.text && (
+                        <div className="mx-3 mt-3 p-3 rounded-2xl border border-primary/20 bg-primary/5">
+                          <div className="flex items-start gap-2 mb-2.5">
+                            <Sparkles className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                            <p className="text-sm text-foreground leading-relaxed">{draft.text}</p>
+                          </div>
+                          <div className="flex gap-1.5 flex-wrap">
+                            <Button size="sm" variant="outline" className="h-7 text-xs rounded-full px-3"
+                              onClick={() => updateDraft(c.id, { text: draft.text })}>
+                              Use this draft
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full px-3"
+                              onClick={() => updateDraft(c.id, { text: `Thanks for reaching out, ${c.author.split(" ")[0]}! We hear you and our team is on it. Appreciate your patience.` })}>
+                              <RefreshCw className="w-3 h-3 mr-1" /> Regenerate
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full px-3"
+                              onClick={() => toast.info("Edit the draft in the box below")}>
+                              Edit before sending
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Replying to strip */}
+                      <div className="flex items-center gap-1.5 px-4 pt-2.5">
+                        <span className="text-[11px] text-muted-foreground">Replying to</span>
+                        <span className="text-[11px] font-semibold text-primary">@{c.author}</span>
+                        <button onClick={() => closeDraft(c.id)} className="ml-auto text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted transition-colors">
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
-                      <textarea
-                        value={draft.text}
-                        onChange={(e) => updateDraft(c.id, { text: e.target.value })}
-                        placeholder="Write your reply..."
-                        rows={3}
-                        className="w-full text-sm bg-background border border-border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      />
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="text-[11px] text-muted-foreground tabular-nums">{draft.text.length}/280</span>
-                        <button onClick={() => toast.info("Attach media coming soon")} className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-                          <ImageIcon className="w-3 h-3" /> Attach
-                        </button>
-                        <button onClick={() => toast.info("Open Settings → Saved replies to manage templates")} className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-                          📋 Saved replies
-                        </button>
-                        {draft.isAi && (
-                          <button
-                            onClick={() => updateDraft(c.id, { text: `Thanks for reaching out, ${c.author.split(" ")[0]}! We hear you and our team is on it. Appreciate your patience.` })}
-                            className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
-                          >
-                            <RefreshCw className="w-3 h-3" /> Regenerate
-                          </button>
-                        )}
-                        <div className="ml-auto flex items-center gap-1.5">
-                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => closeDraft(c.id)}>Discard</Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => saveDraft(c)}>Save as draft</Button>
-                          <Button size="sm" className="h-7 text-xs" onClick={() => sendReply(c)}>
-                            <Send className="w-3 h-3 mr-1" /> Send reply
-                          </Button>
+
+                      {/* Input row */}
+                      <div className="flex items-end gap-2.5 px-3 py-3">
+                        <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 mb-0.5 select-none">
+                          YB
                         </div>
+                        <div className="flex-1 relative">
+                          <textarea
+                            value={draft.text}
+                            onChange={(e) => updateDraft(c.id, { text: e.target.value })}
+                            placeholder={`Reply to ${c.author.split(" ")[0]}…`}
+                            rows={1}
+                            className="w-full resize-none rounded-[22px] border border-input bg-muted/50 px-4 py-2.5 pr-20 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 leading-relaxed overflow-hidden"
+                            style={{ minHeight: "42px", maxHeight: "120px" }}
+                            onInput={(e) => {
+                              const el = e.currentTarget;
+                              el.style.height = "42px";
+                              el.style.height = Math.min(el.scrollHeight, 120) + "px";
+                            }}
+                          />
+                          <div className="absolute right-3 bottom-2.5 flex items-center gap-2.5">
+                            <button onClick={() => toast.info("Attach media coming soon")} className="text-muted-foreground hover:text-foreground transition-colors" title="Attach">
+                              <ImageIcon className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => toast.info("Open Settings → Saved replies")} className="text-muted-foreground hover:text-foreground transition-colors text-base leading-none" title="Saved replies">
+                              💬
+                            </button>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => sendReply(c)}
+                          disabled={!draft.text.trim()}
+                          className="h-9 px-4 rounded-full font-semibold text-sm flex-shrink-0 mb-0.5"
+                        >
+                          Post
+                        </Button>
+                      </div>
+
+                      {/* Secondary toolbar */}
+                      <div className="flex items-center justify-between px-4 pb-3 text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => openDraft(c.id, !draft.isAi, draft.isAi ? "" : (c.aiDraft ?? ""))}
+                            className="inline-flex items-center gap-1 font-medium text-primary hover:text-primary/70 transition-colors">
+                            <Sparkles className="w-3 h-3" />
+                            {draft.isAi ? "Hide AI" : "AI reply"}
+                          </button>
+                          <button onClick={() => saveDraft(c)} className="hover:text-foreground transition-colors">
+                            Save draft
+                          </button>
+                        </div>
+                        <span className="tabular-nums">{draft.text.length}/2200</span>
                       </div>
                     </div>
                   )}
@@ -2049,66 +2211,188 @@ function BoardView({
       </Dialog>
 
       {/* Bulk manual reply modal */}
-      <Dialog open={bulkManualOpen} onOpenChange={(o) => { setBulkManualOpen(o); if (!o) setBulkManualDrafts({}); }}>
+      <Dialog open={bulkManualOpen} onOpenChange={(o) => { setBulkManualOpen(o); if (!o) { setBulkManualDrafts({}); setBulkManualMode("individual"); setBulkManualSameText(""); setBulkManualExcluded(new Set()); } }}>
         <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit3 className="w-4 h-4" />
-              Manual replies for {Object.keys(bulkManualDrafts).length} selected comment{Object.keys(bulkManualDrafts).length === 1 ? "" : "s"}
+              Manual replies — {Object.keys(bulkManualDrafts).length} comment{Object.keys(bulkManualDrafts).length === 1 ? "" : "s"} selected
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto space-y-3 -mx-2 px-2">
-            {Object.entries(bulkManualDrafts).map(([id, text]) => {
-              const c = visibleAll.find((x) => x.id === id);
-              if (!c) return null;
-              return (
-                <div key={id} className="border border-border rounded-lg p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-muted text-foreground text-[10px] font-semibold flex items-center justify-center shrink-0">{c.avatar}</div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-semibold">{c.author}</span>
-                      <p className="text-[11px] text-muted-foreground italic truncate">"{c.text}"</p>
-                    </div>
-                    <PlatformIcon name={c.post.platform} className="w-3.5 h-3.5 shrink-0" />
-                  </div>
-                  <textarea
-                    value={text}
-                    onChange={(e) => setBulkManualDrafts((prev) => ({ ...prev, [id]: e.target.value }))}
-                    rows={2}
-                    placeholder={`Reply to ${c.author.split(" ")[0]}…`}
-                    className="w-full text-xs bg-background border border-border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/60"
-                  />
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground tabular-nums">{text.length}/280</span>
-                    <div className="flex items-center gap-2">
-                      {text.trim().length === 0 ? (
-                        <span className="text-[10px] text-muted-foreground italic">Leave empty to skip</span>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            const t = text.trim();
-                            if (!t) { toast.error("Reply is empty"); return; }
-                            addReply(id, t);
-                            updateComment(id, { stage: "replied" });
-                            setBulkManualDrafts((prev) => { const n = { ...prev }; delete n[id]; return n; });
-                            toast.success(`Replied to ${c.author.split(" ")[0]}`);
-                          }}
-                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
-                        >
-                          <Send className="w-3 h-3" />
-                          Send
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+
+          {/* Mode switcher */}
+          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg self-start">
+            {([
+              { id: "individual", label: "Individual replies" },
+              { id: "same",       label: "Same reply for all" },
+            ] as const).map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setBulkManualMode(m.id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                  bulkManualMode === m.id
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
           </div>
+
+          {bulkManualMode === "same" ? (
+            /* ── Same reply for all ── */
+            <div className="flex-1 overflow-y-auto space-y-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  This reply will be sent to <span className="font-semibold text-foreground">{Object.keys(bulkManualDrafts).length - bulkManualExcluded.size}</span> of {Object.keys(bulkManualDrafts).length} comments. Use the × button to exclude any comment before sending.
+                </p>
+                <textarea
+                  value={bulkManualSameText}
+                  onChange={(e) => setBulkManualSameText(e.target.value)}
+                  rows={4}
+                  placeholder="Write a reply to send to everyone…"
+                  className="w-full text-sm bg-background border border-input rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/60"
+                />
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-muted-foreground tabular-nums">{bulkManualSameText.length}/280</span>
+                </div>
+              </div>
+
+              {/* Preview of recipients */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Comments
+                    <span className="ml-1.5 normal-case font-normal">
+                      — <span className="font-semibold text-foreground">{Object.keys(bulkManualDrafts).length - bulkManualExcluded.size}</span> of {Object.keys(bulkManualDrafts).length}
+                    </span>
+                  </p>
+                  {bulkManualExcluded.size > 0 && (
+                    <button
+                      onClick={() => setBulkManualExcluded(new Set())}
+                      className="text-[11px] text-primary hover:underline font-medium"
+                    >
+                      Restore all
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  {Object.keys(bulkManualDrafts).map((id) => {
+                    const c = visibleAll.find((x) => x.id === id);
+                    if (!c) return null;
+                    const excluded = bulkManualExcluded.has(id);
+                    return (
+                      <div
+                        key={id}
+                        className={cn(
+                          "flex items-start gap-2.5 px-3 py-2.5 rounded-lg transition-colors",
+                          excluded ? "bg-muted/20 opacity-40" : "bg-muted/50",
+                        )}
+                      >
+                        {/* Avatar */}
+                        <div className={cn(
+                          "w-6 h-6 rounded-full text-[10px] font-semibold flex items-center justify-center shrink-0 mt-0.5",
+                          excluded ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary",
+                        )}>{c.avatar}</div>
+
+                        {/* Comment content — primary */}
+                        <div className="flex-1 min-w-0">
+                          <p className={cn(
+                            "text-sm leading-snug",
+                            excluded ? "text-muted-foreground line-through" : "text-foreground",
+                          )}>
+                            {c.text}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-[11px] font-medium text-muted-foreground">{c.author}</span>
+                            <span className="text-muted-foreground/40 text-[10px]">·</span>
+                            <PlatformIcon name={c.post.platform} className="w-3 h-3" />
+                          </div>
+                        </div>
+
+                        {/* Exclude / restore button */}
+                        <button
+                          onClick={() => setBulkManualExcluded((prev) => {
+                            const next = new Set(prev);
+                            excluded ? next.delete(id) : next.add(id);
+                            return next;
+                          })}
+                          className={cn(
+                            "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors mt-0.5",
+                            excluded
+                              ? "bg-primary/10 text-primary hover:bg-primary/20"
+                              : "bg-muted text-muted-foreground hover:bg-error/10 hover:text-error",
+                          )}
+                          title={excluded ? "Restore" : "Remove"}
+                        >
+                          {excluded ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ── Individual replies ── */
+            <div className="flex-1 overflow-y-auto space-y-3 -mx-2 px-2">
+              {Object.entries(bulkManualDrafts).map(([id, text]) => {
+                const c = visibleAll.find((x) => x.id === id);
+                if (!c) return null;
+                return (
+                  <div key={id} className="border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-muted text-foreground text-[10px] font-semibold flex items-center justify-center shrink-0">{c.avatar}</div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-semibold">{c.author}</span>
+                        <p className="text-[11px] text-muted-foreground italic truncate">"{c.text}"</p>
+                      </div>
+                      <PlatformIcon name={c.post.platform} className="w-3.5 h-3.5 shrink-0" />
+                    </div>
+                    <textarea
+                      value={text}
+                      onChange={(e) => setBulkManualDrafts((prev) => ({ ...prev, [id]: e.target.value }))}
+                      rows={2}
+                      placeholder={`Reply to ${c.author.split(" ")[0]}…`}
+                      className="w-full text-xs bg-background border border-border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/60"
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground tabular-nums">{text.length}/280</span>
+                      <div className="flex items-center gap-2">
+                        {text.trim().length === 0 ? (
+                          <span className="text-[10px] text-muted-foreground italic">Leave empty to skip</span>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              const t = text.trim();
+                              if (!t) { toast.error("Reply is empty"); return; }
+                              addReply(id, t);
+                              updateComment(id, { stage: "replied" });
+                              setBulkManualDrafts((prev) => { const n = { ...prev }; delete n[id]; return n; });
+                              toast.success(`Replied to ${c.author.split(" ")[0]}`);
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+                          >
+                            <Send className="w-3 h-3" /> Send
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <DialogFooter className="gap-2">
-            <Button variant="ghost" size="sm" onClick={() => { setBulkManualOpen(false); setBulkManualDrafts({}); }}>Cancel</Button>
-            <Button size="sm" onClick={bulkManualSendAll}>
-              <Send className="w-3 h-3 mr-1" /> Send all replies
+            <Button variant="ghost" size="sm" onClick={() => { setBulkManualOpen(false); setBulkManualDrafts({}); setBulkManualSameText(""); }}>Cancel</Button>
+            <Button size="sm" onClick={bulkManualSendAll} disabled={bulkManualMode === "same" && !bulkManualSameText.trim()}>
+              <Send className="w-3 h-3 mr-1" />
+              {bulkManualMode === "same"
+                ? `Send to ${Object.keys(bulkManualDrafts).length - bulkManualExcluded.size}`
+                : "Send all replies"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2119,10 +2403,10 @@ function BoardView({
 
 function BoardEmptyState({ filter }: { filter: BoardFilter }) {
   const meta: Record<BoardFilter, { Icon: typeof CheckCircle2; title: string; sub: string; iconCls: string }> = {
-    all: { Icon: Inbox, title: "No comments", sub: "Nothing in the board right now.", iconCls: "text-muted-foreground" },
-    pending: { Icon: CheckCircle2, title: "All caught up!", sub: "No pending comments remaining.", iconCls: "text-success" },
-    in_review: { Icon: Users, title: "No comments are currently being reviewed", sub: "Items moved to In Review will appear here.", iconCls: "text-muted-foreground" },
-    replied: { Icon: MessageSquare, title: "No replies sent yet", sub: "Start from the Pending view.", iconCls: "text-muted-foreground" },
+    all:       { Icon: Inbox,         title: "No comments",          sub: "Nothing in the board right now.",            iconCls: "text-muted-foreground" },
+    pending:   { Icon: CheckCircle2,  title: "All caught up!",       sub: "No pending comments remaining.",             iconCls: "text-success" },
+    in_review: { Icon: Users,         title: "No comments in review",sub: "Items moved to In Review will appear here.", iconCls: "text-muted-foreground" },
+    replied:   { Icon: MessageSquare, title: "No replies sent yet",  sub: "Start from the Pending view.",               iconCls: "text-muted-foreground" },
   };
   const m = meta[filter];
   return (
@@ -2450,10 +2734,36 @@ function PostListCard({
           <span className={cn("ml-auto w-1.5 h-1.5 rounded-full", dotCls)} aria-hidden />
         </div>
         <p className="text-[13px] text-foreground line-clamp-2 leading-snug mb-1">{post.title}</p>
-        <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+        <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1 mb-1.5">
           <MessageSquare className="w-3 h-3" />
           {fmt(stats.total)} comments
         </div>
+        {/* Sentiment breakdown */}
+        {(() => {
+          const nonSpam = post.comments.filter((c) => !c.isSpam);
+          const pos = nonSpam.filter((c) => c.sentiment === "positive").length;
+          const neu = nonSpam.filter((c) => c.sentiment === "neutral").length;
+          const neg = nonSpam.filter((c) => c.sentiment === "negative").length;
+          return (
+            <div className="flex items-center gap-2.5">
+              {pos > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-success">
+                  <Smile className="w-3 h-3" /> {pos}
+                </span>
+              )}
+              {neu > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                  <Meh className="w-3 h-3" /> {neu}
+                </span>
+              )}
+              {neg > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-error">
+                  <Frown className="w-3 h-3" /> {neg}
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </button>
   );
@@ -2524,6 +2834,7 @@ function ThreadDetailColumn({
   highlightCommentId?: string | null;
 }) {
   const [filter, setFilter] = useState<ThreadOrmFilter>("all");
+  const [sentimentFilter, setSentimentFilter] = useState<BoardSentiment | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [reply, setReply] = useState("");
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null);
@@ -2567,17 +2878,27 @@ function ThreadDetailColumn({
   const spamItems = items.filter((c) => c.isSpam);
 
   const filtered = nonSpam.filter((c) => {
-    switch (filter) {
-      case "new": return isNewById.has(c.id);
-      case "awaiting": return c.stage === "pending";
-      case "in_review": return c.stage === "in_review";
-      case "replied": return c.stage === "replied";
-      case "spam": return false;
-      default: return true;
-    }
+    const statusOk = (() => {
+      switch (filter) {
+        case "new": return isNewById.has(c.id);
+        case "awaiting": return c.stage === "pending";
+        case "in_review": return c.stage === "in_review";
+        case "replied": return c.stage === "replied";
+        case "spam": return false;
+        default: return true;
+      }
+    })();
+    const sentimentOk = !sentimentFilter || c.sentiment === sentimentFilter;
+    return statusOk && sentimentOk;
   });
 
   const sorted = filter === "spam" ? spamItems : filtered;
+
+  const sentimentCounts = {
+    positive: nonSpam.filter((c) => c.sentiment === "positive").length,
+    neutral:  nonSpam.filter((c) => c.sentiment === "neutral").length,
+    negative: nonSpam.filter((c) => c.sentiment === "negative").length,
+  };
 
   const visible = sorted.slice(0, visibleCount);
   const remaining = Math.max(0, sorted.length - visibleCount);
@@ -2606,6 +2927,8 @@ function ThreadDetailColumn({
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col h-full min-h-0">
+      {/* ── Scrollable area: post card + filter tabs + comments ── */}
+      <div className="flex-1 overflow-y-auto min-h-0">
       {/* ── Post card ── Instagram-style ── */}
       <div className="flex-shrink-0">
         {/* Full-width image banner */}
@@ -2665,11 +2988,12 @@ function ThreadDetailColumn({
 
         {/* Comment filter tabs */}
         <div className="px-3 py-2.5 bg-muted/20 border-b border-border flex items-center gap-1.5 flex-wrap">
+          {/* Status pills */}
           {([
-            { id: "all",       label: "All",       count: stats.total,    active: "bg-foreground text-background",             idle: "bg-muted text-foreground hover:bg-muted/70" },
-            { id: "awaiting",  label: "Pending",   count: stats.awaiting, active: "bg-info text-white",                        idle: "bg-info/10 text-info hover:bg-info/20" },
-            { id: "in_review", label: "In Review", count: stats.inReview, active: "bg-warning text-warning-foreground",        idle: "bg-warning/10 text-warning hover:bg-warning/20" },
-            { id: "replied",   label: "Replied",   count: stats.replied,  active: "bg-success text-success-foreground",        idle: "bg-success/10 text-success hover:bg-success/20" },
+            { id: "all",       label: "All",       count: stats.total,    active: "bg-foreground text-background",        idle: "bg-muted text-foreground hover:bg-muted/70" },
+            { id: "awaiting",  label: "Pending",   count: stats.awaiting, active: "bg-info text-white",                   idle: "bg-info/10 text-info hover:bg-info/20" },
+            { id: "in_review", label: "In Review", count: stats.inReview, active: "bg-warning text-warning-foreground",   idle: "bg-warning/10 text-warning hover:bg-warning/20" },
+            { id: "replied",   label: "Replied",   count: stats.replied,  active: "bg-success text-success-foreground",   idle: "bg-success/10 text-success hover:bg-success/20" },
           ] as { id: ThreadOrmFilter; label: string; count: number; active: string; idle: string }[]).map((p) => (
             <button
               key={p.id}
@@ -2682,11 +3006,43 @@ function ThreadDetailColumn({
               {p.label} <span className="opacity-70">{fmt(p.count)}</span>
             </button>
           ))}
+
+          {/* Separator */}
+          <div className="w-[2px] h-5 bg-border mx-2 shrink-0 rounded-full" />
+
+          {/* Sentiment segmented chip */}
+          <div className="inline-flex items-center rounded-full border border-border bg-muted/40 overflow-hidden">
+            {([
+              { id: "positive" as BoardSentiment, Icon: Smile, label: "Positive", count: sentimentCounts.positive, activeClasses: "bg-success/15 text-success" },
+              { id: "neutral"  as BoardSentiment, Icon: Meh,   label: "Neutral",  count: sentimentCounts.neutral,  activeClasses: "bg-muted text-foreground" },
+              { id: "negative" as BoardSentiment, Icon: Frown,  label: "Negative", count: sentimentCounts.negative, activeClasses: "bg-error/15 text-error" },
+            ]).map((s, i) => {
+              const active = sentimentFilter === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => { setSentimentFilter((prev) => prev === s.id ? null : s.id); setVisibleCount(PAGE_SIZE); }}
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                    i > 0 && "border-l border-border",
+                    active ? s.activeClasses : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  <s.Icon className="w-3 h-3" />
+                  {s.label}
+                  <span className={cn(
+                    "tabular-nums text-[10px] px-1.5 py-0.5 rounded-full",
+                    active ? "bg-current/15" : "bg-muted text-muted-foreground",
+                  )}>{fmt(s.count)}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Comment thread */}
-      <div className="flex-1 overflow-y-auto">
+      <div>
         {sorted.length === 0 ? (
           <ThreadEmptyState filter={filter} stats={stats} onClear={() => setFilter("all")} />
         ) : (
@@ -2715,6 +3071,11 @@ function ThreadDetailColumn({
                       updateComment(c.id, { stage: "in_review", assignee: member });
                       toast.success(`Assigned to ${member}`);
                     }}
+                    onChangeSentiment={(s) => {
+                      updateComment(c.id, { sentiment: s });
+                      toast.success(`Sentiment updated to ${s}`);
+                    }}
+                    updateComment={updateComment}
                   />
                 </div>
               );
@@ -2762,6 +3123,7 @@ function ThreadDetailColumn({
           </div>
         )}
       </div>
+      </div>{/* end outer scroll wrapper */}
 
       {/* ── Sticky reply composer — Instagram style ── */}
       <div className="border-t border-border bg-card flex-shrink-0">
@@ -2901,7 +3263,7 @@ function ThreadEmptyState({ filter, stats, onClear }: { filter: ThreadOrmFilter;
 }
 
 function CommentItem({
-  comment, isNew, expanded, onToggleReplies, onReply, onAiReply, onAssignTo,
+  comment, isNew, expanded, onToggleReplies, onReply, onAiReply, onAssignTo, onChangeSentiment, updateComment,
 }: {
   comment: Comment;
   isNew: boolean;
@@ -2910,6 +3272,8 @@ function CommentItem({
   onReply: () => void;
   onAiReply: () => void;
   onAssignTo: (member: string) => void;
+  onChangeSentiment?: (s: Sentiment) => void;
+  updateComment?: (id: string, patch: Partial<Comment>) => void;
 }) {
   const triggerTag = comment.trigger ? triggerToTag[comment.trigger] : null;
   const stageCls =
@@ -2946,6 +3310,7 @@ function CommentItem({
                 {triggerTag}
               </span>
             )}
+            <SentimentBadge sentiment={comment.sentiment} onChange={onChangeSentiment} />
             <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-semibold ml-auto", stageCls)}>{stageLabel}</span>
           </div>
           {/* Row 2 */}
@@ -2993,7 +3358,7 @@ function CommentItem({
               ) : (
                 <div className="mt-2 pl-7 space-y-3">
                   {shownReplies.map((r) => (
-                    <NestedReply key={r.id} reply={r} depth={1} />
+                    <NestedReply key={r.id} reply={r} depth={1} updateComment={updateComment} />
                   ))}
                   {remainingReplies > 0 && (
                     <button
@@ -3034,7 +3399,7 @@ function CommentItem({
  *  All replies (regardless of depth) render at the same indent under the
  *  top-level comment. Replies to other replies show an "@username" mention
  *  prefix instead of indenting further. */
-function NestedReply({ reply, depth, mentionTo }: { reply: Comment; depth: number; mentionTo?: string }) {
+function NestedReply({ reply, depth, mentionTo, updateComment }: { reply: Comment; depth: number; mentionTo?: string; updateComment?: (id: string, patch: Partial<Comment>) => void }) {
   // Flatten all descendants into a single list, preserving order, and remember
   // each one's parent so we can render an "@parent" mention prefix.
   const flatten = (node: Comment, parentAuthor?: string): { node: Comment; parentAuthor?: string }[] => {
@@ -3075,6 +3440,10 @@ function NestedReply({ reply, depth, mentionTo }: { reply: Comment; depth: numbe
                 {triggerToTag[reply.trigger]}
               </span>
             )}
+            <SentimentBadge
+              sentiment={reply.sentiment}
+              onChange={updateComment ? (s) => { updateComment(reply.id, { sentiment: s }); } : undefined}
+            />
           </div>
           <p className="text-[13px] text-foreground leading-snug">
             {mentionHandle && <span className="text-primary font-medium">{mentionHandle} </span>}
@@ -3107,7 +3476,7 @@ function NestedReply({ reply, depth, mentionTo }: { reply: Comment; depth: numbe
       {isTopLevel && open && (
         <>
           {shown.map(({ node, parentAuthor }) => (
-            <NestedReply key={node.id} reply={node} depth={2} mentionTo={parentAuthor} />
+            <NestedReply key={node.id} reply={node} depth={2} mentionTo={parentAuthor} updateComment={updateComment} />
           ))}
           {remaining > 0 && (
             <button
@@ -3565,7 +3934,7 @@ function PostThreadContextSheet({
 
   return (
     <Sheet open={!!pair} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col">
+      <SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col overflow-hidden">
         {/* Accessible title — visually hidden so we don't duplicate the post header
             already rendered inside ThreadDetailColumn. */}
         <SheetHeader className="sr-only">
@@ -3573,7 +3942,7 @@ function PostThreadContextSheet({
         </SheetHeader>
 
         {selected && pair ? (
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <ThreadDetailColumn
               key={pair.commentId}
               selected={selected}
