@@ -149,6 +149,20 @@ export default function PublishPage() {
   const today = new Date();
   const isToday = (d: Date) => d.toDateString() === today.toDateString();
 
+  const prevMonth = () => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
+  const nextMonth = () => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
+
+  // For list/board — filter to posts whose scheduledFor falls in the cursor month
+  const monthFiltered = useMemo(() => {
+    const y = cursor.getFullYear();
+    const m = cursor.getMonth();
+    return filtered.filter((p) => {
+      if (!p.scheduledFor) return true; // drafts without date — always show
+      const d = new Date(p.scheduledFor);
+      return d.getFullYear() === y && d.getMonth() === m;
+    });
+  }, [filtered, cursor]);
+
   return (
     <div className="space-y-5 animate-fade-in">
 
@@ -334,6 +348,16 @@ export default function PublishPage() {
 
       {view === "list" && (
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
+          {/* Month navigation */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <span className="text-sm font-semibold text-foreground">{monthLabel}</span>
+            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-muted-foreground border-b border-border bg-muted/40">
@@ -345,7 +369,7 @@ export default function PublishPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => {
+              {monthFiltered.map((p) => {
                 const status = STATUS_META[p.status];
                 return (
                   <tr key={p.id} onClick={() => setSelected(p)} className="border-b border-border last:border-0 hover:bg-accent/30 cursor-pointer transition-colors">
@@ -373,8 +397,8 @@ export default function PublishPage() {
                   </tr>
                 );
               })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">No posts match this filter.</td></tr>
+              {monthFiltered.length === 0 && (
+                <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">No posts in {monthLabel}.</td></tr>
               )}
             </tbody>
           </table>
@@ -382,9 +406,20 @@ export default function PublishPage() {
       )}
 
       {view === "board" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="space-y-3">
+          {/* Month navigation */}
+          <div className="bg-card rounded-xl shadow-card flex items-center justify-between px-5 py-3">
+            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <span className="text-sm font-semibold text-foreground">{monthLabel}</span>
+            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {BOARD_COLUMNS.map((col) => {
-            const colPosts = filtered.filter((p) => p.status === col);
+            const colPosts = monthFiltered.filter((p) => p.status === col);
             const status = STATUS_META[col];
             return (
               <div key={col} className="bg-muted/40 rounded-xl p-3 min-h-[300px]">
@@ -414,6 +449,7 @@ export default function PublishPage() {
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
