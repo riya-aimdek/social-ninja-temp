@@ -1455,7 +1455,7 @@ function ReplyQueueView({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 h-[calc(100vh-200px)] min-h-[760px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[640px_1fr] gap-0 h-[calc(100vh-200px)] min-h-[760px] rounded-xl border border-border overflow-hidden bg-card shadow-sm">
         <PostListColumn
           posts={visiblePosts}
           totalCount={enriched.length}
@@ -2634,7 +2634,7 @@ function ThreadsView({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 h-[calc(100vh-200px)] min-h-[760px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[640px_1fr] gap-0 h-[calc(100vh-200px)] min-h-[760px] rounded-xl border border-border overflow-hidden bg-card shadow-sm">
         <PostListColumn
           posts={visiblePosts}
           totalCount={enriched.length}
@@ -2675,7 +2675,7 @@ function PostListColumn({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
+    <div className="bg-card border-r border-border overflow-hidden flex flex-col">
       <div className="px-3 py-2.5 border-b border-border flex items-center">
         <span className="text-sm font-semibold text-foreground">Posts</span>
         <span className="text-xs text-muted-foreground tabular-nums ml-1.5">{fmt(totalCount)}</span>
@@ -2843,19 +2843,10 @@ function ThreadDetailColumn({
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const highlightRef = useRef<HTMLDivElement | null>(null);
 
-  // When the queue swaps the highlighted comment, scroll it into view,
-  // auto-target it for reply, and pre-load its AI draft.
+  // When the queue swaps the highlighted comment, scroll it into view.
   useEffect(() => {
     if (highlightCommentId && highlightRef.current) {
       highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-    if (highlightCommentId && selected) {
-      const target = selected.items.find((c) => c.id === highlightCommentId);
-      if (target) {
-        setReplyTarget(target);
-        setReply(target.aiDraft ?? "");
-        setShowAi(true);
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [highlightCommentId, selected?.post.id]);
@@ -2926,68 +2917,49 @@ function ThreadDetailColumn({
 
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col h-full min-h-0">
-      {/* ── Scrollable area: post card + filter tabs + comments ── */}
+    <div className="bg-card overflow-hidden flex flex-col h-full min-h-0">
+      {/* ── Scrollable area: post card + comments ── */}
       <div className="flex-1 overflow-y-auto min-h-0">
-      {/* ── Post card ── Instagram-style ── */}
-      <div className="flex-shrink-0">
-        {/* Full-width image banner */}
-        <div className="relative w-full h-52 bg-muted overflow-hidden">
-          {post.imageUrl ? (
-            <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className={cn("w-full h-full flex items-center justify-center text-7xl", platformBgClass(post.platform))}>
-              {post.thumbnail}
-            </div>
-          )}
-          {/* Bottom gradient */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
-          {/* Platform + handle badge */}
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/40 backdrop-blur-sm rounded-full px-2.5 py-1">
-            <PlatformIcon name={post.platform} className="w-3 h-3 text-white" />
-            <span className="text-white text-[11px] font-semibold">@yourbrand</span>
-          </div>
-          {/* Open original link */}
-          <button className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm rounded-full p-1.5 text-white hover:bg-black/60 transition-colors" title="Open post">
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
-          {/* Published time */}
-          <span className="absolute bottom-3 left-3 text-[10px] text-white/80 font-medium uppercase tracking-wide flex items-center gap-1">
-            <Clock className="w-3 h-3" /> {post.publishedAt}
-          </span>
-        </div>
 
-        {/* Engagement row + caption */}
-        <div className="px-4 pt-3 pb-2.5 bg-card border-b border-border">
-          <div className="flex items-center mb-2">
-            <div className="flex items-center gap-4">
-              <button className="text-foreground hover:text-error transition-colors" title="Like">
-                <Heart className="w-[20px] h-[20px]" />
-              </button>
-              <button className="text-foreground hover:text-primary transition-colors" title="Comment">
-                <MessageSquare className="w-[20px] h-[20px]" />
-              </button>
-              <button className="text-foreground hover:text-foreground/60 transition-colors -rotate-12" title="Share">
-                <Share2 className="w-[20px] h-[20px]" />
+        {/* ── Post preview card ── */}
+        <div className="px-5 pt-4 pb-3 border-b border-border flex justify-center">
+          <div className="w-full max-w-[420px] rounded-xl border border-border overflow-hidden bg-card shadow-sm">
+            {/* Header */}
+            <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
+              <div className="w-9 h-9 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-bold flex-shrink-0 select-none">
+                YB
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground leading-none">yourbrand</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                  {post.publishedAt} · <PlatformIcon name={post.platform} className="w-3 h-3" />
+                </p>
+              </div>
+              <button className="p-1 rounded-lg hover:bg-accent transition-colors flex-shrink-0" title="Open post">
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             </div>
-            <button className="ml-auto text-foreground hover:text-foreground/60 transition-colors" title="Save">
-              <Bookmark className="w-[20px] h-[20px]" />
-            </button>
+            {/* Caption */}
+            <p className="px-3 pb-2 text-sm text-foreground leading-snug line-clamp-2">{post.title}</p>
+            {/* Image — edge-to-edge within card, 4:3 ratio */}
+            <div className="w-full bg-muted overflow-hidden" style={{ aspectRatio: "4/3" }}>
+              {post.imageUrl ? (
+                <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className={cn("w-full h-full flex items-center justify-center text-5xl", platformBgClass(post.platform))}>
+                  {post.thumbnail}
+                </div>
+              )}
+            </div>
+            {/* Comment count */}
+            <p className="px-3 py-2 text-[11px] text-muted-foreground">
+              <span className="font-semibold text-foreground">{fmt(post.commentCount)}</span> comments
+            </p>
           </div>
-          <div className="flex items-center gap-1.5 mb-1.5 text-[13px] font-semibold text-foreground">
-            <span>1,247 likes</span>
-            <span className="text-muted-foreground font-normal">·</span>
-            <span>{fmt(post.commentCount)} comments</span>
-          </div>
-          <p className="text-sm text-foreground leading-relaxed line-clamp-2">
-            <span className="font-semibold mr-1">yourbrand</span>
-            {post.title}
-          </p>
         </div>
 
-        {/* Comment filter tabs */}
-        <div className="px-3 py-2.5 bg-muted/20 border-b border-border flex items-center gap-1.5 flex-wrap">
+        {/* Comment filter tabs — sticky so they stay visible when post scrolls away */}
+        <div className="sticky top-0 z-10 px-3 py-2.5 bg-card border-b border-border flex items-center gap-1.5 flex-wrap shadow-sm">
           {/* Status pills */}
           {([
             { id: "all",       label: "All",       count: stats.total,    active: "bg-foreground text-background",        idle: "bg-muted text-foreground hover:bg-muted/70" },
@@ -3039,7 +3011,6 @@ function ThreadDetailColumn({
             })}
           </div>
         </div>
-      </div>
 
       {/* Comment thread */}
       <div>
@@ -3295,15 +3266,15 @@ function CommentItem({
   const remainingReplies = Math.max(0, replies.length - visibleReplies);
 
   return (
-    <div className="px-4 py-3">
+    <div className="px-4 py-3.5">
       <div className="flex gap-3">
-        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5 select-none">
           {comment.avatar}
         </div>
         <div className="min-w-0 flex-1">
-          {/* Row 1 */}
-          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-            <span className="text-[13px] font-semibold text-foreground">{comment.author}</span>
+          {/* Row 1 — meta */}
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <span className="text-sm font-semibold text-foreground">{comment.author}</span>
             <span className="text-[11px] text-muted-foreground">· {comment.at}</span>
             {triggerTag && (
               <span className={cn("inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full", TAG_COLORS[triggerTag] ?? "bg-muted text-muted-foreground")}>
@@ -3313,13 +3284,14 @@ function CommentItem({
             <SentimentBadge sentiment={comment.sentiment} onChange={onChangeSentiment} />
             <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-semibold ml-auto", stageCls)}>{stageLabel}</span>
           </div>
-          {/* Row 2 */}
-          <p className="text-sm text-foreground leading-snug">{comment.text}</p>
-          <div className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
-            <ThumbsUp className="w-3 h-3" /> {comment.likes}
+          {/* Row 2 — text */}
+          <p className="text-[13px] text-foreground leading-relaxed">{comment.text}</p>
+          {/* Row 3 — likes + actions */}
+          <div className="flex items-center gap-4 mt-2 text-[11px] font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1 tabular-nums"><ThumbsUp className="w-3 h-3" /> {comment.likes}</span>
           </div>
-          {/* Row 3 — actions */}
-          <div className="flex items-center gap-3 mt-2 text-[11px] font-medium text-muted-foreground flex-wrap">
+          {/* Row 4 — action buttons */}
+          <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium text-muted-foreground flex-wrap">
             <button onClick={onReply} className="hover:text-foreground inline-flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Reply</button>
             <button onClick={onAiReply} className="hover:text-primary text-primary inline-flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI reply</button>
             {comment.assignee && (
@@ -3934,7 +3906,7 @@ function PostThreadContextSheet({
 
   return (
     <Sheet open={!!pair} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col overflow-hidden">
+      <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 flex flex-col overflow-hidden">
         {/* Accessible title — visually hidden so we don't duplicate the post header
             already rendered inside ThreadDetailColumn. */}
         <SheetHeader className="sr-only">
