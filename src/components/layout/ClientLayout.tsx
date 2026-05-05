@@ -3,7 +3,7 @@ import { Outlet, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, FolderOpen, Users, Link2, Sparkles, CalendarDays, MessageSquare,
   BarChart3, Megaphone, Ear, Settings, Bell, ChevronDown, ChevronUp, ChevronRight,
-  LogOut, Globe, Palette
+  LogOut, Globe, Palette, KanbanSquare, FileText, ShieldAlert, Bot
 } from "lucide-react";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 import acmeCorpLogoSrc from "@/assets/logos/acme-corp-logo.svg";
@@ -35,14 +35,29 @@ const clientNavItems = [
   { label: "Settings", icon: Settings, path: "/client/settings" },
 ];
 
+type NavItem = {
+  label: string;
+  icon: any;
+  path: string;
+  children?: { label: string; icon: any; path: string }[];
+};
+
 // Project-level nav (project selected)
-const projectNavItems = [
+const projectNavItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/client/project/dashboard" },
   { label: "Team", icon: Users, path: "/client/project/team" },
   { label: "Social Profiles", icon: Globe, path: "/client/connect" },
   { label: "Create", icon: Sparkles, path: "/client/create" },
   { label: "Publish", icon: CalendarDays, path: "/client/publish" },
-  { label: "Engage", icon: MessageSquare, path: "/client/engage" },
+  {
+    label: "Engage", icon: MessageSquare, path: "/client/engage",
+    children: [
+      { label: "Comment Board", icon: KanbanSquare, path: "/client/engage" },
+      { label: "Posts", icon: FileText, path: "/client/engage/posts" },
+      { label: "Spam Queue", icon: ShieldAlert, path: "/client/engage/spam" },
+      { label: "Auto Replies", icon: Bot, path: "/client/engage/auto-replies" },
+    ],
+  },
   { label: "Analyze", icon: BarChart3, path: "/client/analyze" },
   { label: "Promote", icon: Megaphone, path: "/client/promote" },
   { label: "Listen", icon: Ear, path: "/client/listen" },
@@ -56,6 +71,7 @@ export default function ClientLayout() {
   const [selectedClient, setSelectedClient] = useState(mockClients[0]);
   const [selectedProject, setSelectedProject] = useState<{ id: string; name: string; logo: string } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(["Engage"]));
 
   const clientProjects = mockProjectsByClient[selectedClient.id] || [];
   const navItems = selectedProject ? projectNavItems : clientNavItems;
@@ -78,14 +94,20 @@ export default function ClientLayout() {
     navigate("/client/dashboard");
   };
 
-  // Breadcrumb
+  // Breadcrumb — children before parent so child label wins on exact path match
   const allNavItems = [
     ...clientNavItems,
-    ...projectNavItems,
+    ...projectNavItems.flatMap(n => n.children ? [...n.children, n] : [n]),
     { label: "My Profile", path: "/client/profile" },
   ];
-  const currentNav = allNavItems.find(n => location.pathname === n.path || location.pathname.startsWith(n.path + "/"));
+  const currentNav = allNavItems.find(n => location.pathname === n.path)
+    ?? allNavItems.find(n => location.pathname.startsWith(n.path + "/"));
   const breadcrumbLabel = currentNav?.label || "Dashboard";
+
+  // Find parent nav item (for sub-pages like Engage children)
+  const parentNav = projectNavItems.find(n =>
+    n.children?.some(c => location.pathname === c.path)
+  );
 
   return (
     <div className="flex h-screen overflow-hidden bg-background font-sans">
@@ -168,21 +190,68 @@ export default function ClientLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+          {(navItems as NavItem[]).map((item) => {
+            const hasChildren = !!item.children?.length;
+            const isActive = hasChildren
+              ? item.children!.some(c => location.pathname === c.path)
+              : location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+            const isExpanded = expandedMenus.has(item.label);
+
             return (
-              <Link
-                key={item.label}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                  ${isActive
-                    ? "bg-primary text-white"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  }`}
-              >
-                <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
-                <span>{item.label}</span>
-              </Link>
+              <div key={item.label}>
+                {hasChildren ? (
+                  <button
+                    onClick={() => setExpandedMenus(prev => {
+                      const next = new Set(prev);
+                      next.has(item.label) ? next.delete(item.label) : next.add(item.label);
+                      return next;
+                    })}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                      ${isActive
+                        ? "text-primary"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      }`}
+                  >
+                    <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                  </button>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                      ${isActive
+                        ? "bg-primary text-white"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      }`}
+                  >
+                    <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                )}
+
+                {hasChildren && isExpanded && (
+                  <div className="mt-0.5 ml-3 pl-3 border-l border-sidebar-border space-y-0.5">
+                    {item.children!.map((child) => {
+                      const childActive = location.pathname === child.path;
+                      return (
+                        <Link
+                          key={child.label}
+                          to={child.path}
+                          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-200
+                            ${childActive
+                              ? "bg-primary text-white"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            }`}
+                        >
+                          <child.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
@@ -236,6 +305,12 @@ export default function ClientLayout() {
                   <button onClick={handleBackToClient} className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">{selectedClient.name}</button>
                   <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
                   <span className="text-xs text-muted-foreground truncate">{selectedProject.name}</span>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                </>
+              )}
+              {parentNav && (
+                <>
+                  <span className="text-xs text-muted-foreground shrink-0">{parentNav.label}</span>
                   <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
                 </>
               )}

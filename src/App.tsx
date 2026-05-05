@@ -113,7 +113,10 @@ const App = () => (
             <Route path="/client/create" element={<CreatePage />} />
             <Route path="/client/create/ai" element={<CreateAiPage />} />
             <Route path="/client/publish" element={<PublishPage />} />
-            <Route path="/client/engage" element={<EngagePage />} />
+            <Route path="/client/engage" element={<EngagePage view="board" />} />
+            <Route path="/client/engage/posts" element={<EngagePage view="threads" />} />
+            <Route path="/client/engage/spam" element={<EngagePage view="spam" />} />
+            <Route path="/client/engage/auto-replies" element={<EngagePage view="variants" />} />
             <Route path="/client/engage/v2" element={<EngageV2Page />} />
             <Route path="/engage/v2" element={<Navigate to="/client/engage/v2" replace />} />
             <Route path="/client/analyze" element={<AnalyzePage />} />

@@ -5,7 +5,7 @@ import {
   ArrowRight, MoreVertical, MapPin, Shield, Shuffle, Trash2, Plus,
   ThumbsUp, ThumbsDown, Edit3, RefreshCw, Smile, Meh, Frown, ListTree,
   Bot, Users, Zap, X, Check, AtSign, Mail, Star, ArrowDownUp, ChevronDown,
-  ExternalLink, Image as ImageIcon,
+  ExternalLink, Image as ImageIcon, Heart, Bookmark, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,11 +29,11 @@ const fmt = (n: number) => n.toLocaleString();
    Types
    ────────────────────────────────────────────────────────────── */
 
-type Stage = "pending" | "in_review" | "replied" | "escalated";
-type Priority = "low" | "medium" | "high" | "urgent";
+type Stage = "pending" | "in_review" | "replied";
+type Priority = "low" | "medium" | "high";
 type Sentiment = "positive" | "neutral" | "negative";
 type Platform = "Instagram" | "Facebook" | "LinkedIn" | "Twitter" | "GBP";
-type Trigger = "anniversary" | "product_inquiry" | "job_application" | "praise" | "complaint" | "general";
+type Trigger = "anniversary" | "product_inquiry" | "job_application" | "praise" | "complaint" | "general" | "price_request" | "discount_request" | "order_status" | "return_exchange" | "potential_lead" | "question" | "negative_comment";
 
 interface Comment {
   id: string;
@@ -88,14 +88,12 @@ const STAGES: { id: Stage; label: string; dot: string }[] = [
   { id: "pending", label: "Pending", dot: "bg-info" },
   { id: "in_review", label: "In Review", dot: "bg-warning" },
   { id: "replied", label: "Replied", dot: "bg-success" },
-  { id: "escalated", label: "Escalated", dot: "bg-error" },
 ];
 
 const priorityStyles: Record<Priority, string> = {
   low: "bg-muted text-muted-foreground",
   medium: "bg-info/15 text-info",
   high: "bg-warning/15 text-warning",
-  urgent: "bg-error/15 text-error",
 };
 
 const sentimentMeta: Record<Sentiment, { color: string; bg: string; Icon: typeof Smile; label: string }> = {
@@ -104,13 +102,44 @@ const sentimentMeta: Record<Sentiment, { color: string; bg: string; Icon: typeof
   negative: { color: "text-error", bg: "bg-error/10", Icon: Frown, label: "Negative" },
 };
 
-const triggerLabel: Record<Trigger, string> = {
-  anniversary: "Anniversary",
-  product_inquiry: "Product inquiry",
-  job_application: "Job application",
-  praise: "Praise",
-  complaint: "Complaint",
-  general: "General",
+// Canonical tag labels — single source of truth for both comment badges and filter modal
+const TAGS = [
+  "Complaint", "Negative Comment", "Praise", "Product Inquiry", "Question",
+  "Job Application", "Price Request", "Discount Request", "Order Status",
+  "Return/Exchange", "Potential Lead", "Unclassified",
+] as const;
+
+// Map auto-detected trigger → canonical tag label
+const triggerToTag: Record<Trigger, string> = {
+  anniversary:      "Praise",
+  product_inquiry:  "Product Inquiry",
+  job_application:  "Job Application",
+  praise:           "Praise",
+  complaint:        "Complaint",
+  general:          "Unclassified",
+  price_request:    "Price Request",
+  discount_request: "Discount Request",
+  order_status:     "Order Status",
+  return_exchange:  "Return/Exchange",
+  potential_lead:   "Potential Lead",
+  question:         "Question",
+  negative_comment: "Negative Comment",
+};
+
+// Single color map keyed by tag label — used everywhere
+const TAG_COLORS: Record<string, string> = {
+  "Complaint":        "bg-error/10 text-error",
+  "Negative Comment": "bg-error/10 text-error",
+  "Praise":           "bg-success/10 text-success",
+  "Potential Lead":   "bg-success/10 text-success",
+  "Product Inquiry":  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  "Question":         "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  "Job Application":  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
+  "Price Request":    "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  "Discount Request": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  "Order Status":     "bg-warning/10 text-warning",
+  "Return/Exchange":  "bg-warning/10 text-warning",
+  "Unclassified":     "bg-muted text-muted-foreground",
 };
 
 const PlatformIcon = ({ name, className }: { name: Platform; className?: string }) => {
@@ -143,32 +172,33 @@ const POSTS: Post[] = [
         stage: "pending", priority: "low",
         sla: { dueIn: "3h 48m", breached: false },
         replies: (() => {
-          const seeds: Array<{ a: string; av: string; t: string; s: "positive" | "neutral" | "negative" }> = [
-            { a: "Mike Chen", av: "MC", t: "Seconded! Such an inspiring journey.", s: "positive" },
-            { a: "Lara Petrov", av: "LP", t: "Huge congrats — been following since the beta days 🙌", s: "positive" },
-            { a: "Noah Kimura", av: "NK", t: "5 years already? Insane growth, well deserved.", s: "positive" },
-            { a: "Priya Shah", av: "PS", t: "Cheers to the team behind the scenes 🥂", s: "positive" },
-            { a: "Diego Alvarez", av: "DA", t: "What a milestone — onto the next chapter!", s: "positive" },
-            { a: "Sofia Rossi", av: "SR", t: "Confetti everywhere 🎊 congrats!!", s: "positive" },
-            { a: "Ahmed Karim", av: "AK", t: "Quality has only gone up year over year. Respect.", s: "positive" },
-            { a: "Yuki Tanaka", av: "YT", t: "Five years of consistency is no small feat 👏", s: "positive" },
-            { a: "Ben Carter", av: "BC", t: "Will there be an anniversary drop? 👀", s: "neutral" },
-            { a: "Zara Hussain", av: "ZH", t: "Love the team, love the brand. Keep going!", s: "positive" },
-            { a: "Marco Bianchi", av: "MB", t: "Toasting from Milan tonight 🍷", s: "positive" },
-            { a: "Hannah Becker", av: "HB", t: "Such an inspiring story — congrats team!", s: "positive" },
-            { a: "Tariq Mensah", av: "TM", t: "5 down, 50 to go 🚀", s: "positive" },
-            { a: "Elena Voss", av: "EV", t: "Can we get a behind-the-scenes anniversary post? 🙏", s: "neutral" },
-            { a: "Ravi Iyer", av: "RI", t: "Watching from day one — super proud.", s: "positive" },
-            { a: "Camille Dubois", av: "CD", t: "Bravo 👏 the brand has only gotten better.", s: "positive" },
-            { a: "Jonas Lindberg", av: "JL", t: "Anniversary giveaway? Asking for a friend 😄", s: "neutral" },
-            { a: "Isabela Costa", av: "IC", t: "Sending love from São Paulo 💛", s: "positive" },
-            { a: "Owen Walsh", av: "OW", t: "Thanks for 5 years of great products!", s: "positive" },
-            { a: "Mei Lin", av: "ML", t: "Here's to many more — proud customer ❤️", s: "positive" },
+          const seeds: Array<{ a: string; av: string; t: string; s: "positive" | "neutral" | "negative"; tr?: Trigger }> = [
+            { a: "Mike Chen", av: "MC", t: "Seconded! Such an inspiring journey.", s: "positive", tr: "praise" },
+            { a: "Lara Petrov", av: "LP", t: "Huge congrats — been following since the beta days 🙌", s: "positive", tr: "anniversary" },
+            { a: "Noah Kimura", av: "NK", t: "5 years already? Insane growth, well deserved.", s: "positive", tr: "praise" },
+            { a: "Priya Shah", av: "PS", t: "Cheers to the team behind the scenes 🥂", s: "positive", tr: "anniversary" },
+            { a: "Diego Alvarez", av: "DA", t: "What a milestone — onto the next chapter!", s: "positive", tr: "praise" },
+            { a: "Sofia Rossi", av: "SR", t: "Confetti everywhere 🎊 congrats!!", s: "positive", tr: "anniversary" },
+            { a: "Ahmed Karim", av: "AK", t: "Quality has only gone up year over year. Respect.", s: "positive", tr: "praise" },
+            { a: "Yuki Tanaka", av: "YT", t: "Five years of consistency is no small feat 👏", s: "positive", tr: "praise" },
+            { a: "Ben Carter", av: "BC", t: "Will there be an anniversary drop? 👀", s: "neutral", tr: "product_inquiry" },
+            { a: "Zara Hussain", av: "ZH", t: "Love the team, love the brand. Keep going!", s: "positive", tr: "praise" },
+            { a: "Marco Bianchi", av: "MB", t: "Toasting from Milan tonight 🍷", s: "positive", tr: "anniversary" },
+            { a: "Hannah Becker", av: "HB", t: "Such an inspiring story — congrats team!", s: "positive", tr: "praise" },
+            { a: "Tariq Mensah", av: "TM", t: "5 down, 50 to go 🚀", s: "positive", tr: "praise" },
+            { a: "Elena Voss", av: "EV", t: "Can we get a behind-the-scenes anniversary post? 🙏", s: "neutral", tr: "question" },
+            { a: "Ravi Iyer", av: "RI", t: "Watching from day one — super proud.", s: "positive", tr: "praise" },
+            { a: "Camille Dubois", av: "CD", t: "Bravo 👏 the brand has only gotten better.", s: "positive", tr: "praise" },
+            { a: "Jonas Lindberg", av: "JL", t: "Anniversary giveaway? Asking for a friend 😄", s: "neutral", tr: "discount_request" },
+            { a: "Isabela Costa", av: "IC", t: "Sending love from São Paulo 💛", s: "positive", tr: "anniversary" },
+            { a: "Owen Walsh", av: "OW", t: "Thanks for 5 years of great products!", s: "positive", tr: "praise" },
+            { a: "Mei Lin", av: "ML", t: "Here's to many more — proud customer ❤️", s: "positive", tr: "anniversary" },
           ];
           return seeds.map((r, i) => ({
             id: `C-1-r${i + 1}`,
             author: r.a, avatar: r.av, text: r.t, at: `${i + 2}m`,
             sentiment: r.s, likes: (i * 2) % 7,
+            trigger: r.tr,
             stage: (i % 6 === 0 ? "pending" : "replied") as Stage,
             priority: "low" as const,
             sla: { dueIn: i % 6 === 0 ? `${2 + i}h` : "—", breached: false },
@@ -222,6 +252,22 @@ const POSTS: Post[] = [
         stage: "in_review", priority: "medium", assignee: "Mike T.",
         sla: { dueIn: "2h 50m", breached: false },
       },
+      {
+        id: "C-8", author: "Preethi Nair", avatar: "PN",
+        text: "How much is the limited-edition anniversary box? Can't find the price anywhere 👀", at: "1h 10m",
+        sentiment: "neutral", likes: 3, trigger: "price_request",
+        aiDraft: "Hi Preethi! The anniversary box is $49 — link in bio to grab yours before they sell out! 🎁",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 40m", breached: false },
+      },
+      {
+        id: "C-9", author: "Bolu Adeyemi", avatar: "BA",
+        text: "We're looking for brand partners for our upcoming campaign — who's the right person to contact?", at: "1h 20m",
+        sentiment: "positive", likes: 1, trigger: "potential_lead",
+        aiDraft: "Hi Bolu! Thanks for reaching out 🙌 Please DM us or email partnerships@yourbrand.com and our team will get back to you.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 30m", breached: false },
+      },
     ],
   },
   {
@@ -243,7 +289,7 @@ const POSTS: Post[] = [
         text: "Waited 40 minutes and nobody helped me. Very disappointed.", at: "3h",
         sentiment: "negative", likes: 0, trigger: "complaint",
         aiDraft: "Lisa, we're so sorry about your experience — that's not the standard we hold ourselves to. Could you DM us your visit details so our manager can make this right?",
-        stage: "escalated", priority: "urgent", assignee: "Sarah C.",
+        stage: "in_review", priority: "high", assignee: "Sarah C.",
         sla: { dueIn: "OVERDUE 15m", breached: true },
       },
       {
@@ -257,7 +303,7 @@ const POSTS: Post[] = [
       {
         id: "C-13", author: "Riya Pillai", avatar: "RP",
         text: "Are the new hours permanent or seasonal?", at: "2h",
-        sentiment: "neutral", likes: 0, trigger: "product_inquiry",
+        sentiment: "neutral", likes: 0, trigger: "question",
         aiDraft: "Hi Riya! These hours are permanent through the season — we'll review again in spring.",
         stage: "pending", priority: "high",
         sla: { dueIn: "1h 05m", breached: false },
@@ -265,10 +311,26 @@ const POSTS: Post[] = [
       {
         id: "C-14", author: "Anonymous", avatar: "AN",
         text: "★ rude staff", at: "8h",
-        sentiment: "negative", likes: 0, trigger: "complaint",
+        sentiment: "negative", likes: 0, trigger: "negative_comment",
         aiDraft: "We're really sorry to hear this. Could you share more about your visit so we can look into it?",
-        stage: "pending", priority: "urgent",
+        stage: "pending", priority: "high",
         sla: { dueIn: "OVERDUE 2h", breached: true },
+      },
+      {
+        id: "C-15", author: "James Okafor", avatar: "JO",
+        text: "I placed a click-and-collect order 2 days ago — still no confirmation. Can someone check the status?", at: "6h",
+        sentiment: "neutral", likes: 0, trigger: "order_status",
+        aiDraft: "Hi James, sorry for the delay! Could you DM us your order number? We'll check and get back to you within the hour.",
+        stage: "pending", priority: "high",
+        sla: { dueIn: "30m", breached: false },
+      },
+      {
+        id: "C-16", author: "Nina Holst", avatar: "NH",
+        text: "Do the new hours apply to the drive-through as well?", at: "5h",
+        sentiment: "neutral", likes: 2, trigger: "question",
+        aiDraft: "Hi Nina! Yes — drive-through follows the same updated hours. See you soon! ☕",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "1h 40m", breached: false },
       },
     ],
   },
@@ -289,7 +351,7 @@ const POSTS: Post[] = [
       {
         id: "C-21", author: "Naomi Bellweather", avatar: "NB",
         text: "Is this role open to remote candidates in Europe?", at: "3h",
-        sentiment: "neutral", likes: 6, trigger: "product_inquiry",
+        sentiment: "neutral", likes: 6, trigger: "question",
         aiDraft: "Hi Naomi! Yes — this role is open to EU-based remote candidates. The job spec link has the full timezone overlap requirements.",
         stage: "pending", priority: "medium",
         sla: { dueIn: "2h 30m", breached: false },
@@ -305,10 +367,26 @@ const POSTS: Post[] = [
       {
         id: "C-23", author: "Elena Costa", avatar: "EC",
         text: "Will there be a portfolio review round?", at: "6h",
-        sentiment: "neutral", likes: 1, trigger: "product_inquiry",
+        sentiment: "neutral", likes: 1, trigger: "question",
         aiDraft: "Yes Elena — round 2 is a 45-min portfolio walkthrough with the design team. Full process is in the JD.",
         stage: "pending", priority: "low",
         sla: { dueIn: "5h 10m", breached: false },
+      },
+      {
+        id: "C-24", author: "Kwame Asante", avatar: "KA",
+        text: "What's the team size for this role? Would love to understand the scope before applying.", at: "7h",
+        sentiment: "neutral", likes: 4, trigger: "question",
+        aiDraft: "Hi Kwame! The design team is 6 people. This role partners closely with product and engineering across 3 squads.",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "4h 50m", breached: false },
+      },
+      {
+        id: "C-25", author: "Lucia Ferrara", avatar: "LF",
+        text: "Would you consider a fractional / freelance arrangement instead of full-time? My portfolio aligns well.", at: "8h",
+        sentiment: "positive", likes: 2, trigger: "potential_lead",
+        aiDraft: "Hi Lucia! We're focused on full-time for now, but feel free to send your portfolio to talent@yourbrand.com — we keep a freelance bench for project work!",
+        stage: "in_review", priority: "medium", assignee: "Priya S.",
+        sla: { dueIn: "3h 20m", breached: false },
       },
     ],
   },
@@ -342,6 +420,38 @@ const POSTS: Post[] = [
         stage: "in_review", priority: "high", assignee: "Sarah C.",
         sla: { dueIn: "40m", breached: false },
       },
+      {
+        id: "C-33", author: "Amara Diallo", avatar: "AD",
+        text: "I need to return the linen trousers from the last collection — they shrank after one wash 😕", at: "7h",
+        sentiment: "negative", likes: 0, trigger: "return_exchange",
+        aiDraft: "Hi Amara, we're really sorry about that! Please DM us your order number and we'll arrange a free return and replacement right away.",
+        stage: "pending", priority: "high",
+        sla: { dueIn: "1h 10m", breached: false },
+      },
+      {
+        id: "C-34", author: "Tom Greer", avatar: "TG",
+        text: "Any discount for first-time buyers? Considering grabbing 2–3 pieces.", at: "8h",
+        sentiment: "neutral", likes: 3, trigger: "discount_request",
+        aiDraft: "Hi Tom! Use code WELCOME15 at checkout for 15% off your first order 🎉 Enjoy the Spring Collection!",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 00m", breached: false },
+      },
+      {
+        id: "C-35", author: "Fatou Dieng", avatar: "FD",
+        text: "What's the full price for the spring bundle — the complete 5-piece set?", at: "9h",
+        sentiment: "neutral", likes: 1, trigger: "price_request",
+        aiDraft: "Hi Fatou! The 5-piece spring bundle is $129 (down from $165). Tap the link in bio to see the full breakdown 💐",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 20m", breached: false },
+      },
+      {
+        id: "C-36", author: "Zoe Lambert", avatar: "ZL",
+        text: "I'm a micro-influencer (18k followers, fashion niche) — would love to collab. Who do I DM?", at: "10h",
+        sentiment: "positive", likes: 5, trigger: "potential_lead",
+        aiDraft: "Hi Zoe! We'd love to hear more 🌸 Please DM us with your handle and a bit about your audience and we'll pass it to our collabs team.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "3h 00m", breached: false },
+      },
     ],
   },
   {
@@ -361,7 +471,7 @@ const POSTS: Post[] = [
       {
         id: "C-41", author: "Sasha Vargas", avatar: "SV",
         text: "Counterpoint: most orgs aren't ready to staff a product team for tokens.", at: "4h",
-        sentiment: "neutral", likes: 14, trigger: "general",
+        sentiment: "neutral", likes: 14, trigger: "negative_comment",
         aiDraft: "Fair point, Sasha — even one part-time owner shifts the outcome dramatically.",
         stage: "in_review", priority: "medium", assignee: "Mike T.",
         sla: { dueIn: "1h 35m", breached: false },
@@ -373,6 +483,30 @@ const POSTS: Post[] = [
         aiDraft: "Love that Ade — let us know how the convo goes!",
         stage: "replied", priority: "low", assignee: "Priya S.",
         sla: { dueIn: "—", breached: false },
+      },
+      {
+        id: "C-43", author: "Daria Koval", avatar: "DK",
+        text: "How do you handle dark mode tokens — separate set or semantic aliases only?", at: "2h",
+        sentiment: "neutral", likes: 9, trigger: "question",
+        aiDraft: "We use semantic aliases all the way — a single `color.surface.default` resolves differently in light vs dark. No parallel token sets needed.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "1h 50m", breached: false },
+      },
+      {
+        id: "C-44", author: "Piers Whitfield", avatar: "PW",
+        text: "We'd love to have you speak at our design systems conf in October — DMs open!", at: "1h 30m",
+        sentiment: "positive", likes: 11, trigger: "potential_lead",
+        aiDraft: "Thanks Piers, honoured to be considered! Drop us a DM with the details and we'll take a look at the schedule 🙌",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "2h 10m", breached: false },
+      },
+      {
+        id: "C-45", author: "Chloe Marchand", avatar: "CM",
+        text: "Every team I've worked with has failed at this because no one owns it post-launch. Same story everywhere.", at: "1h",
+        sentiment: "negative", likes: 18, trigger: "negative_comment",
+        aiDraft: "100% — the ownership gap is real. That's exactly why we argue it needs a product mindset, not just a handoff doc.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "1h 30m", breached: false },
       },
     ],
   },
@@ -393,7 +527,7 @@ const POSTS: Post[] = [
       {
         id: "C-51", author: "Theo Nakamura", avatar: "TN",
         text: "Is the new packaging actually recyclable end-to-end?", at: "5h",
-        sentiment: "neutral", likes: 12, trigger: "product_inquiry",
+        sentiment: "neutral", likes: 12, trigger: "question",
         aiDraft: "Great question Theo — yes, every layer is curbside-recyclable.",
         stage: "in_review", priority: "high", assignee: "Priya S.",
         sla: { dueIn: "45m", breached: false },
@@ -401,10 +535,26 @@ const POSTS: Post[] = [
       {
         id: "C-52", author: "Mona Eliasson", avatar: "ME",
         text: "Mine arrived crushed last week tbh 😬", at: "4h",
-        sentiment: "negative", likes: 3, trigger: "complaint",
+        sentiment: "negative", likes: 3, trigger: "return_exchange",
         aiDraft: "Mona, that's not on — DM us your order # and we'll get a replacement out today.",
-        stage: "escalated", priority: "urgent", assignee: "Sarah C.",
+        stage: "in_review", priority: "high", assignee: "Sarah C.",
         sla: { dueIn: "OVERDUE 22m", breached: true },
+      },
+      {
+        id: "C-53", author: "Lena Bergstrom", avatar: "LB",
+        text: "What material is the inner lining made from? Trying to check if it's safe for food items.", at: "3h",
+        sentiment: "neutral", likes: 7, trigger: "question",
+        aiDraft: "Great question Lena! The inner lining is unbleached kraft paper — food-safe and fully compostable.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 30m", breached: false },
+      },
+      {
+        id: "C-54", author: "Ryan Osei", avatar: "RO",
+        text: "The old packaging was fine honestly. This feels like change for change's sake.", at: "2h",
+        sentiment: "negative", likes: 2, trigger: "negative_comment",
+        aiDraft: "Totally fair to feel that way, Ryan — sustainability was the main driver. But we'd love to know what you'd improve!",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "1h 55m", breached: false },
       },
     ],
   },
@@ -425,10 +575,26 @@ const POSTS: Post[] = [
       {
         id: "C-61", author: "Harini Subramanian", avatar: "HS",
         text: "Curious what tooling you used for the attribution piece?", at: "7h",
-        sentiment: "neutral", likes: 6, trigger: "product_inquiry",
+        sentiment: "neutral", likes: 6, trigger: "question",
         aiDraft: "Hi Harini! Mix of Dreamdata + a bit of internal SQL on the warehouse.",
         stage: "pending", priority: "medium",
         sla: { dueIn: "2h 50m", breached: false },
+      },
+      {
+        id: "C-62", author: "Marcus Obi", avatar: "MO",
+        text: "We'd love to feature your company in our upcoming B2B growth report — would you be open to a quick call?", at: "6h",
+        sentiment: "positive", likes: 3, trigger: "potential_lead",
+        aiDraft: "Hi Marcus, thanks for thinking of us! Drop us a DM with more details and we'll connect you with the right person 🙌",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 20m", breached: false },
+      },
+      {
+        id: "C-63", author: "Tina Park", avatar: "TP",
+        text: "Did you break out organic vs paid in the attribution model? Would change the story quite a bit.", at: "5h",
+        sentiment: "neutral", likes: 8, trigger: "question",
+        aiDraft: "Good call Tina — yes, organic contributed ~38% of attributed pipeline, paid the rest. Happy to share the breakdown.",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "3h 10m", breached: false },
       },
     ],
   },
@@ -449,10 +615,26 @@ const POSTS: Post[] = [
       {
         id: "C-71", author: "Carla Núñez", avatar: "CN",
         text: "Are walk-ins okay on Saturdays or do I need to book?", at: "9h",
-        sentiment: "neutral", likes: 1, trigger: "product_inquiry",
+        sentiment: "neutral", likes: 1, trigger: "question",
         aiDraft: "Hi Carla! Walk-ins are welcome — bookings just guarantee a slot if it's busy.",
         stage: "pending", priority: "medium",
         sla: { dueIn: "1h 25m", breached: false },
+      },
+      {
+        id: "C-72", author: "Steve Nwosu", avatar: "SN",
+        text: "Do you still offer the loyalty stamp card here? My old card is from the old location.", at: "8h",
+        sentiment: "neutral", likes: 0, trigger: "question",
+        aiDraft: "Hi Steve! Yes — we accept all loyalty cards regardless of which branch issued them. See you Saturday!",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "2h 00m", breached: false },
+      },
+      {
+        id: "C-73", author: "Aisha Cole", avatar: "AC",
+        text: "Any student discount on Saturdays? Asking for a broke uni student 😅", at: "7h",
+        sentiment: "neutral", likes: 4, trigger: "discount_request",
+        aiDraft: "Hey Aisha! Show your student ID for 10% off any day, including Saturdays 🎓",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "2h 40m", breached: false },
       },
     ],
   },
@@ -473,10 +655,26 @@ const POSTS: Post[] = [
       {
         id: "C-81", author: "Ravi Deshpande", avatar: "RD",
         text: "60% feels generous — what was the baseline?", at: "11h",
-        sentiment: "neutral", likes: 5, trigger: "general",
+        sentiment: "neutral", likes: 5, trigger: "negative_comment",
         aiDraft: "Fair pushback Ravi — baseline was their pre-rollout 4-week onboarding cycle.",
         stage: "pending", priority: "medium",
         sla: { dueIn: "1h 45m", breached: false },
+      },
+      {
+        id: "C-82", author: "Claire Dupont", avatar: "CD",
+        text: "This is exactly what we're trying to solve — could we get on a call to explore working together?", at: "10h",
+        sentiment: "positive", likes: 6, trigger: "potential_lead",
+        aiDraft: "Hi Claire, love to hear that! Please reach out at hello@yourbrand.com and our partnerships team will be in touch 🙌",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 10m", breached: false },
+      },
+      {
+        id: "C-83", author: "Sam Liu", avatar: "SL",
+        text: "What does the enterprise package cost? Trying to pitch this internally.", at: "9h",
+        sentiment: "neutral", likes: 2, trigger: "price_request",
+        aiDraft: "Hi Sam! Enterprise pricing is custom — drop us a message at sales@yourbrand.com and we'll get you a tailored quote.",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "2h 30m", breached: false },
       },
     ],
   },
@@ -489,7 +687,7 @@ const POSTS: Post[] = [
       {
         id: "C-90", author: "Mae Olusanya", avatar: "MO",
         text: "Tagging @nina @sam @jules 🤞🤞", at: "1d",
-        sentiment: "positive", likes: 2, trigger: "general",
+        sentiment: "positive", likes: 2, trigger: "product_inquiry",
         aiDraft: "Good luck Mae! 🍀 Make sure you're following so we can DM the winner.",
         stage: "pending", priority: "low",
         sla: { dueIn: "6h 00m", breached: false },
@@ -508,6 +706,54 @@ const POSTS: Post[] = [
         sentiment: "neutral", likes: 0, isSpam: true,
         stage: "pending", priority: "low",
         sla: { dueIn: "—", breached: false },
+      },
+      {
+        id: "C-93", author: "Aaliya Hussain", avatar: "AH",
+        text: "Will there be a discount code for those who don't win? 😅 I really want the Pro plan.", at: "22h",
+        sentiment: "neutral", likes: 8, trigger: "discount_request",
+        aiDraft: "Aaliya, we love the enthusiasm! 😄 Stay tuned — we'll have a promo code dropping after the giveaway ends.",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "5h 30m", breached: false },
+      },
+      {
+        id: "C-94", author: "Tom Bakker", avatar: "TB",
+        text: "Is this open to followers outside the US? I'm in the Netherlands 🇳🇱", at: "20h",
+        sentiment: "neutral", likes: 12, trigger: "question",
+        aiDraft: "Hi Tom! Yes — this giveaway is open internationally 🌍 Good luck!",
+        stage: "pending", priority: "low",
+        sla: { dueIn: "5h 00m", breached: false },
+      },
+      {
+        id: "C-95", author: "Jules Fontaine", avatar: "JF",
+        text: "This is the 3rd giveaway from this account and I've never once seen a real winner announced. Feels fake.", at: "18h",
+        sentiment: "negative", likes: 3, trigger: "negative_comment",
+        aiDraft: "Hi Jules, that's fair feedback and we hear you. We'll post the winner announcement on our story and tag them publicly — transparency matters to us.",
+        stage: "in_review", priority: "high", assignee: "Sarah C.",
+        sla: { dueIn: "1h 20m", breached: false },
+      },
+      {
+        id: "C-96", author: "Nia Clarke", avatar: "NC",
+        text: "How much would a monthly Pro plan cost if I just want to buy it directly?", at: "15h",
+        sentiment: "neutral", likes: 5, trigger: "price_request",
+        aiDraft: "Hi Nia! Pro is $29/month or $249/year. You can grab it at the link in bio — and good luck in the giveaway! 🎁",
+        stage: "pending", priority: "medium",
+        sla: { dueIn: "4h 00m", breached: false },
+      },
+      {
+        id: "C-97", author: "Kofi Mensah", avatar: "KM",
+        text: "I ordered last week and haven't received a shipping confirmation yet — is everything okay?", at: "12h",
+        sentiment: "neutral", likes: 1, trigger: "order_status",
+        aiDraft: "Hi Kofi, sorry for the delay! Please DM your order number and we'll look into it right away.",
+        stage: "pending", priority: "high",
+        sla: { dueIn: "45m", breached: false },
+      },
+      {
+        id: "C-98", author: "Sophie Oran", avatar: "SO",
+        text: "We bought the annual plan 2 weeks ago but I'd like to upgrade to the team version — how do I do that?", at: "10h",
+        sentiment: "neutral", likes: 0, trigger: "return_exchange",
+        aiDraft: "Hi Sophie! You can upgrade right from your account settings under Billing → Change Plan. Happy to walk you through it if you get stuck!",
+        stage: "in_review", priority: "medium", assignee: "Mike T.",
+        sla: { dueIn: "2h 00m", breached: false },
       },
     ],
   },
@@ -552,16 +798,8 @@ const REPLY_TEMPLATES: ReplyTemplate[] = [
 
 type Tab = "board" | "threads" | "sentiment" | "spam" | "variants";
 
-const TABS: { id: Tab; label: string; Icon: typeof Inbox; description: string }[] = [
-  { id: "board", label: "Comment Board", Icon: KanbanSquare, description: "Unified list view of all comments" },
-  { id: "threads", label: "Posts", Icon: ListTree, description: "Browse posts and their comment threads" },
-  { id: "sentiment", label: "Sentiment Review", Icon: Smile, description: "Audit & correct AI sentiment tags" },
-  { id: "spam", label: "Spam Queue", Icon: Shield, description: "Filtered comments awaiting review" },
-  { id: "variants", label: "Auto Replies", Icon: Shuffle, description: "Manage humanized auto-reply templates" },
-];
-
-export default function EngagePage() {
-  const [tab, setTab] = useState<Tab>("board");
+export default function EngagePage({ view = "board" }: { view?: Tab }) {
+  const tab = view;
   const [posts, setPosts] = useState<Post[]>(POSTS);
   const [templates, setTemplates] = useState<ReplyTemplate[]>(REPLY_TEMPLATES);
   const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
@@ -580,10 +818,6 @@ export default function EngagePage() {
   const [statusFilter, setStatusFilter] = useState<Set<"open" | "in_progress" | "completed">>(new Set());
   const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
   const [dateRange, setDateRange] = useState<"all" | "today" | "7d" | "30d">("all");
-  const TAGS = [
-    "Unclassified", "Question", "Complaint", "Price Request", "Product Inquiry",
-    "Order Status", "Discount Request", "Return/Exchange", "Negative Comment", "Potential Lead",
-  ];
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -618,16 +852,6 @@ export default function EngagePage() {
   // Map a comment's stage → status filter buckets
   const stageToStatus = (s: Stage): "open" | "in_progress" | "completed" =>
     s === "pending" ? "open" : s === "replied" ? "completed" : "in_progress";
-
-  // Map a comment's trigger → tag filter labels
-  const triggerToTag: Record<Trigger, string> = {
-    anniversary: "Praise",
-    product_inquiry: "Product Inquiry",
-    job_application: "Question",
-    praise: "Praise",
-    complaint: "Complaint",
-    general: "Unclassified",
-  };
 
   // Apply search + category + status + tag filters end-to-end
   const allComments = useMemo(() => {
@@ -700,8 +924,7 @@ export default function EngagePage() {
 
   const summary = useMemo(() => ({
     pending: allComments.filter((c) => c.stage === "pending").length + 14,
-    urgent: allComments.filter((c) => c.priority === "urgent" && c.stage !== "replied").length + 3,
-    breached: allComments.filter((c) => c.sla.breached).length + 5,
+    inReview: allComments.filter((c) => c.stage === "in_review").length + 8,
     replied: allComments.filter((c) => c.stage === "replied").length + 142,
     spam: spamComments.length + 27,
   }), [allComments, spamComments]);
@@ -770,8 +993,8 @@ export default function EngagePage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Summary — collapsible */}
-      <div className="border border-border rounded-xl bg-card overflow-hidden">
+      {/* Summary — collapsible, only on Comment Board */}
+      {tab === "board" && <div className="border border-border rounded-xl bg-card overflow-hidden">
         <button
           onClick={() => setStatsOpen(o => !o)}
           className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/50 transition-colors"
@@ -782,9 +1005,9 @@ export default function EngagePage() {
               <div className="flex items-center gap-3 ml-2">
                 {[
                   { label: "Pending", value: summary.pending, tone: "text-info" },
-                  { label: "Urgent", value: summary.urgent, tone: "text-error" },
-                  { label: "SLA breached", value: summary.breached, tone: "text-warning" },
+                  { label: "In Review", value: summary.inReview, tone: "text-warning" },
                   { label: "Replied", value: summary.replied, tone: "text-success" },
+                  { label: "Spam", value: summary.spam, tone: "text-muted-foreground" },
                 ].map(s => (
                   <span key={s.label} className={cn("text-xs font-semibold tabular-nums", s.tone)}>
                     {s.value} <span className="font-normal text-muted-foreground">{s.label}</span>
@@ -797,14 +1020,12 @@ export default function EngagePage() {
         </button>
         {statsOpen && (
           <div className="border-t border-border">
-            {/* desktop: single row with dividers */}
             <div className="hidden md:flex divide-x divide-border">
               {[
-                { I: MessageSquare, label: "Pending review", value: summary.pending, iconTone: "text-info bg-info/10", valueTone: "text-info" },
-                { I: AlertTriangle, label: "Urgent", value: summary.urgent, iconTone: "text-error bg-error/10", valueTone: "text-error" },
-                { I: Clock, label: "SLA breached", value: summary.breached, iconTone: "text-warning bg-warning/10", valueTone: "text-warning" },
-                { I: CheckCircle2, label: "Replied today", value: summary.replied, iconTone: "text-success bg-success/10", valueTone: "text-success" },
-                { I: Shield, label: "Spam filtered", value: summary.spam, iconTone: "text-muted-foreground bg-muted", valueTone: "text-foreground" },
+                { I: MessageSquare, label: "Pending",       value: summary.pending,  iconTone: "text-info bg-info/10",         valueTone: "text-info" },
+                { I: Clock,         label: "In Review",     value: summary.inReview, iconTone: "text-warning bg-warning/10",   valueTone: "text-warning" },
+                { I: CheckCircle2,  label: "Replied",       value: summary.replied,  iconTone: "text-success bg-success/10",   valueTone: "text-success" },
+                { I: Shield,        label: "Spam Filtered", value: summary.spam,     iconTone: "text-muted-foreground bg-muted", valueTone: "text-foreground" },
               ].map((s) => (
                 <div key={s.label} className="flex-1 flex items-center gap-4 px-5 py-4">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", s.iconTone)}>
@@ -817,14 +1038,12 @@ export default function EngagePage() {
                 </div>
               ))}
             </div>
-            {/* mobile: 2-col grid */}
             <div className="grid grid-cols-2 divide-x divide-y divide-border md:hidden">
               {[
-                { I: MessageSquare, label: "Pending review", value: summary.pending, iconTone: "text-info bg-info/10", valueTone: "text-info" },
-                { I: AlertTriangle, label: "Urgent", value: summary.urgent, iconTone: "text-error bg-error/10", valueTone: "text-error" },
-                { I: Clock, label: "SLA breached", value: summary.breached, iconTone: "text-warning bg-warning/10", valueTone: "text-warning" },
-                { I: CheckCircle2, label: "Replied today", value: summary.replied, iconTone: "text-success bg-success/10", valueTone: "text-success" },
-                { I: Shield, label: "Spam filtered", value: summary.spam, iconTone: "text-muted-foreground bg-muted", valueTone: "text-foreground" },
+                { I: MessageSquare, label: "Pending",       value: summary.pending,  iconTone: "text-info bg-info/10",           valueTone: "text-info" },
+                { I: Clock,         label: "In Review",     value: summary.inReview, iconTone: "text-warning bg-warning/10",     valueTone: "text-warning" },
+                { I: CheckCircle2,  label: "Replied",       value: summary.replied,  iconTone: "text-success bg-success/10",     valueTone: "text-success" },
+                { I: Shield,        label: "Spam Filtered", value: summary.spam,     iconTone: "text-muted-foreground bg-muted", valueTone: "text-foreground" },
               ].map((s) => (
                 <div key={s.label} className="flex items-center gap-3 px-4 py-4">
                   <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", s.iconTone)}>
@@ -839,39 +1058,52 @@ export default function EngagePage() {
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
-      {/* Tabs row with platform filter + refresh */}
-      <div className="flex items-end gap-3 border-b border-border flex-wrap">
-        <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "px-4 py-2.5 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px whitespace-nowrap transition-colors",
-                tab === t.id
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <t.Icon className="w-3.5 h-3.5" /> {t.label}
-              {t.id === "spam" && summary.spam > 0 && (
-                <span className="ml-0.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{fmt(summary.spam)}</span>
-              )}
-            </button>
-          ))}
+      {/* ─── Toolbar — hidden on Variants (template manager, not comments) ─── */}
+      {tab !== "variants" && (
+      <div className="space-y-2">
+        {/* Refresh row */}
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-xs text-muted-foreground">
+            Updated {lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}, {lastRefresh.toLocaleDateString([], { month: "short", day: "numeric" })}
+          </span>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing} className="h-7 px-2.5 gap-1.5 text-xs">
+            <RefreshCw className={cn("w-3 h-3", refreshing && "animate-spin")} />
+            Refresh
+          </Button>
         </div>
-        <div className="flex items-center gap-2 pb-2">
+
+      <div className="bg-card rounded-xl border border-border p-2">
+        <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
+
+          {/* Search */}
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search comments, authors, keywords…"
+              className="w-full pl-9 pr-8 h-10 rounded-lg bg-background border border-input shadow-sm text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground placeholder:font-normal transition-colors"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Platform filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+              <Button variant="ghost" size="sm" className="h-9 px-2 gap-1.5 shrink-0 text-xs">
                 {platformFilter !== "all" ? (
                   <PlatformIcon name={platformFilter as Platform} className="w-3.5 h-3.5" />
                 ) : (
                   <Filter className="w-3.5 h-3.5" />
                 )}
-                {platformFilter === "all" ? "All platforms" : platformFilter}
+                <span className="hidden md:inline">{platformFilter === "all" ? "All platforms" : platformFilter}</span>
                 <span className="text-[10px] tabular-nums px-1.5 rounded-full bg-muted text-muted-foreground font-semibold">
                   {fmt(platformCounts[platformFilter])}
                 </span>
@@ -889,40 +1121,6 @@ export default function EngagePage() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing} className="h-8 gap-1.5 text-xs" title={`Updated ${lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}>
-            <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
-            <span className="hidden md:inline">Refresh</span>
-          </Button>
-        </div>
-      </div>
-
-
-      {/* ─── Inbox toolbar — hidden on Variants (template manager, not comments) ─── */}
-      {tab !== "variants" && (
-      <div className="bg-card rounded-xl border border-border p-2">
-        <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
-          {/* Category moved into Filters dialog */}
-
-          {/* Prominent search */}
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search comments, authors, keywords…"
-              className="w-full pl-9 pr-8 h-10 rounded-lg bg-background border border-input shadow-sm text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground placeholder:font-normal transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label="Clear search"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
 
           {/* Sort */}
           <DropdownMenu>
@@ -952,6 +1150,7 @@ export default function EngagePage() {
               </span>
             )}
           </Button>
+
         </div>
 
         {/* Active filter chips + result count */}
@@ -975,7 +1174,7 @@ export default function EngagePage() {
             ))}
             {[...tagFilter].map((t) => (
               <button key={`t-${t}`} onClick={() => { const n = new Set(tagFilter); n.delete(t); setTagFilter(n); }}
-                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground hover:bg-muted/70">
+                className={cn("inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full font-semibold", TAG_COLORS[t] ?? "bg-muted text-muted-foreground")}>
                 {t} <X className="w-3 h-3" />
               </button>
             ))}
@@ -991,6 +1190,7 @@ export default function EngagePage() {
             </button>
           </div>
         )}
+      </div>
       </div>
       )}
 
@@ -1043,37 +1243,18 @@ export default function EngagePage() {
               </div>
             </div>
             <div>
-
-              <p className="text-xs font-semibold text-foreground mb-2">Status</p>
-              <div className="flex items-center gap-2 flex-wrap">
-                {(["open", "in_progress", "completed"] as const).map((s) => {
-                  const active = statusFilter.has(s);
-                  const label = s === "in_progress" ? "In Progress" : s === "open" ? "Open" : "Completed";
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => {
-                        const next = new Set(statusFilter);
-                        next.has(s) ? next.delete(s) : next.add(s);
-                        setStatusFilter(next);
-                      }}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
-                        active ? "bg-foreground text-background border-foreground" : "bg-card text-foreground border-border hover:border-foreground/40",
-                      )}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-foreground">Tags</p>
+                {tagFilter.size > 0 && (
+                  <button onClick={() => setTagFilter(new Set())} className="text-[10px] text-primary hover:underline font-medium">
+                    Clear ({tagFilter.size})
+                  </button>
+                )}
               </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold text-foreground mb-2">Tags</p>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 {TAGS.map((t) => {
                   const active = tagFilter.has(t);
+                  const colorCls = TAG_COLORS[t] ?? "bg-muted text-muted-foreground";
                   return (
                     <button
                       key={t}
@@ -1083,10 +1264,12 @@ export default function EngagePage() {
                         setTagFilter(next);
                       }}
                       className={cn(
-                        "px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
-                        active ? "bg-foreground text-background border-foreground" : "bg-card text-foreground border-border hover:border-foreground/40",
+                        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all",
+                        colorCls,
+                        active ? "ring-2 ring-offset-1 ring-current opacity-100" : "opacity-60 hover:opacity-90",
                       )}
                     >
+                      {active && <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" />}
                       {t}
                     </button>
                   );
@@ -1170,7 +1353,7 @@ function ReplyQueueView({
   );
 
   const [platformFilter, setPlatformFilter] = useState<"all" | Platform>("all");
-  const [sort, setSort] = useState<PostSort>("most_urgent");
+  const [sort, setSort] = useState<PostSort>("awaiting");
   const [selectedPostId, setSelectedPostId] = useState<string | null>(enriched[0]?.post.id ?? null);
 
   const visiblePosts = useMemo(() => {
@@ -1179,7 +1362,6 @@ function ReplyQueueView({
     sorted.sort((a, b) => {
       switch (sort) {
         case "most_comments": return b.stats.total - a.stats.total;
-        case "most_urgent": return b.stats.urgent - a.stats.urgent;
         case "awaiting": return (b.stats.awaiting + b.stats.inReview) - (a.stats.awaiting + a.stats.inReview);
         default: return 0;
       }
@@ -1218,8 +1400,7 @@ function ReplyQueueView({
           totalCount={enriched.length}
           platformFilter={platformFilter}
           setPlatformFilter={setPlatformFilter}
-          sort={sort}
-          setSort={setSort}
+
           selectedId={selected?.post.id ?? ""}
           onSelect={setSelectedPostId}
         />
@@ -1258,7 +1439,7 @@ function BoardView({
   openContext: (commentId: string, postId: string) => void;
 }) {
   const PAGE_SIZE = 10;
-  const [filter, setFilter] = useState<BoardFilter>("pending");
+  const [filter, setFilter] = useState<BoardFilter>("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drafts, setDrafts] = useState<Record<string, ReplyDraftState>>({});
@@ -1268,14 +1449,7 @@ function BoardView({
   const [bulkManualDrafts, setBulkManualDrafts] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  // Counts (exclude escalated entirely — treat as urgent flag in pending/in_review)
-  const visibleAll = useMemo(
-    () => comments.filter((c) => c.stage !== "escalated" || true).map((c) =>
-      // Coerce escalated to in_review with urgent flag for this view's purposes
-      c.stage === "escalated" ? ({ ...c, stage: "in_review" as Stage, priority: "urgent" as Priority }) : c,
-    ),
-    [comments],
-  );
+  const visibleAll = useMemo(() => comments, [comments]);
 
   const counts = useMemo(() => ({
     all: visibleAll.length,
@@ -1285,14 +1459,7 @@ function BoardView({
   }), [visibleAll]);
 
   const filtered = useMemo(() => {
-    const list = filter === "all" ? visibleAll : visibleAll.filter((c) => c.stage === filter);
-    // Urgent first
-    return [...list].sort((a, b) => {
-      const ua = a.priority === "urgent" ? 0 : 1;
-      const ub = b.priority === "urgent" ? 0 : 1;
-      if (ua !== ub) return ua - ub;
-      return 0;
-    });
+    return filter === "all" ? visibleAll : visibleAll.filter((c) => c.stage === filter);
   }, [visibleAll, filter]);
 
   // Clear selections that are no longer in the visible filter
@@ -1436,12 +1603,8 @@ function BoardView({
     clearSelection();
   };
 
-  const toggleUrgent = (c: Comment & { post: Post }) => {
-    updateComment(c.id, { priority: c.priority === "urgent" ? "low" : "urgent" });
-  };
-
   // SLA / Overdue helpers
-  const isOverdue = (c: Comment) => c.sla.breached || c.priority === "urgent" && c.stage !== "replied";
+  const isOverdue = (c: Comment) => c.sla.breached;
 
   const FILTER_TABS: { id: BoardFilter; label: string; count: number; dot: string }[] = [
     { id: "all", label: "All", count: counts.all, dot: "bg-muted-foreground" },
@@ -1542,13 +1705,12 @@ function BoardView({
         ) : (
           <ul className="divide-y divide-border">
             {filtered.slice(0, visibleCount).map((c) => {
-              const isUrgent = c.priority === "urgent" && c.stage !== "replied";
               const isSelected = selected.has(c.id);
               const draft = drafts[c.id];
               const isLong = c.text.length > 280;
               const isExpanded = expanded.has(c.id);
               const stageMeta = STAGES.find((s) => s.id === c.stage);
-              const triggerTagLabel = c.trigger ? triggerLabel[c.trigger] : null;
+              const triggerTagLabel = c.trigger ? triggerToTag[c.trigger] : null;
 
               return (
                 <li
@@ -1556,7 +1718,6 @@ function BoardView({
                   className={cn(
                     "relative transition-colors",
                     isSelected ? "bg-primary/5" : "hover:bg-muted/30",
-                    isUrgent && "border-l-[3px] border-l-error",
                   )}
                 >
                   <div className="flex gap-3 px-4 py-3.5">
@@ -1579,17 +1740,12 @@ function BoardView({
                     {/* Content */}
                     <div className="flex-1 min-w-0">
 
-                      {/* Row 1: author · time · urgent + status right */}
+                      {/* Row 1: author · time · status right */}
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="text-[13px] font-semibold text-foreground truncate">{c.author}</span>
                         <span className="text-muted-foreground text-xs shrink-0">· {c.at}</span>
-                        {isUrgent && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-error/15 text-error shrink-0">
-                            <span className="w-1.5 h-1.5 rounded-full bg-error" /> Urgent
-                          </span>
-                        )}
                         {triggerTagLabel && (
-                          <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground shrink-0">
+                          <span className={cn("inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0", TAG_COLORS[triggerTagLabel] ?? "bg-muted text-muted-foreground")}>
                             {triggerTagLabel}
                           </span>
                         )}
@@ -1713,19 +1869,11 @@ function BoardView({
                             <MoreVertical className="w-3.5 h-3.5" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem className="text-xs gap-2" onClick={() => toggleUrgent(c)}>
-                              <AlertTriangle className="w-3 h-3" />
-                              {c.priority === "urgent" ? "Remove urgent" : "Flag as urgent"}
-                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-xs gap-2" onClick={() => toast.success("Comment hidden")}>
                               <X className="w-3 h-3" /> Hide
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-xs gap-2 text-error focus:text-error" onClick={() => { updateComment(c.id, { isSpam: true }); toast.success("Marked as spam"); }}>
                               <Shield className="w-3 h-3" /> Mark as spam
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-xs gap-2" onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/comment/${c.id}`); toast.success("Link copied"); }}>
-                              <ExternalLink className="w-3 h-3" /> Copy link
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1932,9 +2080,26 @@ function BoardView({
                   />
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-muted-foreground tabular-nums">{text.length}/280</span>
-                    {text.trim().length === 0 && (
-                      <span className="text-[10px] text-muted-foreground italic">Leave empty to skip this comment</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {text.trim().length === 0 ? (
+                        <span className="text-[10px] text-muted-foreground italic">Leave empty to skip</span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const t = text.trim();
+                            if (!t) { toast.error("Reply is empty"); return; }
+                            addReply(id, t);
+                            updateComment(id, { stage: "replied" });
+                            setBulkManualDrafts((prev) => { const n = { ...prev }; delete n[id]; return n; });
+                            toast.success(`Replied to ${c.author.split(" ")[0]}`);
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <Send className="w-3 h-3" />
+                          Send
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -1975,22 +2140,27 @@ function BoardEmptyState({ filter }: { filter: BoardFilter }) {
 
 type ThreadFilter = "all" | "new" | "awaiting" | "replied";
 
-const FILLER_SAMPLES: { author: string; avatar: string; text: string; sentiment: Sentiment }[] = [
-  { author: "Aria Patel", avatar: "AP", text: "Love this 🙌 keep it up!", sentiment: "positive" },
-  { author: "Noah Kim", avatar: "NK", text: "Just shared with my team — super helpful.", sentiment: "positive" },
-  { author: "Lia Romano", avatar: "LR", text: "Quick q — does this apply to enterprise plans too?", sentiment: "neutral" },
-  { author: "Ben Carter", avatar: "BC", text: "Been waiting for this update for ages 🎉", sentiment: "positive" },
-  { author: "Sana Iqbal", avatar: "SI", text: "How does this compare to last year's release?", sentiment: "neutral" },
-  { author: "Owen Reyes", avatar: "OR", text: "Following along — keep them coming.", sentiment: "neutral" },
-  { author: "Mira Chen", avatar: "MC", text: "Honestly the best update so far this year.", sentiment: "positive" },
-  { author: "Jacob Hill", avatar: "JH", text: "Tagging the team — we should try this.", sentiment: "positive" },
-  { author: "Eva Mendes", avatar: "EM", text: "When will EU customers see this rolled out?", sentiment: "neutral" },
-  { author: "Tariq Yusuf", avatar: "TY", text: "Could the docs link be added to the post?", sentiment: "neutral" },
-  { author: "Hana Kobayashi", avatar: "HK", text: "Beautiful work — visuals are 🔥", sentiment: "positive" },
-  { author: "Diego Salas", avatar: "DS", text: "Took me 5 mins to set up. Smooth.", sentiment: "positive" },
-  { author: "Lukas Weber", avatar: "LW", text: "Not sure I agree with the pricing change tbh.", sentiment: "negative" },
-  { author: "Yara Haddad", avatar: "YH", text: "Will there be a webinar walkthrough?", sentiment: "neutral" },
-  { author: "Sven Eriksson", avatar: "SE", text: "Big upgrade from last quarter, well done team.", sentiment: "positive" },
+const FILLER_SAMPLES: { author: string; avatar: string; text: string; sentiment: Sentiment; trigger: Trigger }[] = [
+  { author: "Aria Patel",      avatar: "AP", text: "Love this 🙌 keep it up!",                                   sentiment: "positive", trigger: "praise" },
+  { author: "Noah Kim",        avatar: "NK", text: "Just shared with my team — super helpful.",                   sentiment: "positive", trigger: "praise" },
+  { author: "Lia Romano",      avatar: "LR", text: "Quick q — does this apply to enterprise plans too?",          sentiment: "neutral",  trigger: "question" },
+  { author: "Ben Carter",      avatar: "BC", text: "Been waiting for this update for ages 🎉",                    sentiment: "positive", trigger: "praise" },
+  { author: "Sana Iqbal",      avatar: "SI", text: "How does this compare to last year's release?",              sentiment: "neutral",  trigger: "question" },
+  { author: "Owen Reyes",      avatar: "OR", text: "Following along — keep them coming.",                         sentiment: "neutral",  trigger: "praise" },
+  { author: "Mira Chen",       avatar: "MC", text: "Honestly the best update so far this year.",                  sentiment: "positive", trigger: "praise" },
+  { author: "Jacob Hill",      avatar: "JH", text: "Tagging the team — we should try this.",                      sentiment: "positive", trigger: "potential_lead" },
+  { author: "Eva Mendes",      avatar: "EM", text: "When will EU customers see this rolled out?",                 sentiment: "neutral",  trigger: "question" },
+  { author: "Tariq Yusuf",     avatar: "TY", text: "Could the docs link be added to the post?",                  sentiment: "neutral",  trigger: "question" },
+  { author: "Hana Kobayashi",  avatar: "HK", text: "Beautiful work — visuals are 🔥",                            sentiment: "positive", trigger: "praise" },
+  { author: "Diego Salas",     avatar: "DS", text: "Took me 5 mins to set up. Smooth.",                           sentiment: "positive", trigger: "praise" },
+  { author: "Lukas Weber",     avatar: "LW", text: "Not sure I agree with the pricing change tbh.",               sentiment: "negative", trigger: "negative_comment" },
+  { author: "Yara Haddad",     avatar: "YH", text: "Will there be a webinar walkthrough?",                        sentiment: "neutral",  trigger: "question" },
+  { author: "Sven Eriksson",   avatar: "SE", text: "Big upgrade from last quarter, well done team.",              sentiment: "positive", trigger: "praise" },
+  { author: "Priya Mehta",     avatar: "PM", text: "Is there a discount for annual plans?",                       sentiment: "neutral",  trigger: "discount_request" },
+  { author: "James Wu",        avatar: "JW", text: "What's the pricing for the pro tier?",                        sentiment: "neutral",  trigger: "price_request" },
+  { author: "Fatima Al-Sayed", avatar: "FA", text: "My order still hasn't shipped after 5 days 😕",              sentiment: "negative", trigger: "order_status" },
+  { author: "Carlos Vega",     avatar: "CV", text: "Need to return an item — how do I start the process?",        sentiment: "neutral",  trigger: "return_exchange" },
+  { author: "Anika Sharma",    avatar: "AS", text: "We'd love to partner with you on our next campaign!",          sentiment: "positive", trigger: "potential_lead" },
 ];
 
 /** Build a realistic dense thread for a post — pads up to commentCount with synthetic items.
@@ -2048,6 +2218,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
                   id: `${id}-R-${j}-N-${k}-D-${m}`,
                   author: ds.author, avatar: ds.avatar, text: ds.text,
                   at: `${m + 1}m`, sentiment: ds.sentiment,
+                  trigger: ds.trigger,
                   likes: ((m * 2) % 9), stage: "replied" as Stage,
                   priority: "low", sla: { dueIn: "—", breached: false },
                 };
@@ -2057,6 +2228,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
               id: `${id}-R-${j}-N-${k}`,
               author: ns.author, avatar: ns.avatar, text: ns.text,
               at: `${k + 1}m`, sentiment: ns.sentiment,
+              trigger: ns.trigger,
               likes: ((k * 2) % 14), stage: "replied" as Stage,
               priority: "low", sla: { dueIn: "—", breached: false },
               replies: deep,
@@ -2070,6 +2242,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
           text: rs.text,
           at: `${j + 1}h`,
           sentiment: rs.sentiment,
+          trigger: rs.trigger,
           likes: ((j * 3) % 22),
           stage: "replied" as Stage,
           priority: "low",
@@ -2084,6 +2257,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
       author: s.author, avatar: s.avatar, text: s.text,
       at: age,
       sentiment: s.sentiment,
+      trigger: s.trigger,
       likes: ((i * 5) % 18),
       stage,
       assignee: undefined,
@@ -2100,7 +2274,7 @@ function buildDenseThread(p: Post): { items: Comment[]; isNewById: Set<string> }
  *  Right: post context header + triage filter bar + Instagram-style threaded
  *  comments with paginated load-more and a sticky reply composer. */
 
-type ThreadOrmFilter = "all" | "new" | "awaiting" | "urgent" | "in_review" | "replied" | "spam";
+type ThreadOrmFilter = "all" | "new" | "awaiting" | "in_review" | "replied" | "spam";
 
 interface PostOrmStats {
   total: number;
@@ -2108,23 +2282,15 @@ interface PostOrmStats {
   awaiting: number;
   inReview: number;
   replied: number;
-  urgent: number;
   spam: number;
   allReplied: boolean;
 }
 
-const URGENT_KEYWORDS = ["refund", "broken", "scam", "terrible", "worst", "lawsuit", "complaint", "angry"];
-
-function computePostStats(post: Post): { items: Comment[]; isNewById: Set<string>; isUrgentById: Set<string>; stats: PostOrmStats } {
+function computePostStats(post: Post): { items: Comment[]; isNewById: Set<string>; stats: PostOrmStats } {
   const { items, isNewById } = buildDenseThread(post);
-  const isUrgentById = new Set<string>();
-  let awaiting = 0, inReview = 0, replied = 0, urgent = 0, spam = 0, newCount = 0;
+  let awaiting = 0, inReview = 0, replied = 0, spam = 0, newCount = 0;
   items.forEach((c) => {
     if (c.isSpam) { spam += 1; return; }
-    if (c.sentiment === "negative" || URGENT_KEYWORDS.some((k) => c.text.toLowerCase().includes(k))) {
-      isUrgentById.add(c.id);
-      urgent += 1;
-    }
     if (isNewById.has(c.id)) newCount += 1;
     if (c.stage === "pending") awaiting += 1;
     else if (c.stage === "in_review") inReview += 1;
@@ -2134,21 +2300,19 @@ function computePostStats(post: Post): { items: Comment[]; isNewById: Set<string
   return {
     items,
     isNewById,
-    isUrgentById,
     stats: {
       total: nonSpam,
       newCount,
       awaiting,
       inReview,
       replied,
-      urgent,
       spam,
       allReplied: nonSpam > 0 && awaiting === 0 && inReview === 0,
     },
   };
 }
 
-type PostSort = "newest" | "most_comments" | "most_urgent" | "awaiting";
+type PostSort = "newest" | "most_comments" | "awaiting";
 
 function ThreadsView({
   posts, updateComment, addReply,
@@ -2172,7 +2336,6 @@ function ThreadsView({
     sorted.sort((a, b) => {
       switch (sort) {
         case "most_comments": return b.stats.total - a.stats.total;
-        case "most_urgent": return b.stats.urgent - a.stats.urgent;
         case "awaiting": return b.stats.awaiting - a.stats.awaiting;
         default: return 0;
       }
@@ -2193,8 +2356,7 @@ function ThreadsView({
           totalCount={enriched.length}
           platformFilter={platformFilter}
           setPlatformFilter={setPlatformFilter}
-          sort={sort}
-          setSort={setSort}
+
           selectedId={selected?.post.id ?? ""}
           onSelect={setSelectedPostId}
         />
@@ -2215,43 +2377,24 @@ const PLATFORM_PILLS: ("all" | Platform)[] = ["all", "Instagram", "Facebook", "L
 const SORT_OPTIONS: { id: PostSort; label: string }[] = [
   { id: "newest", label: "Newest" },
   { id: "most_comments", label: "Most comments" },
-  { id: "most_urgent", label: "Most urgent" },
   { id: "awaiting", label: "Awaiting reply" },
 ];
 
 function PostListColumn({
-  posts, totalCount, platformFilter, setPlatformFilter, sort, setSort, selectedId, onSelect,
+  posts, totalCount, platformFilter, setPlatformFilter, selectedId, onSelect,
 }: {
   posts: { post: Post; stats: PostOrmStats }[];
   totalCount: number;
   platformFilter: "all" | Platform;
   setPlatformFilter: (p: "all" | Platform) => void;
-  sort: PostSort;
-  setSort: (s: PostSort) => void;
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
-      <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-sm font-semibold text-foreground">Posts</span>
-          <span className="text-xs text-muted-foreground tabular-nums">{fmt(totalCount)}</span>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <ArrowDownUp className="w-3 h-3" />
-              {SORT_OPTIONS.find((s) => s.id === sort)?.label}
-              <ChevronDown className="w-3 h-3" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {SORT_OPTIONS.map((s) => (
-              <DropdownMenuItem key={s.id} onClick={() => setSort(s.id)}>{s.label}</DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="px-3 py-2.5 border-b border-border flex items-center">
+        <span className="text-sm font-semibold text-foreground">Posts</span>
+        <span className="text-xs text-muted-foreground tabular-nums ml-1.5">{fmt(totalCount)}</span>
       </div>
 
 
@@ -2284,11 +2427,7 @@ function PostListCard({
 }) {
   const isTextOnly = !post.thumbnail || post.thumbnail.trim() === "";
   const hasUnreplied = stats.awaiting + stats.inReview > 0;
-  const dotCls = stats.urgent > 0
-    ? "bg-error"
-    : hasUnreplied
-      ? "bg-warning"
-      : "bg-success";
+  const dotCls = hasUnreplied ? "bg-warning" : "bg-success";
 
   return (
     <button
@@ -2314,9 +2453,6 @@ function PostListCard({
         <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
           <MessageSquare className="w-3 h-3" />
           {fmt(stats.total)} comments
-          {hasUnreplied && (
-            <span className="ml-1 text-warning font-medium">· {stats.awaiting + stats.inReview} pending</span>
-          )}
         </div>
       </div>
     </button>
@@ -2382,13 +2518,12 @@ const PAGE_SIZE = 30;
 function ThreadDetailColumn({
   selected, updateComment, addReply, highlightCommentId,
 }: {
-  selected: { post: Post; items: Comment[]; isNewById: Set<string>; isUrgentById: Set<string>; stats: PostOrmStats } | null;
+  selected: { post: Post; items: Comment[]; isNewById: Set<string>; stats: PostOrmStats } | null;
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
   highlightCommentId?: string | null;
 }) {
   const [filter, setFilter] = useState<ThreadOrmFilter>("all");
-  const [sortMode, setSortMode] = useState<"top" | "newest">("newest");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [reply, setReply] = useState("");
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null);
@@ -2426,7 +2561,7 @@ function ThreadDetailColumn({
     );
   }
 
-  const { post, items, isNewById, isUrgentById, stats } = selected;
+  const { post, items, isNewById, stats } = selected;
 
   const nonSpam = items.filter((c) => !c.isSpam);
   const spamItems = items.filter((c) => c.isSpam);
@@ -2435,7 +2570,6 @@ function ThreadDetailColumn({
     switch (filter) {
       case "new": return isNewById.has(c.id);
       case "awaiting": return c.stage === "pending";
-      case "urgent": return isUrgentById.has(c.id);
       case "in_review": return c.stage === "in_review";
       case "replied": return c.stage === "replied";
       case "spam": return false;
@@ -2443,9 +2577,7 @@ function ThreadDetailColumn({
     }
   });
 
-  const sorted = filter === "spam"
-    ? spamItems
-    : [...filtered].sort((a, b) => sortMode === "top" ? b.likes - a.likes : 0);
+  const sorted = filter === "spam" ? spamItems : filtered;
 
   const visible = sorted.slice(0, visibleCount);
   const remaining = Math.max(0, sorted.length - visibleCount);
@@ -2474,46 +2606,82 @@ function ThreadDetailColumn({
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col h-full min-h-0">
-      {/* Post context header (with inline status pills) */}
-      <div className="border-b border-border bg-muted/20 p-4 flex-shrink-0">
-        <div className="flex items-start gap-3 mb-3">
-          <PostThumb post={post} size="lg" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-1">
-              <PlatformIcon name={post.platform} className="w-3.5 h-3.5" />
-              <span className="font-medium text-foreground">@yourbrand</span>
-              <span>·</span>
-              <Clock className="w-3 h-3" />
-              <span>{post.publishedAt}</span>
-              <button className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
-                Open <ExternalLink className="w-3 h-3" />
+      {/* ── Post card ── Instagram-style ── */}
+      <div className="flex-shrink-0">
+        {/* Full-width image banner */}
+        <div className="relative w-full h-52 bg-muted overflow-hidden">
+          {post.imageUrl ? (
+            <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className={cn("w-full h-full flex items-center justify-center text-7xl", platformBgClass(post.platform))}>
+              {post.thumbnail}
+            </div>
+          )}
+          {/* Bottom gradient */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+          {/* Platform + handle badge */}
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/40 backdrop-blur-sm rounded-full px-2.5 py-1">
+            <PlatformIcon name={post.platform} className="w-3 h-3 text-white" />
+            <span className="text-white text-[11px] font-semibold">@yourbrand</span>
+          </div>
+          {/* Open original link */}
+          <button className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm rounded-full p-1.5 text-white hover:bg-black/60 transition-colors" title="Open post">
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+          {/* Published time */}
+          <span className="absolute bottom-3 left-3 text-[10px] text-white/80 font-medium uppercase tracking-wide flex items-center gap-1">
+            <Clock className="w-3 h-3" /> {post.publishedAt}
+          </span>
+        </div>
+
+        {/* Engagement row + caption */}
+        <div className="px-4 pt-3 pb-2.5 bg-card border-b border-border">
+          <div className="flex items-center mb-2">
+            <div className="flex items-center gap-4">
+              <button className="text-foreground hover:text-error transition-colors" title="Like">
+                <Heart className="w-[20px] h-[20px]" />
+              </button>
+              <button className="text-foreground hover:text-primary transition-colors" title="Comment">
+                <MessageSquare className="w-[20px] h-[20px]" />
+              </button>
+              <button className="text-foreground hover:text-foreground/60 transition-colors -rotate-12" title="Share">
+                <Share2 className="w-[20px] h-[20px]" />
               </button>
             </div>
-            <p className="text-sm text-foreground leading-snug line-clamp-3 mb-2">{post.title}</p>
-
-            {/* Status pills inside the post — clickable filter tabs */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {([
-                { id: "all", label: "All", count: stats.total, active: "bg-foreground text-background", idle: "bg-muted text-foreground hover:bg-muted/70" },
-                ...(stats.urgent > 0 ? [{ id: "urgent" as const, label: "Urgent", count: stats.urgent, active: "bg-error text-error-foreground", idle: "bg-error/15 text-error hover:bg-error/25" }] : []),
-                ...(stats.awaiting > 0 ? [{ id: "awaiting" as const, label: "Awaiting reply", count: stats.awaiting, active: "bg-warning text-warning-foreground", idle: "bg-warning/15 text-warning hover:bg-warning/25" }] : []),
-                ...(stats.inReview > 0 ? [{ id: "in_review" as const, label: "In review", count: stats.inReview, active: "bg-warning text-warning-foreground", idle: "bg-warning/10 text-warning hover:bg-warning/20" }] : []),
-                ...(stats.replied > 0 ? [{ id: "replied" as const, label: "Replied", count: stats.replied, active: "bg-success text-success-foreground", idle: "bg-success/15 text-success hover:bg-success/25" }] : []),
-              ] as { id: ThreadOrmFilter; label: string; count: number; active: string; idle: string }[]).map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => { setFilter(p.id); setVisibleCount(PAGE_SIZE); }}
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors",
-                    filter === p.id ? p.active : p.idle,
-                  )}
-                >
-                  {p.id === "all" && <MessageSquare className="w-3 h-3" />}
-                  {p.label} {fmt(p.count)}
-                </button>
-              ))}
-            </div>
+            <button className="ml-auto text-foreground hover:text-foreground/60 transition-colors" title="Save">
+              <Bookmark className="w-[20px] h-[20px]" />
+            </button>
           </div>
+          <div className="flex items-center gap-1.5 mb-1.5 text-[13px] font-semibold text-foreground">
+            <span>1,247 likes</span>
+            <span className="text-muted-foreground font-normal">·</span>
+            <span>{fmt(post.commentCount)} comments</span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+            <span className="font-semibold mr-1">yourbrand</span>
+            {post.title}
+          </p>
+        </div>
+
+        {/* Comment filter tabs */}
+        <div className="px-3 py-2.5 bg-muted/20 border-b border-border flex items-center gap-1.5 flex-wrap">
+          {([
+            { id: "all",       label: "All",       count: stats.total,    active: "bg-foreground text-background",             idle: "bg-muted text-foreground hover:bg-muted/70" },
+            { id: "awaiting",  label: "Pending",   count: stats.awaiting, active: "bg-info text-white",                        idle: "bg-info/10 text-info hover:bg-info/20" },
+            { id: "in_review", label: "In Review", count: stats.inReview, active: "bg-warning text-warning-foreground",        idle: "bg-warning/10 text-warning hover:bg-warning/20" },
+            { id: "replied",   label: "Replied",   count: stats.replied,  active: "bg-success text-success-foreground",        idle: "bg-success/10 text-success hover:bg-success/20" },
+          ] as { id: ThreadOrmFilter; label: string; count: number; active: string; idle: string }[]).map((p) => (
+            <button
+              key={p.id}
+              onClick={() => { setFilter(p.id); setVisibleCount(PAGE_SIZE); }}
+              className={cn(
+                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors",
+                filter === p.id ? p.active : p.idle,
+              )}
+            >
+              {p.label} <span className="opacity-70">{fmt(p.count)}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -2522,21 +2690,7 @@ function ThreadDetailColumn({
         {sorted.length === 0 ? (
           <ThreadEmptyState filter={filter} stats={stats} onClear={() => setFilter("all")} />
         ) : (
-          <div className="divide-y divide-border">
-            {/* Sort toggle */}
-            {filter !== "spam" && (
-              <div className="flex items-center gap-3 px-4 py-2 text-xs">
-                <button
-                  onClick={() => setSortMode("top")}
-                  className={cn("font-medium", sortMode === "top" ? "text-foreground" : "text-muted-foreground hover:text-foreground")}
-                >Top comments</button>
-                <button
-                  onClick={() => setSortMode("newest")}
-                  className={cn("font-medium", sortMode === "newest" ? "text-foreground" : "text-muted-foreground hover:text-foreground")}
-                >Newest first</button>
-              </div>
-            )}
-
+          <div className="divide-y divide-border/40">
             {visible.map((c) => {
               const isHighlighted = highlightCommentId === c.id;
               return (
@@ -2548,7 +2702,6 @@ function ThreadDetailColumn({
                   <CommentItem
                     comment={c}
                     isNew={isNewById.has(c.id)}
-                    isUrgent={isUrgentById.has(c.id)}
                     expanded={expandedReplies.has(c.id)}
                     onToggleReplies={() => toggleReplies(c.id)}
                     onReply={() => { setReplyTarget(c); setReply(""); setShowAi(false); }}
@@ -2567,18 +2720,23 @@ function ThreadDetailColumn({
               );
             })}
 
-            {remaining > 0 && (
-              <div className="py-3 flex justify-center">
-                <button
-                  className="text-sm text-muted-foreground hover:text-foreground font-medium"
-                  onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
-                >
-                  Load {Math.min(remaining, PAGE_SIZE)} more {remaining === 1 ? "comment" : "comments"}
-                </button>
+            {(remaining > 0 || sorted.length > PAGE_SIZE) && (
+              <div className="flex items-center gap-3 px-4 py-3 border-t border-border bg-muted/20">
+                <span className="text-xs text-muted-foreground">
+                  Showing <span className="font-medium text-foreground">{fmt(visible.length)}</span> of <span className="font-medium text-foreground">{fmt(sorted.length)}</span> comments
+                </span>
+                {remaining > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1.5"
+                    onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                  >
+                    Load {Math.min(remaining, PAGE_SIZE)} more
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </Button>
+                )}
               </div>
-            )}
-            {remaining === 0 && sorted.length > PAGE_SIZE && (
-              <div className="py-3 text-center text-xs text-muted-foreground">All {fmt(sorted.length)} comments loaded</div>
             )}
 
             {/* Spam collapsed group when not specifically filtering for spam */}
@@ -2605,64 +2763,111 @@ function ThreadDetailColumn({
         )}
       </div>
 
-      {/* Sticky reply composer */}
-      <div className="border-t border-border p-3 bg-card flex-shrink-0">
-        <div className="flex items-center justify-between mb-2 text-[11px] text-muted-foreground">
-          {replyTarget ? (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-              Replying to @{replyTarget.author}
-              <button onClick={() => setReplyTarget(null)} className="hover:text-foreground"><X className="w-3 h-3" /></button>
-            </span>
-          ) : (
-            <span>Replying to this post on {post.platform}</span>
-          )}
-          <button onClick={() => setShowAi((s) => !s)} className="inline-flex items-center gap-1 text-primary hover:underline">
-            <Sparkles className="w-3 h-3" /> {showAi ? "Hide" : "Suggest"} AI reply
-          </button>
-        </div>
+      {/* ── Sticky reply composer — Instagram style ── */}
+      <div className="border-t border-border bg-card flex-shrink-0">
 
+        {/* AI suggestion card */}
         {showAi && (
-          <div className="mb-2 p-2.5 rounded-lg border border-dashed border-primary/30 bg-primary/5">
-            <p className="text-sm text-foreground">
-              {replyTarget?.aiDraft ?? `Thanks so much for engaging with this post! We really appreciate your support 💛`}
-            </p>
-            <div className="flex gap-1.5 mt-2">
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setReply(replyTarget?.aiDraft ?? "Thanks so much for engaging with this post! We really appreciate your support 💛")}>
+          <div className="mx-3 mt-3 p-3 rounded-2xl border border-primary/20 bg-primary/5">
+            <div className="flex items-start gap-2 mb-2.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-foreground leading-relaxed">
+                {replyTarget?.aiDraft ?? `Thanks so much for engaging with this post! We really appreciate your support 💛`}
+              </p>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              <Button size="sm" variant="outline" className="h-7 text-xs rounded-full px-3"
+                onClick={() => setReply(replyTarget?.aiDraft ?? "Thanks so much for engaging with this post! We really appreciate your support 💛")}>
                 Use this draft
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => {
-                const fallback = replyTarget?.aiDraft ?? `Thanks ${replyTarget?.author?.split(" ")[0] ?? "for reaching out"}! Our team is on it — appreciate your patience.`;
-                setReply(fallback);
-                toast.success("Regenerated AI draft");
-              }}>Regenerate</Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => {
-                setReply(replyTarget?.aiDraft ?? "");
-                toast.info("Edit the draft below before sending");
-              }}>Edit before sending</Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full px-3"
+                onClick={() => {
+                  const fallback = replyTarget?.aiDraft ?? `Thanks ${replyTarget?.author?.split(" ")[0] ?? "for reaching out"}! Our team is on it — appreciate your patience.`;
+                  setReply(fallback);
+                  toast.success("Regenerated AI draft");
+                }}>Regenerate</Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full px-3"
+                onClick={() => { setReply(replyTarget?.aiDraft ?? ""); toast.info("Edit the draft below before sending"); }}>
+                Edit before sending
+              </Button>
             </div>
           </div>
         )}
 
-        <textarea
-          value={reply}
-          onChange={(e) => setReply(e.target.value)}
-          placeholder={replyTarget ? `Reply to ${replyTarget.author}…` : "Write a reply…"}
-          rows={2}
-          className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-        />
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <button onClick={() => toast.info("Attach media coming soon")} className="inline-flex items-center gap-1 hover:text-foreground"><ImageIcon className="w-3.5 h-3.5" /> Attach</button>
-            <button onClick={() => toast.info("Open Settings → Saved replies to manage templates")} className="inline-flex items-center gap-1 hover:text-foreground">📋 Saved replies</button>
-            <span className="tabular-nums">{reply.length}/2200</span>
+        {/* Replying-to context strip */}
+        {replyTarget && (
+          <div className="flex items-center gap-1.5 px-4 pt-2.5">
+            <span className="text-[11px] text-muted-foreground">Replying to</span>
+            <span className="text-[11px] font-semibold text-primary">@{replyTarget.author}</span>
+            <button onClick={() => setReplyTarget(null)} className="ml-auto text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted transition-colors">
+              <X className="w-3 h-3" />
+            </button>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { if (!reply.trim()) { toast.error("Nothing to save"); return; } toast.success("Draft saved"); }}>Save draft</Button>
-            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => { if (!reply.trim()) { toast.error("Write a reply first"); return; } toast.success("Reply scheduled"); }}><Clock className="w-3 h-3" />Schedule</Button>
-            <Button size="sm" onClick={send} disabled={!reply.trim()} className="h-7 text-xs gap-1">
-              <Send className="w-3 h-3" /> Send
-            </Button>
+        )}
+
+        {/* Main input row */}
+        <div className="flex items-end gap-2.5 px-3 py-3">
+          {/* Brand avatar */}
+          <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 mb-0.5 select-none">
+            YB
           </div>
+
+          {/* Pill input */}
+          <div className="flex-1 relative">
+            <textarea
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              placeholder={replyTarget ? `Reply to ${replyTarget.author.split(" ")[0]}…` : "Add a comment…"}
+              rows={1}
+              className="w-full resize-none rounded-[22px] border border-input bg-muted/50 px-4 py-2.5 pr-20 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 leading-relaxed overflow-hidden"
+              style={{ minHeight: "42px", maxHeight: "120px" }}
+              onInput={(e) => {
+                const el = e.currentTarget;
+                el.style.height = "42px";
+                el.style.height = Math.min(el.scrollHeight, 120) + "px";
+              }}
+            />
+            {/* Inline icon actions */}
+            <div className="absolute right-3 bottom-2.5 flex items-center gap-2.5">
+              <button onClick={() => toast.info("Attach media coming soon")} className="text-muted-foreground hover:text-foreground transition-colors" title="Attach">
+                <ImageIcon className="w-4 h-4" />
+              </button>
+              <button onClick={() => toast.info("Open Settings → Saved replies")} className="text-muted-foreground hover:text-foreground transition-colors text-base leading-none" title="Saved replies">
+                💬
+              </button>
+            </div>
+          </div>
+
+          {/* Post button */}
+          <Button
+            onClick={send}
+            disabled={!reply.trim()}
+            className="h-9 px-4 rounded-full font-semibold text-sm flex-shrink-0 mb-0.5"
+          >
+            Post
+          </Button>
+        </div>
+
+        {/* Secondary toolbar */}
+        <div className="flex items-center justify-between px-4 pb-3 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowAi((s) => !s)}
+              className="inline-flex items-center gap-1 font-medium text-primary hover:text-primary/70 transition-colors">
+              <Sparkles className="w-3 h-3" />
+              {showAi ? "Hide AI" : "AI reply"}
+            </button>
+            <button
+              onClick={() => { if (!reply.trim()) { toast.error("Nothing to save"); return; } toast.success("Draft saved"); }}
+              className="hover:text-foreground transition-colors">
+              Save draft
+            </button>
+            <button
+              onClick={() => { if (!reply.trim()) { toast.error("Write a reply first"); return; } toast.success("Reply scheduled"); }}
+              className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+              <Clock className="w-3 h-3" /> Schedule
+            </button>
+          </div>
+          <span className="tabular-nums">{reply.length}/2200</span>
         </div>
       </div>
     </div>
@@ -2696,27 +2901,23 @@ function ThreadEmptyState({ filter, stats, onClear }: { filter: ThreadOrmFilter;
 }
 
 function CommentItem({
-  comment, isNew, isUrgent, expanded, onToggleReplies, onReply, onAiReply, onAssignTo,
+  comment, isNew, expanded, onToggleReplies, onReply, onAiReply, onAssignTo,
 }: {
   comment: Comment;
   isNew: boolean;
-  isUrgent: boolean;
   expanded: boolean;
   onToggleReplies: () => void;
   onReply: () => void;
   onAiReply: () => void;
   onAssignTo: (member: string) => void;
 }) {
-  const triggerTag = comment.trigger ? triggerLabel[comment.trigger] : null;
+  const triggerTag = comment.trigger ? triggerToTag[comment.trigger] : null;
   const stageCls =
     comment.stage === "replied" ? "bg-success/15 text-success"
     : comment.stage === "in_review" ? "bg-warning/15 text-warning"
-    : comment.stage === "escalated" ? "bg-error/15 text-error"
-    : isUrgent ? "bg-error/15 text-error"
     : "bg-info/15 text-info";
-  const stageLabel = isUrgent && comment.stage === "pending"
-    ? "Urgent"
-    : isNew && comment.stage === "pending"
+  const stageLabel =
+    isNew && comment.stage === "pending"
       ? "New"
       : comment.stage === "pending" ? "Awaiting reply"
       : STAGES.find((s) => s.id === comment.stage)?.label ?? comment.stage;
@@ -2730,7 +2931,7 @@ function CommentItem({
   const remainingReplies = Math.max(0, replies.length - visibleReplies);
 
   return (
-    <div className={cn("px-4 py-3", isUrgent && "border-l-[3px] border-l-error bg-error/5")}>
+    <div className="px-4 py-3">
       <div className="flex gap-3">
         <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center flex-shrink-0">
           {comment.avatar}
@@ -2740,13 +2941,8 @@ function CommentItem({
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
             <span className="text-[13px] font-semibold text-foreground">{comment.author}</span>
             <span className="text-[11px] text-muted-foreground">· {comment.at}</span>
-            {isUrgent && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-error/15 text-error shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-error" /> Urgent
-              </span>
-            )}
             {triggerTag && (
-              <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground">
+              <span className={cn("inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full", TAG_COLORS[triggerTag] ?? "bg-muted text-muted-foreground")}>
                 {triggerTag}
               </span>
             )}
@@ -2871,9 +3067,14 @@ function NestedReply({ reply, depth, mentionTo }: { reply: Comment; depth: numbe
           {reply.avatar}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[13px] font-semibold text-foreground">{reply.author}</span>
             <span className="text-[11px] text-muted-foreground">{reply.at}</span>
+            {reply.trigger && (
+              <span className={cn("inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full", TAG_COLORS[triggerToTag[reply.trigger]] ?? "bg-muted text-muted-foreground")}>
+                {triggerToTag[reply.trigger]}
+              </span>
+            )}
           </div>
           <p className="text-[13px] text-foreground leading-snug">
             {mentionHandle && <span className="text-primary font-medium">{mentionHandle} </span>}
@@ -3231,8 +3432,8 @@ function VariantsView({
                 onChange={(e) => setNewCat((s) => ({ ...s, trigger: e.target.value as Trigger }))}
                 className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               >
-                {(Object.keys(triggerLabel) as Trigger[]).map((tr) => (
-                  <option key={tr} value={tr}>{triggerLabel[tr]}</option>
+                {(Object.keys(triggerToTag) as Trigger[]).map((tr) => (
+                  <option key={tr} value={tr}>{triggerToTag[tr]}</option>
                 ))}
               </select>
             </div>
@@ -3273,8 +3474,8 @@ function VariantsView({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-foreground">{t.label}</h3>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                    Trigger: {triggerLabel[t.trigger]}
+                  <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-semibold", TAG_COLORS[triggerToTag[t.trigger]] ?? "bg-muted text-muted-foreground")}>
+                    {triggerToTag[t.trigger]}
                   </span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
                     {t.variants.length} variants
