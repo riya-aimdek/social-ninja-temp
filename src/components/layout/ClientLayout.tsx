@@ -32,6 +32,7 @@ const clientNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/client/dashboard" },
   { label: "Projects", icon: FolderOpen, path: "/client/projects" },
   { label: "Team", icon: Users, path: "/client/team" },
+  { label: "Settings", icon: Settings, path: "/client/settings" },
 ];
 
 // Project-level nav (project selected)

@@ -91,6 +91,9 @@ export const defaultPermissions: Record<string, string[]> = {
   "content-creator": ["Engage"],
   "approver": ["Analyze"],
   "social-media-manager": ["Engage", "Listen", "Boost", "Analyze"],
+  "viewer": [],
+  "orm": ["Engage", "Listen"],
+  "client": ["Analyze"],
 };
 
 export const permissionColors: Record<string, string> = {
@@ -101,8 +104,11 @@ export const permissionColors: Record<string, string> = {
 };
 
 export const roleCards = [
-  { id: "business-admin", name: "Business Admin", desc: "Manages one business's projects. Creates projects, adds social accounts, and invites business team members." },
+  { id: "business-admin", name: "Business Admin", desc: "Full admin of the business account. Creates projects, adds social accounts, invites team members, and manages all project teams." },
   { id: "content-creator", name: "Content Creator", desc: 'Can draft posts for specific social accounts within a project but cannot hit "Publish".' },
-  { id: "approver", name: "Approver", desc: "Usually a contact at the business. Can log in to see their specific project to review and approve posts." },
-  { id: "social-media-manager", name: "Social Media Manager", desc: "Can draft, schedule, and publish posts, and view analytics for their specific project." },
+  { id: "approver", name: "Approver", desc: "Usually a contact at the client company. Can log in to see only their specific project to review and approve posts." },
+  { id: "social-media-manager", name: "Social Media Manager", desc: "Can draft, schedule, and publish posts, and view analytics for that specific project." },
+  { id: "viewer", name: "Viewer", desc: "Read-only access to view content and reports. Cannot create, edit, or publish anything." },
+  { id: "orm", name: "ORM", desc: "Online Reputation Management. Monitors and responds to social media mentions and messages." },
+  { id: "client", name: "Client", desc: "Customer with access to view published content and analytics reports." },
 ];

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FolderOpen, CheckCircle2, XCircle, Search, Plus, Link2, Pencil, Power, Trash2, FileText, Users, Clock } from "lucide-react";
+import { useState, useRef } from "react";
+import { FolderOpen, CheckCircle2, XCircle, Search, Plus, Link2, Pencil, Power, Trash2, FileText, Users, Clock, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { projects, activeProjects, inactiveProjects, totalPosts } from "@/data/businessMockData";
@@ -10,6 +10,46 @@ export default function ClientProjectsPage() {
   const [showModal, setShowModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDesc, setNewProjectDesc] = useState("");
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setNewProjectName("");
+    setNewProjectDesc("");
+    setLogoPreview(null);
+  };
+
+  // Edit modal state
+  const [editingProject, setEditingProject] = useState<typeof projects[0] | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editLogo, setEditLogo] = useState<string | null>(null);
+  const editLogoInputRef = useRef<HTMLInputElement>(null);
+
+  const openEditModal = (project: typeof projects[0]) => {
+    setEditingProject(project);
+    setEditName(project.name);
+    setEditDesc(project.description || "");
+    setEditLogo(null);
+  };
+
+  const closeEditModal = () => {
+    setEditingProject(null);
+    setEditName("");
+    setEditDesc("");
+    setEditLogo(null);
+  };
+
+  const handleEditLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setEditLogo(URL.createObjectURL(file));
+  };
 
   const filtered = projects.filter(p => {
     if (activeTab === "active" && p.status !== "Active") return false;
@@ -105,7 +145,7 @@ export default function ClientProjectsPage() {
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Connect accounts"><Link2 className="w-4 h-4 text-muted-foreground" /></button>
-                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Edit"><Pencil className="w-4 h-4 text-muted-foreground" /></button>
+                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Edit" onClick={() => openEditModal(project)}><Pencil className="w-4 h-4 text-muted-foreground" /></button>
                         <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Toggle status"><Power className="w-4 h-4 text-muted-foreground" /></button>
                         <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Delete"><Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" /></button>
                       </div>
@@ -123,22 +163,153 @@ export default function ClientProjectsPage() {
 
       {/* New Project Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
-          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-foreground mb-4">Create New Project</h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeModal}>
+          <div className="bg-white dark:bg-card rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between px-7 py-5 border-b border-border flex-shrink-0">
+              <h3 className="text-lg font-semibold text-foreground">Create Project</h3>
+              <button onClick={closeModal} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="overflow-y-auto flex-1 px-7 py-6 space-y-5">
               <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Project Name *</label>
-                <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary" placeholder="Enter project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                  Project Name <span className="text-error">*</span>
+                </label>
+                <input
+                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary placeholder:text-muted-foreground/60"
+                  placeholder="e.g. Acme Campaign"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                />
               </div>
+
               <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Description</label>
-                <textarea className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary resize-none" rows={3} placeholder="What is this project about? (Optional)" value={newProjectDesc} onChange={(e) => setNewProjectDesc(e.target.value)} />
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                  Description
+                </label>
+                <input
+                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary placeholder:text-muted-foreground/60"
+                  placeholder="Optional description"
+                  value={newProjectDesc}
+                  onChange={(e) => setNewProjectDesc(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                  Project Logo
+                </label>
+                <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="w-full rounded-xl border-2 border-dashed border-border hover:border-primary/50 transition-colors py-8 flex flex-col items-center justify-center gap-2 bg-muted/20"
+                >
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo preview" className="w-16 h-16 rounded-lg object-cover" />
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Click to upload logo</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button onClick={() => setShowModal(false)} disabled={!newProjectName.trim()}>Create Project</Button>
+
+            {/* Sticky Footer */}
+            <div className="flex items-center justify-end gap-4 px-7 py-5 border-t border-border flex-shrink-0">
+              <button onClick={closeModal} className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2">
+                Cancel
+              </button>
+              <button
+                onClick={closeModal}
+                disabled={!newProjectName.trim()}
+                className="px-6 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+              >
+                Create Project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Project Modal */}
+      {editingProject && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeEditModal}>
+          <div className="bg-white dark:bg-card rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between px-7 py-5 border-b border-border flex-shrink-0">
+              <h3 className="text-lg font-semibold text-foreground">Edit Project</h3>
+              <button onClick={closeEditModal} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="overflow-y-auto flex-1 px-7 py-6 space-y-5">
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                  Project Name <span className="text-error">*</span>
+                </label>
+                <input
+                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary placeholder:text-muted-foreground/60"
+                  placeholder="e.g. Acme Campaign"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                  Description
+                </label>
+                <input
+                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:border-primary placeholder:text-muted-foreground/60"
+                  placeholder="Optional description"
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                  Project Logo
+                </label>
+                <input ref={editLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleEditLogoChange} />
+                <button
+                  type="button"
+                  onClick={() => editLogoInputRef.current?.click()}
+                  className="w-full rounded-xl border-2 border-dashed border-border hover:border-primary/50 transition-colors py-8 flex flex-col items-center justify-center gap-2 bg-muted/20"
+                >
+                  {editLogo ? (
+                    <img src={editLogo} alt="Logo preview" className="w-16 h-16 rounded-lg object-cover" />
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Click to upload logo</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Sticky Footer */}
+            <div className="flex items-center justify-end gap-4 px-7 py-5 border-t border-border flex-shrink-0">
+              <button onClick={closeEditModal} className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2">
+                Cancel
+              </button>
+              <button
+                onClick={closeEditModal}
+                disabled={!editName.trim()}
+                className="px-6 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         </div>

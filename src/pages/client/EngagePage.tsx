@@ -1517,18 +1517,6 @@ function BoardView({
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => bulkMoveInReview()}>
             <Users className="w-3 h-3 mr-1" /> Move to In Review
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs"
-            onClick={bulkMarkReplied}
-            disabled={!Array.from(selected).some((id) => {
-              const c = visibleAll.find((x) => x.id === id);
-              return !!(c?.aiDraft || drafts[id]?.text);
-            })}
-          >
-            <Check className="w-3 h-3 mr-1" /> Mark as Replied
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="ghost" className="h-7 text-xs">
@@ -2946,6 +2934,8 @@ function NestedReply({ reply, depth, mentionTo }: { reply: Comment; depth: numbe
    View 4 — Sentiment review & correction
    ────────────────────────────────────────────────────────────── */
 
+const SENTIMENT_PAGE_SIZE = 10;
+
 function SentimentReviewView({
   comments, updateComment, openContext,
 }: {
@@ -2954,7 +2944,16 @@ function SentimentReviewView({
   openContext: (commentId: string, postId: string) => void;
 }) {
   const [filter, setFilter] = useState<"all" | Sentiment>("all");
+  const [visibleCount, setVisibleCount] = useState(SENTIMENT_PAGE_SIZE);
+
   const filtered = comments.filter((c) => filter === "all" || c.sentiment === filter);
+  const visible = filtered.slice(0, visibleCount);
+  const remaining = filtered.length - visibleCount;
+
+  const changeFilter = (f: "all" | Sentiment) => {
+    setFilter(f);
+    setVisibleCount(SENTIMENT_PAGE_SIZE);
+  };
 
   const correct = (id: string, s: Sentiment) => {
     updateComment(id, { sentiment: s });
@@ -2976,7 +2975,7 @@ function SentimentReviewView({
         <Filter className="w-3.5 h-3.5 text-muted-foreground" />
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">Sentiment</span>
         {(["all", "positive", "neutral", "negative"] as const).map((s) => (
-          <button key={s} onClick={() => setFilter(s)}
+          <button key={s} onClick={() => changeFilter(s)}
             className={cn(
               "px-2.5 py-1 rounded-full border text-xs font-medium capitalize transition-colors",
               filter === s ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border hover:text-foreground",
@@ -2984,9 +2983,6 @@ function SentimentReviewView({
             {s === "all" ? "All" : s}
           </button>
         ))}
-        <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
-          Showing <span className="font-semibold text-foreground">{fmt(filtered.length)}</span> of {fmt(comments.length)}
-        </span>
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -3000,7 +2996,7 @@ function SentimentReviewView({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => {
+            {visible.map((c) => {
               const sm = sentimentMeta[c.sentiment];
               return (
                 <tr key={c.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => openContext(c.id, c.post.id)}>
@@ -3041,6 +3037,21 @@ function SentimentReviewView({
           </tbody>
         </table>
         {filtered.length === 0 && <div className="p-10 text-center text-sm text-muted-foreground">No comments match these filters.</div>}
+        {filtered.length > 0 && (
+          <div className="px-4 py-3 border-t border-border flex items-center justify-between bg-muted/20">
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Showing <span className="font-semibold text-foreground">{fmt(Math.min(visibleCount, filtered.length))}</span> of <span className="font-semibold text-foreground">{fmt(filtered.length)}</span> comments
+            </span>
+            {remaining > 0 && (
+              <button
+                onClick={() => setVisibleCount((v) => v + SENTIMENT_PAGE_SIZE)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Load {fmt(Math.min(remaining, SENTIMENT_PAGE_SIZE))} more
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -3050,6 +3061,8 @@ function SentimentReviewView({
    View 5 — Spam queue
    ────────────────────────────────────────────────────────────── */
 
+const SPAM_PAGE_SIZE = 10;
+
 function SpamView({
   spam, unspam, openContext,
 }: {
@@ -3057,6 +3070,10 @@ function SpamView({
   unspam: (id: string) => void;
   openContext: (commentId: string, postId: string) => void;
 }) {
+  const [visibleCount, setVisibleCount] = useState(SPAM_PAGE_SIZE);
+  const visible = spam.slice(0, visibleCount);
+  const remaining = spam.length - visibleCount;
+
   return (
     <div className="space-y-4">
       <div className="bg-warning/5 border border-warning/20 rounded-xl p-3 flex items-start gap-2.5">
@@ -3068,7 +3085,7 @@ function SpamView({
       </div>
 
       <div className="bg-card rounded-xl border border-border divide-y divide-border">
-        {spam.map((c) => (
+        {visible.map((c) => (
           <div
             key={c.id}
             onClick={() => openContext(c.id, c.post.id)}
@@ -3097,6 +3114,21 @@ function SpamView({
           </div>
         ))}
         {spam.length === 0 && <div className="p-10 text-center text-sm text-muted-foreground">No spam in the queue.</div>}
+        {spam.length > 0 && (
+          <div className="px-4 py-3 flex items-center justify-between bg-muted/20">
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Showing <span className="font-semibold text-foreground">{fmt(Math.min(visibleCount, spam.length))}</span> of <span className="font-semibold text-foreground">{fmt(spam.length)}</span> comments
+            </span>
+            {remaining > 0 && (
+              <button
+                onClick={() => setVisibleCount((v) => v + SPAM_PAGE_SIZE)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Load {fmt(Math.min(remaining, SPAM_PAGE_SIZE))} more
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

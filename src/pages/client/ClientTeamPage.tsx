@@ -17,10 +17,18 @@ export default function ClientTeamPage() {
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [members] = useState(initialMembers);
+  const [activeTab, setActiveTab] = useState<"all" | "active" | "pending">("all");
 
-  const filtered = members.filter(u =>
-    !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = members.filter(u => {
+    if (activeTab === "active" && u.status !== "active") return false;
+    if (activeTab === "pending" && u.status !== "pending") return false;
+    if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const allCount = members.length;
+  const activeCount = members.filter(u => u.status === "active").length;
+  const pendingCount = members.filter(u => u.status === "pending").length;
 
   const handleRoleSelect = (roleId: string) => {
     setSelectedRole(roleId);
@@ -56,40 +64,65 @@ export default function ClientTeamPage() {
 
   const RoleCardsGrid = () => (
     <div className="grid grid-cols-2 gap-3">
-      {roleCards.map(r => (
-        <button key={r.id} onClick={() => handleRoleSelect(r.id)} className={`p-4 rounded-xl border text-left transition-all ${selectedRole === r.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground'}`}>
-          <div className="flex items-center justify-between mb-1">
-            <span className={`text-sm font-semibold ${selectedRole === r.id ? 'text-primary' : 'text-foreground'}`}>{r.name}</span>
-            {selectedRole === r.id ? (
-              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="h-3 w-3 text-white" /></div>
-            ) : (
-              <div className="w-5 h-5 rounded-full border-2 border-border" />
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">{r.desc}</p>
-        </button>
-      ))}
+      {roleCards.map(r => {
+        const active = selectedRole === r.id;
+        return (
+          <button
+            key={r.id}
+            onClick={() => handleRoleSelect(r.id)}
+            className={`p-4 rounded-xl border text-left transition-all ${active ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-muted-foreground bg-background"}`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <span className={`text-sm font-bold ${active ? "text-primary" : "text-foreground"}`}>{r.name}</span>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-1">{r.desc}</p>
+              </div>
+              <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors ${active ? "border-primary bg-primary" : "border-muted-foreground/40"}`}>
+                {active && <Check className="h-3 w-3 text-white" />}
+              </div>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 
-  const PermissionsGrid = () => (
-    <div className="mb-6">
-      <label className="text-sm font-semibold text-foreground mb-3 block">Permissions</label>
-      <div className="grid grid-cols-2 gap-3">
-        {permissionList.map(perm => {
-          const active = selectedPermissions.includes(perm);
-          return (
-            <button key={perm} onClick={() => togglePermission(perm)} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${active ? 'border-emerald-300 bg-emerald-500/5' : 'border-border hover:border-muted-foreground'}`}>
-              <div className={`w-5 h-5 rounded flex items-center justify-center ${active ? 'bg-emerald-600' : 'border-2 border-border'}`}>
-                {active && <Check className="h-3 w-3 text-white" />}
-              </div>
-              <span className={`text-sm font-medium ${active ? 'text-emerald-700' : 'text-foreground'}`}>{perm}</span>
-            </button>
-          );
-        })}
+  const PermissionsGrid = () => {
+    const roleDefaults = defaultPermissions[selectedRole] || [];
+    return (
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-sm font-bold text-foreground">Permissions</label>
+          <span className="text-xs text-muted-foreground">Click to grant extra or revoke defaults</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {permissionList.map(perm => {
+            const isDefault = roleDefaults.includes(perm);
+            const isChecked = selectedPermissions.includes(perm);
+            const isExtra = isChecked && !isDefault;
+            const isRevoked = !isChecked && isDefault;
+            return (
+              <button
+                key={perm}
+                onClick={() => togglePermission(perm)}
+                className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-muted-foreground bg-background transition-all"
+              >
+                <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+                  {isChecked && <Check className="h-3 w-3 text-white" />}
+                </div>
+                <span className={`text-sm font-medium flex-1 text-left ${isRevoked ? "line-through text-muted-foreground" : "text-foreground"}`}>{perm}</span>
+                {isExtra && <span className="text-[10px] font-semibold text-emerald-600">+extra</span>}
+                {isRevoked && <span className="text-[10px] font-semibold text-error">revoked</span>}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground mt-2.5">
+          <span className="text-emerald-600 font-semibold">+extra</span> = added beyond role &nbsp;·&nbsp; <span className="text-error font-semibold line-through">revoked</span> = removed from role default
+        </p>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -118,6 +151,28 @@ export default function ClientTeamPage() {
 
       {/* Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
+        {/* Tabs */}
+        <div className="border-b border-border px-5">
+          <div className="flex gap-6">
+            {([
+              { key: "all", label: "All", count: allCount },
+              { key: "active", label: "Active", count: activeCount },
+              { key: "pending", label: "Pending", count: pendingCount },
+            ] as const).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              >
+                {tab.label}
+                <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${activeTab === tab.key ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -176,31 +231,72 @@ export default function ClientTeamPage() {
 
       {/* Invite User Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
-          <div className="w-[600px] bg-card border border-border rounded-2xl p-8 max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-foreground">Invite User</h2>
-              <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
+          <div className="w-full max-w-2xl bg-white dark:bg-card rounded-2xl shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between px-8 py-5 border-b border-border flex-shrink-0">
+              <h2 className="text-lg font-semibold text-foreground">Invite User</h2>
+              <button onClick={() => setShowModal(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <hr className="border-border mb-6" />
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-1.5 block">Full Name <span className="text-primary">*</span></label>
-                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Jane Doe" value={inviteName} onChange={e => setInviteName(e.target.value)} />
+
+            {/* Scrollable Body */}
+            <div className="overflow-y-auto flex-1 px-8 py-6">
+              {/* Name + Email */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    Full Name <span className="text-error">*</span>
+                  </label>
+                  <input
+                    className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary"
+                    placeholder="Jane Doe"
+                    value={inviteName}
+                    onChange={e => setInviteName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    Email Address <span className="text-error">*</span>
+                  </label>
+                  <input
+                    className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary"
+                    placeholder="jane@company.com"
+                    type="email"
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-1.5 block">Email Address <span className="text-primary">*</span></label>
-                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="jane@company.com" type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
+
+              {/* Assign Role */}
+              <div className="mb-6">
+                <label className="text-sm font-bold text-foreground mb-3 block">
+                  Assign Role <span className="text-error">*</span>
+                </label>
+                <RoleCardsGrid />
               </div>
+
+              {/* Permissions (shown when role selected) */}
+              {selectedRole && <PermissionsGrid />}
             </div>
-            <div className="mb-6">
-              <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
-              <RoleCardsGrid />
-            </div>
-            {selectedRole && <PermissionsGrid />}
-            <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <Button variant="outline" onClick={() => setShowModal(false)} className="px-8 flex-1">Cancel</Button>
-              <Button className="px-8 flex-1" disabled={!inviteName.trim() || !inviteEmail.trim() || !selectedRole}>Send Invitation</Button>
+
+            {/* Sticky Footer */}
+            <div className="flex items-center justify-end gap-4 px-8 py-5 border-t border-border flex-shrink-0">
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                disabled={!inviteName.trim() || !inviteEmail.trim() || !selectedRole}
+                className="px-8 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+              >
+                Send Invitation
+              </button>
             </div>
           </div>
         </div>
@@ -208,20 +304,39 @@ export default function ClientTeamPage() {
 
       {/* Manage User Modal */}
       {manageUser && (
-        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setManageUser(null)}>
-          <div className="w-[600px] bg-card border border-border rounded-2xl p-8 max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-foreground">Manage — {manageUser.name}</h2>
-              <button onClick={() => setManageUser(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setManageUser(null)}>
+          <div className="w-full max-w-2xl bg-white dark:bg-card rounded-2xl shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between px-8 py-5 border-b border-border flex-shrink-0">
+              <h2 className="text-lg font-semibold text-foreground">Manage — {manageUser.name}</h2>
+              <button onClick={() => setManageUser(null)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <div className="mb-6">
-              <label className="text-sm font-semibold text-foreground mb-3 block">Assign Role <span className="text-primary">*</span></label>
-              <RoleCardsGrid />
+
+            {/* Scrollable Body */}
+            <div className="overflow-y-auto flex-1 px-8 py-6">
+              <div className="mb-6">
+                <label className="text-sm font-bold text-foreground mb-3 block">Assign Role <span className="text-error">*</span></label>
+                <RoleCardsGrid />
+              </div>
+              {selectedRole && <PermissionsGrid />}
             </div>
-            {selectedRole && <PermissionsGrid />}
-            <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <Button variant="outline" onClick={() => setManageUser(null)} className="px-8 flex-1">Cancel</Button>
-              <Button className="px-8 flex-1">Save Changes</Button>
+
+            {/* Sticky Footer */}
+            <div className="flex items-center justify-end gap-4 px-8 py-5 border-t border-border flex-shrink-0">
+              <button
+                onClick={() => setManageUser(null)}
+                className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setManageUser(null)}
+                className="px-8 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider hover:bg-primary/90 transition-colors"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         </div>
