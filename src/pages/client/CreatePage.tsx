@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import RichTextToolbar from "@/components/composer/RichTextToolbar";
+import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
 
 /* ---------------- Platform model ---------------- */
 type PlatformKey = "instagram" | "facebook" | "linkedin" | "twitter";
@@ -82,9 +83,23 @@ export default function CreatePage() {
   const [customHashtag, setCustomHashtag] = useState("");
 
   /* ---- schedule ---- */
-  const [scheduleMode, setScheduleMode] = useState<"now" | "schedule">("now");
+  const [scheduleMode, setScheduleMode] = useState<"now" | "schedule" | "queue">("now");
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
+
+  // Mock queue slots (mirrors what's set in Settings → Queue Times)
+  const queueSlots = [
+    { day: "Monday",    time: "09:00" },
+    { day: "Monday",    time: "13:00" },
+    { day: "Monday",    time: "18:00" },
+    { day: "Tuesday",   time: "09:00" },
+    { day: "Tuesday",   time: "13:00" },
+    { day: "Wednesday", time: "09:00" },
+    { day: "Thursday",  time: "18:00" },
+    { day: "Friday",    time: "09:00" },
+    { day: "Friday",    time: "17:00" },
+  ];
+  const nextSlot = queueSlots[0];
 
   /* ---- preview ---- */
   const [previewMode, setPreviewMode] = useState<"tabs" | "grid">("tabs");
@@ -380,17 +395,6 @@ export default function CreatePage() {
                         value={overrides[activeOverrideTab]?.caption ?? sharedCaption}
                         onChange={(v) => setOverrideCaption(activeOverrideTab!, v)}
                       />
-                      <div className="flex justify-between items-center text-[11px]">
-                        <button
-                          onClick={() => resetOverride(activeOverrideTab)}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          Reset to shared
-                        </button>
-                        <span className="text-muted-foreground">
-                          Recommended: {PLATFORMS[activeOverrideTab].recSize} · {PLATFORMS[activeOverrideTab].aspectLabel}
-                        </span>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -403,30 +407,44 @@ export default function CreatePage() {
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <CalendarIcon className="w-4 h-4 text-primary" /> Scheduling
             </h3>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setScheduleMode("now")}
-                className={cn(
-                  "py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 border",
-                  scheduleMode === "now" ? "gradient-coral text-primary-foreground border-transparent shadow-coral" : "bg-card border-border text-foreground hover:bg-accent"
-                )}
-              >
-                <Send className="w-3.5 h-3.5" /> Send Now
-              </button>
-              <button
-                onClick={() => setScheduleMode("schedule")}
-                className={cn(
-                  "py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 border",
-                  scheduleMode === "schedule" ? "gradient-coral text-primary-foreground border-transparent shadow-coral" : "bg-card border-border text-foreground hover:bg-accent"
-                )}
-              >
-                <Clock className="w-3.5 h-3.5" /> Schedule
-              </button>
+            <div className="flex items-center bg-muted rounded-lg p-1 gap-0">
+              {([
+                { id: "now",      label: "Send Now",     icon: Send },
+                { id: "schedule", label: "Schedule",     icon: Clock },
+                { id: "queue",    label: "Add to Queue", icon: CalendarIcon },
+              ] as const).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setScheduleMode(id)}
+                  className={cn(
+                    "flex-1 py-1.5 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+                    scheduleMode === id
+                      ? "gradient-coral text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
             </div>
             {scheduleMode === "schedule" && (
               <div className="grid grid-cols-2 gap-2">
                 <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="px-3 py-2 rounded-lg border border-input text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                <TimePickerPopup value={scheduleTime} onChange={setScheduleTime} />
+              </div>
+            )}
+            {scheduleMode === "queue" && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-primary/5 border border-primary/20 rounded-lg">
+                  <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-foreground">Next slot: {nextSlot.day} at {(() => { const [h, m] = nextSlot.time.split(":").map(Number); const ampm = h >= 12 ? "PM" : "AM"; const h12 = h % 12 || 12; return `${h12}:${String(m).padStart(2, "0")} ${ampm}`; })()}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Post will be added to your queue and published at the next available time.</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Manage queue times in <button className="text-primary underline underline-offset-2 hover:no-underline" onClick={() => toast.info("Go to Settings → Queue Times")}>Settings → Queue Times</button>
+                </p>
               </div>
             )}
           </div>
@@ -440,7 +458,7 @@ export default function CreatePage() {
               onClick={handlePublish}
               className="px-5 py-2.5 rounded-lg gradient-coral text-primary-foreground font-semibold text-sm shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2"
             >
-              {scheduleMode === "now" ? <><Send className="w-4 h-4" /> Publish Now</> : <><Clock className="w-4 h-4" /> Schedule Post</>}
+              {scheduleMode === "now" ? <><Send className="w-4 h-4" /> Publish Now</> : scheduleMode === "queue" ? <><CalendarIcon className="w-4 h-4" /> Queue Post</> : <><Clock className="w-4 h-4" /> Schedule Post</>}
             </button>
           </div>
         </section>

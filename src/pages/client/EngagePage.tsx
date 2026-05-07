@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
 
 /** Format a count with thousand-separators — show exact value, never truncate */
 const fmt = (n: number) => n.toLocaleString();
@@ -2094,12 +2095,12 @@ function BoardView({
                     </div>
                   </div>
 
-                  {/* Inline reply — Instagram style */}
+                  {/* Inline reply — indented under comment text */}
                   {draft?.open && (
-                    <div className="border-t border-border bg-card rounded-b-xl overflow-hidden">
+                    <div className="ml-14 mr-4 mb-3 mt-1 border border-border rounded-xl bg-muted/20 overflow-hidden">
 
                       {/* Replying to strip */}
-                      <div className="flex items-center gap-1.5 px-4 pt-2.5">
+                      <div className="flex items-center gap-1.5 px-3 pt-2.5">
                         <span className="text-[11px] text-muted-foreground">Replying to</span>
                         <span className="text-[11px] font-semibold text-primary">@{c.author}</span>
                         <button onClick={() => closeDraft(c.id)} className="ml-auto text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted transition-colors">
@@ -2108,7 +2109,7 @@ function BoardView({
                       </div>
 
                       {/* Input row */}
-                      <div className="flex items-end gap-2.5 px-3 py-3">
+                      <div className="flex items-end gap-2 px-3 py-2.5">
                         <AccountAvatar account={c.post.account} size="md" />
                         <div className="flex-1 relative">
                           <textarea
@@ -2150,7 +2151,7 @@ function BoardView({
                       </div>
 
                       {/* Secondary toolbar */}
-                      <div className="flex items-center justify-between px-4 pb-3 text-[11px] text-muted-foreground">
+                      <div className="flex items-center justify-between px-3 pb-2.5 text-[11px] text-muted-foreground">
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => openDraft(c.id, !draft.isAi, draft.isAi ? "" : (c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`))}
@@ -3336,11 +3337,10 @@ function ThreadDetailColumn({
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Time</label>
-                <input
-                  type="time"
-                  className="input-dark text-sm"
+                <TimePickerPopup
                   value={scheduleTime}
-                  onChange={(e) => setScheduleTime(e.target.value)}
+                  onChange={setScheduleTime}
+                  className="input-dark text-sm"
                 />
               </div>
             </div>

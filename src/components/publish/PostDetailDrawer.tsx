@@ -17,6 +17,7 @@ import {
   type PostDraft, type AuditEvent, type Platform,
 } from "@/data/publishMockData";
 import { cn } from "@/lib/utils";
+import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
 
 export type PostAction = "approve" | "reject" | "send" | "schedule" | "edit_resubmit" | "reschedule";
 
@@ -397,10 +398,7 @@ function ReschedulePopover({
         />
         <div className="border-t border-border p-3 flex items-center gap-2">
           <label className="text-xs text-muted-foreground">Time</label>
-          <input
-            type="time" value={time} onChange={(e) => setTime(e.target.value)}
-            className="flex-1 text-sm bg-card border border-border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          <TimePickerPopup value={time} onChange={setTime} className="flex-1" />
           <Button size="sm" onClick={onSubmit}>{date ? format(date, "MMM d") : "Pick"} · {time}</Button>
         </div>
       </PopoverContent>

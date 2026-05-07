@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { teamMembers, connectedAccounts, totalPosts, socialAccounts } from "@/data/businessMockData";
 import { WorkflowSettings } from "@/components/settings/WorkflowSettings";
+import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
 
 /* ─── Nav ─────────────────────────────────────────────────────── */
 const navItems = [
@@ -16,6 +17,7 @@ const navItems = [
   { id: "security",      label: "Security Settings",     icon: Shield },
   { id: "general",       label: "General Settings",      icon: Settings },
   { id: "approvals",     label: "Approvals",             icon: CheckCircle2 },
+  { id: "queue",         label: "Queue Times",           icon: Clock },
   { id: "workflows",     label: "Workflows",             icon: GitBranch },
 ];
 
@@ -49,6 +51,9 @@ const messageTags = [
   { name: "Potential Lead",     color: "bg-green-50 text-green-700 border-green-200" },
   { name: "Positive Feedback",  color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 ];
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+type Day = typeof DAYS[number];
 
 const passwordRules = [
   { label: "At least 8 characters",  test: (p: string) => p.length >= 8 },
@@ -136,6 +141,34 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
   const [requireMultiApprover, setRequireMultiApprover] = useState(false);
   const [allowSelfApprove, setAllowSelfApprove] = useState(true);
   const [weekendsCount, setWeekendsCount] = useState(false);
+
+  // queue times
+  const [queueSlots, setQueueSlots] = useState<Record<Day, string[]>>({
+    Monday:    ["09:00", "13:00", "18:00"],
+    Tuesday:   ["09:00", "13:00", "18:00"],
+    Wednesday: ["09:00", "13:00"],
+    Thursday:  ["09:00", "13:00", "18:00"],
+    Friday:    ["09:00", "17:00"],
+    Saturday:  ["11:00"],
+    Sunday:    [],
+  });
+  const [queueEnabled, setQueueEnabled] = useState<Record<Day, boolean>>({
+    Monday: true, Tuesday: true, Wednesday: true, Thursday: true,
+    Friday: true, Saturday: false, Sunday: false,
+  });
+
+  const addQueueSlot = (day: Day) =>
+    setQueueSlots((prev) => ({ ...prev, [day]: [...prev[day], "09:00"] }));
+
+  const removeQueueSlot = (day: Day, idx: number) =>
+    setQueueSlots((prev) => ({ ...prev, [day]: prev[day].filter((_, i) => i !== idx) }));
+
+  const updateQueueSlot = (day: Day, idx: number, val: string) =>
+    setQueueSlots((prev) => {
+      const slots = [...prev[day]];
+      slots[idx] = val;
+      return { ...prev, [day]: slots };
+    });
 
   const connectedCount = connectedAccounts.length;
   const totalPlatforms = socialAccounts.length;
@@ -622,8 +655,68 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
           </>
         )}
 
+        {/* ── Queue Times ─────────────────────────────────────── */}
+        {activeTab === "queue" && (
+          <>
+            <SectionCard>
+              <SectionTitle sub="Set the times your posts will be automatically queued for publishing each day.">
+                Queue Times
+              </SectionTitle>
+              <div className="space-y-3">
+                {DAYS.map((day) => {
+                  const enabled = queueEnabled[day];
+                  const slots = queueSlots[day];
+                  return (
+                    <div key={day} className={cn("rounded-xl border border-border p-4 transition-colors", !enabled && "opacity-50")}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <Toggle checked={enabled} onChange={(v) => setQueueEnabled((prev) => ({ ...prev, [day]: v }))} />
+                          <span className="text-sm font-semibold text-foreground w-24">{day}</span>
+                          <span className="text-xs text-muted-foreground">{slots.length} slot{slots.length !== 1 ? "s" : ""}</span>
+                        </div>
+                        <button
+                          disabled={!enabled}
+                          onClick={() => addQueueSlot(day)}
+                          className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:text-primary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add slot
+                        </button>
+                      </div>
+                      {enabled && slots.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {slots.map((t, i) => (
+                            <div key={i} className="flex items-center gap-1">
+                              <TimePickerPopup
+                                value={t}
+                                onChange={(val) => updateQueueSlot(day, i, val)}
+                              />
+                              <button onClick={() => removeQueueSlot(day, i)} className="text-muted-foreground hover:text-error transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {enabled && slots.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic">No slots — posts won't be queued on this day.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </SectionCard>
+            <div className="flex justify-end mt-2">
+              <SaveBtn label="Save Queue Times" />
+            </div>
+          </>
+        )}
+
         {/* ── Workflows ───────────────────────────────────────── */}
-        {activeTab === "workflows" && <WorkflowSettings scope="client" />}
+        {activeTab === "workflows" && (
+          <SectionCard className="p-0 overflow-hidden">
+            <WorkflowSettings scope="client" />
+          </SectionCard>
+        )}
 
         {/* ── Hashtags ─────────────────────────────────────────── */}
         {activeTab === "hashtags" && (

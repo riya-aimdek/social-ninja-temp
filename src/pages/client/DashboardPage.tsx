@@ -2,17 +2,12 @@ import {
   TrendingUp, TrendingDown, Users, FileText, Clock, Activity,
   Facebook, Instagram, Linkedin, Twitter
 } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
-
-const sparkData = [
-  { v: 30 }, { v: 45 }, { v: 35 }, { v: 50 }, { v: 42 }, { v: 58 }, { v: 65 },
-];
 
 const kpis = [
   { label: "Total Followers", value: "24.8K", change: "+3.2%", up: true, icon: Users },
   { label: "Posts This Week", value: "18", change: "+12%", up: true, icon: FileText },
   { label: "Queued Posts", value: "7", change: "3 due today", up: true, icon: Clock },
-  { label: "Avg Engagement", value: "4.7%", change: "-0.3%", up: false, icon: Activity },
+  { label: "Connected Accounts", value: "3", change: "1 disconnected", up: false, icon: Activity },
 ];
 
 const connectedAccounts = [
@@ -78,19 +73,6 @@ export default function DashboardPage() {
             </div>
             <p className="text-2xl font-bold tracking-tight text-foreground tabular-nums">{kpi.value}</p>
             <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>
-            <div className="h-10 mt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={sparkData}>
-                  <defs>
-                    <linearGradient id={`spark-${kpi.label}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(358, 97%, 68%)" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="hsl(358, 97%, 68%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="hsl(358, 97%, 68%)" strokeWidth={2} fill={`url(#spark-${kpi.label})`} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
           </div>
         ))}
       </div>
