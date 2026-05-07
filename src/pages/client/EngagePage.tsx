@@ -5,6 +5,7 @@ import {
   ArrowRight, MoreVertical, MapPin, Shield, Shuffle, Trash2, Plus,
   ThumbsUp, ThumbsDown, Edit3, RefreshCw, Smile, Meh, Frown, ListTree,
   Bot, Users, Zap, X, Check, AtSign, Mail, Star, ArrowDownUp, ChevronDown,
+  ChevronLeft, ChevronRight,
   ExternalLink, Image as ImageIcon, Heart, Bookmark, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ interface Comment {
   sentiment: Sentiment;
   likes: number;
   isSpam?: boolean;
+  isHidden?: boolean;
   trigger?: Trigger;
   aiDraft?: string;
   stage: Stage;
@@ -917,7 +919,7 @@ export default function EngagePage({ view = "board" }: { view?: Tab }) {
   // Apply search + category + status + tag filters end-to-end
   const allComments = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    let out = platformMatched;
+    let out = platformMatched.filter((c) => !c.isHidden);
 
     if (categoryTab === "mentions") out = out.filter((c) => c.text.includes("@"));
     else if (categoryTab === "reviews") out = out.filter((c) => c.post.platform === "GBP");
@@ -1048,6 +1050,35 @@ export default function EngagePage({ view = "board" }: { view?: Tab }) {
       }),
     );
     toast.success("Reply posted");
+  };
+
+  const deleteComment = (id: string) => {
+    const removeFromTree = (list: Comment[]): Comment[] =>
+      list.filter((c) => c.id !== id).map((c) => ({
+        ...c,
+        replies: c.replies ? removeFromTree(c.replies) : c.replies,
+      }));
+    setPosts((prev) => prev.map((p) => ({ ...p, comments: removeFromTree(p.comments) })));
+    toast.success("Comment deleted");
+  };
+
+  const addTopLevelComment = (postId: string, text: string) => {
+    const comment: Comment = {
+      id: `C-${Date.now()}`,
+      author: "You",
+      avatar: "YO",
+      text,
+      at: "just now",
+      sentiment: "positive",
+      likes: 0,
+      stage: "replied",
+      priority: "low",
+      sla: { dueIn: "—", breached: false },
+    };
+    setPosts((prev) => prev.map((p) =>
+      p.id === postId ? { ...p, comments: [...p.comments, comment] } : p,
+    ));
+    toast.success("Reply posted to thread");
   };
 
   const [statsOpen, setStatsOpen] = useState(true);
@@ -1368,9 +1399,9 @@ export default function EngagePage({ view = "board" }: { view?: Tab }) {
 
       
       {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
-      {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} />}
+      {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} addTopLevelComment={addTopLevelComment} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} openContext={openContext} />}
-      {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} openContext={openContext} />}
+      {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} deleteComment={deleteComment} openContext={openContext} />}
       {tab === "variants" && <VariantsView templates={templates} setTemplates={setTemplates} />}
 
       <PostThreadContextSheet
@@ -1379,6 +1410,7 @@ export default function EngagePage({ view = "board" }: { view?: Tab }) {
         onClose={() => setContextPair(null)}
         updateComment={updateComment}
         addReply={addReply}
+        addTopLevelComment={addTopLevelComment}
       />
     </div>
   );
@@ -1470,6 +1502,7 @@ function ReplyQueueView({
           selected={selected}
           updateComment={updateComment}
           addReply={addReply}
+          addTopLevelComment={addTopLevelComment}
           highlightCommentId={highlightId}
         />
       </div>
@@ -1503,7 +1536,7 @@ function BoardView({
   const PAGE_SIZE = 10;
   const [filter, setFilter] = useState<BoardFilter>("all");
   const [sentimentFilter, setSentimentFilter] = useState<BoardSentiment | null>(null);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drafts, setDrafts] = useState<Record<string, ReplyDraftState>>({});
   const [bulkAiOpen, setBulkAiOpen] = useState(false);
@@ -1708,8 +1741,8 @@ function BoardView({
     { id: "negative", Icon: Frown, label: "Negative", count: counts.negative, activeClasses: "bg-error/15 text-error" },
   ];
 
-  const changeFilter = (f: BoardFilter) => { setFilter(f); setVisibleCount(PAGE_SIZE); };
-  const toggleSentiment = (s: BoardSentiment) => { setSentimentFilter((prev) => prev === s ? null : s); setVisibleCount(PAGE_SIZE); };
+  const changeFilter = (f: BoardFilter) => { setFilter(f); setCurrentPage(1); };
+  const toggleSentiment = (s: BoardSentiment) => { setSentimentFilter((prev) => prev === s ? null : s); setCurrentPage(1); };
 
   return (
     <div className="space-y-3">
@@ -1829,7 +1862,7 @@ function BoardView({
           <BoardEmptyState filter={filter} />
         ) : (
           <ul className="divide-y divide-border">
-            {filtered.slice(0, visibleCount).map((c) => {
+            {filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((c) => {
               const isSelected = selected.has(c.id);
               const draft = drafts[c.id];
               const isLong = c.text.length > 280;
@@ -1995,7 +2028,7 @@ function BoardView({
                             <MoreVertical className="w-3.5 h-3.5" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem className="text-xs gap-2" onClick={() => toast.success("Comment hidden")}>
+                            <DropdownMenuItem className="text-xs gap-2" onClick={() => { updateComment(c.id, { isHidden: true }); toast.success("Comment hidden"); }}>
                               <X className="w-3 h-3" /> Hide
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-xs gap-2 text-error focus:text-error" onClick={() => { updateComment(c.id, { isSpam: true }); toast.success("Marked as spam"); }}>
@@ -2104,30 +2137,65 @@ function BoardView({
           </ul>
         )}
 
-        {/* Load more */}
-        {filtered.length > visibleCount && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
-            <span className="text-xs text-muted-foreground">
-              Showing <span className="font-medium text-foreground">{visibleCount}</span> of <span className="font-medium text-foreground">{filtered.length}</span> comments
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs gap-1.5"
-              onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
-            >
-              Load {Math.min(PAGE_SIZE, filtered.length - visibleCount)} more
-              <ChevronDown className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        )}
+        {/* Pagination */}
+        {filtered.length > PAGE_SIZE && (() => {
+          const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+          const start = (currentPage - 1) * PAGE_SIZE + 1;
+          const end = Math.min(currentPage * PAGE_SIZE, filtered.length);
 
-        {/* All loaded indicator */}
-        {filtered.length > 0 && filtered.length <= visibleCount && filtered.length > PAGE_SIZE && (
-          <div className="px-4 py-2.5 border-t border-border text-center text-xs text-muted-foreground">
-            All {filtered.length} comments loaded
-          </div>
-        )}
+          const pages: (number | "…")[] = [];
+          if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+          } else if (currentPage <= 4) {
+            pages.push(1, 2, 3, 4, 5, "…", totalPages);
+          } else if (currentPage >= totalPages - 3) {
+            pages.push(1, "…", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+          } else {
+            pages.push(1, "…", currentPage - 1, currentPage, currentPage + 1, "…", totalPages);
+          }
+
+          return (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
+              <span className="text-xs text-muted-foreground tabular-nums">
+                Showing <span className="font-medium text-foreground">{start}–{end}</span> of <span className="font-medium text-foreground">{filtered.length}</span> comments
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                {pages.map((p, i) =>
+                  p === "…" ? (
+                    <span key={`e${i}`} className="h-7 w-7 flex items-center justify-center text-xs text-muted-foreground">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p as number)}
+                      className={cn(
+                        "h-7 w-7 flex items-center justify-center rounded-lg text-xs font-medium transition-colors",
+                        currentPage === p
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
       </div>
 
@@ -2599,11 +2667,12 @@ function computePostStats(post: Post): { items: Comment[]; isNewById: Set<string
 type PostSort = "newest" | "most_comments" | "awaiting";
 
 function ThreadsView({
-  posts, updateComment, addReply,
+  posts, updateComment, addReply, addTopLevelComment,
 }: {
   posts: Post[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
+  addTopLevelComment: (postId: string, text: string) => void;
 }) {
   const enriched = useMemo(
     () => posts.map((p) => ({ post: p, ...computePostStats(p) })),
@@ -2649,6 +2718,7 @@ function ThreadsView({
           selected={selected}
           updateComment={updateComment}
           addReply={addReply}
+          addTopLevelComment={addTopLevelComment}
         />
       </div>
     </div>
@@ -2826,11 +2896,12 @@ function PostThumb({ post, size = "md", className }: { post: Post; size?: "sm" |
 const PAGE_SIZE = 30;
 
 function ThreadDetailColumn({
-  selected, updateComment, addReply, highlightCommentId,
+  selected, updateComment, addReply, addTopLevelComment, highlightCommentId,
 }: {
   selected: { post: Post; items: Comment[]; isNewById: Set<string>; stats: PostOrmStats } | null;
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
+  addTopLevelComment: (postId: string, text: string) => void;
   highlightCommentId?: string | null;
 }) {
   const [filter, setFilter] = useState<ThreadOrmFilter>("all");
@@ -2907,8 +2978,8 @@ function ThreadDetailColumn({
     if (replyTarget) {
       addReply(replyTarget.id, reply.trim());
       updateComment(replyTarget.id, { stage: "replied" });
-    } else {
-      toast.success("Reply posted to thread");
+    } else if (selected) {
+      addTopLevelComment(selected.post.id, reply.trim());
     }
     setReply("");
     setReplyTarget(null);
@@ -3606,10 +3677,11 @@ function SentimentReviewView({
 const SPAM_PAGE_SIZE = 10;
 
 function SpamView({
-  spam, unspam, openContext,
+  spam, unspam, deleteComment, openContext,
 }: {
   spam: (Comment & { post: Post })[];
   unspam: (id: string) => void;
+  deleteComment: (id: string) => void;
   openContext: (commentId: string, postId: string) => void;
 }) {
   const [visibleCount, setVisibleCount] = useState(SPAM_PAGE_SIZE);
@@ -3649,7 +3721,7 @@ function SpamView({
               <Button variant="outline" size="sm" onClick={() => unspam(c.id)} className="gap-1">
                 <RefreshCw className="w-3 h-3" /> Restore
               </Button>
-              <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground">
+              <Button variant="ghost" size="sm" className="gap-1 text-error hover:text-error" onClick={(e) => { e.stopPropagation(); deleteComment(c.id); }}>
                 <Trash2 className="w-3 h-3" /> Delete
               </Button>
             </div>
@@ -3886,13 +3958,14 @@ function findCommentDeep(list: Comment[], id: string): Comment | null {
 }
 
 function PostThreadContextSheet({
-  pair, posts, onClose, updateComment, addReply,
+  pair, posts, onClose, updateComment, addReply, addTopLevelComment,
 }: {
   pair: { commentId: string; postId: string } | null;
   posts: Post[];
   onClose: () => void;
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
+  addTopLevelComment: (postId: string, text: string) => void;
 }) {
   const post = pair ? posts.find((p) => p.id === pair.postId) : null;
 
@@ -3920,6 +3993,7 @@ function PostThreadContextSheet({
               selected={selected}
               updateComment={updateComment}
               addReply={addReply}
+              addTopLevelComment={addTopLevelComment}
               highlightCommentId={pair.commentId}
             />
           </div>

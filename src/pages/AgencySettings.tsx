@@ -2,8 +2,9 @@ import { useState } from "react";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
 import { Upload, AlertTriangle } from "lucide-react";
+import { WorkflowSettings } from "@/components/settings/WorkflowSettings";
 
-const settingsTabs = ['General', 'Notifications', 'Security', 'Danger Zone'];
+const settingsTabs = ['General', 'Notifications', 'Security', 'Workflows', 'Danger Zone'];
 
 const agencyNotifications = [
   "New client created",
@@ -197,6 +198,12 @@ const AgencySettings = () => {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'Workflows' && (
+        <div className="py-1">
+          <WorkflowSettings scope="agency" />
         </div>
       )}
 

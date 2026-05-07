@@ -20,6 +20,7 @@ const agencyNavItems = [
   { title: "Users", path: "/agency/team", icon: Users },
   { title: "Social Accounts", path: "/agency/social-accounts", icon: LinkIcon },
   { title: "Client Billing", path: "/agency/client-billing", icon: Receipt },
+  { title: "Settings", path: "/agency/settings", icon: Settings },
 ];
 
 const clientNavItems = [

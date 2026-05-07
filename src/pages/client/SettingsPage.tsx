@@ -3,10 +3,11 @@ import {
   User, CreditCard, Users, Bell, Hash, Shield, Save,
   Upload, Plus, Trash2, MessageSquare, Tag, Check, AlertCircle,
   Download, X, CheckCircle2, Clock, Zap, BellRing, Settings,
-  Link2, Timer, Eye, EyeOff, Camera,
+  Link2, Eye, EyeOff, Camera, GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { teamMembers, connectedAccounts, totalPosts, socialAccounts } from "@/data/businessMockData";
+import { WorkflowSettings } from "@/components/settings/WorkflowSettings";
 
 /* ─── Nav ─────────────────────────────────────────────────────── */
 const navItems = [
@@ -14,8 +15,8 @@ const navItems = [
   { id: "notifications", label: "Notification Settings", icon: Bell },
   { id: "security",      label: "Security Settings",     icon: Shield },
   { id: "general",       label: "General Settings",      icon: Settings },
-  { id: "queue",         label: "Set Queue Times",        icon: Timer },
   { id: "approvals",     label: "Approvals",             icon: CheckCircle2 },
+  { id: "workflows",     label: "Workflows",             icon: GitBranch },
 ];
 
 /* ─── Mock data ───────────────────────────────────────────────── */
@@ -56,7 +57,6 @@ const passwordRules = [
   { label: "1 special character",    test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
 ];
 
-const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
 /* ─── Reusable atoms ──────────────────────────────────────────── */
 const SectionCard = ({ children, className }: { children: React.ReactNode; className?: string }) => (
@@ -137,22 +137,8 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
   const [allowSelfApprove, setAllowSelfApprove] = useState(true);
   const [weekendsCount, setWeekendsCount] = useState(false);
 
-  // queue times
-  const [queueAccount, setQueueAccount] = useState("facebook - AI trial");
-  const [dayToggles, setDayToggles] = useState<Record<string, boolean>>(
-    Object.fromEntries(DAYS.map(d => [d, true]))
-  );
-  const [daySlots, setDaySlots] = useState<Record<string, string[]>>(
-    Object.fromEntries(DAYS.map(d => [d, ["09:00", "12:00", "17:00"]]))
-  );
-
   const connectedCount = connectedAccounts.length;
   const totalPlatforms = socialAccounts.length;
-
-  const addSlot = (day: string) => setDaySlots(prev => ({ ...prev, [day]: [...prev[day], "09:00"] }));
-  const removeSlot = (day: string, i: number) => setDaySlots(prev => ({ ...prev, [day]: prev[day].filter((_, idx) => idx !== i) }));
-  const updateSlot = (day: string, i: number, val: string) =>
-    setDaySlots(prev => ({ ...prev, [day]: prev[day].map((s, idx) => idx === i ? val : s) }));
 
   return (
     <div className="flex gap-6 animate-fade-in min-h-0">
@@ -403,64 +389,6 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
           </SectionCard>
         )}
 
-        {/* ── Queue Times ─────────────────────────────────────── */}
-        {activeTab === "queue" && (
-          <>
-            <SectionCard>
-              <SectionTitle sub="Set the optimal times to publish queued posts for each connected account.">Set Queue Times</SectionTitle>
-              <div>
-                <FieldLabel>Select Account</FieldLabel>
-                <select
-                  value={queueAccount}
-                  onChange={e => setQueueAccount(e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary transition-all"
-                >
-                  <option>facebook - AI trial</option>
-                  <option>instagram - AI trial</option>
-                </select>
-              </div>
-            </SectionCard>
-
-            <div className="space-y-3">
-              {DAYS.map((day) => (
-                <SectionCard key={day}>
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm font-semibold text-foreground">{day}</p>
-                    <Toggle checked={dayToggles[day]} onChange={(v) => setDayToggles(prev => ({ ...prev, [day]: v }))} />
-                  </div>
-                  {dayToggles[day] && (
-                    <>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {daySlots[day].map((slot, i) => (
-                          <div key={i} className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-2 py-1.5 border border-border">
-                            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                            <input
-                              type="time"
-                              value={slot}
-                              onChange={(e) => updateSlot(day, i, e.target.value)}
-                              className="text-sm text-foreground bg-transparent outline-none w-[70px]"
-                            />
-                            <button onClick={() => removeSlot(day, i)} className="text-muted-foreground hover:text-destructive transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      <button onClick={() => addSlot(day)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
-                        <Plus className="w-3.5 h-3.5" /> Add Time Slot
-                      </button>
-                    </>
-                  )}
-                </SectionCard>
-              ))}
-            </div>
-
-            <div className="flex justify-end">
-              <SaveBtn label="Save Queue Times" />
-            </div>
-          </>
-        )}
-
         {/* ── Billing ─────────────────────────────────────────── */}
         {activeTab === "billing" && (
           <>
@@ -611,10 +539,10 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                     <BellRing className="w-4 h-4 text-info" />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={reminderEnabled} onChange={e => setReminderEnabled(e.target.checked)} className="w-4 h-4 accent-primary shrink-0" />
                       <p className="text-sm font-semibold text-foreground">Send reminders for pending approvals</p>
-                      <input type="checkbox" checked={reminderEnabled} onChange={e => setReminderEnabled(e.target.checked)} className="w-4 h-4 accent-primary" />
-                    </div>
+                    </label>
                     <p className="text-xs text-muted-foreground mt-0.5">Nudge approvers automatically so posts don't sit idle in the queue.</p>
                     {reminderEnabled && (
                       <div className="mt-4 pt-4 border-t border-border space-y-3">
@@ -693,6 +621,9 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
             </div>
           </>
         )}
+
+        {/* ── Workflows ───────────────────────────────────────── */}
+        {activeTab === "workflows" && <WorkflowSettings scope="client" />}
 
         {/* ── Hashtags ─────────────────────────────────────────── */}
         {activeTab === "hashtags" && (
