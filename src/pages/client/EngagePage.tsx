@@ -6,7 +6,7 @@ import {
   ThumbsUp, ThumbsDown, Edit3, RefreshCw, Smile, Meh, Frown, ListTree,
   Bot, Users, Zap, X, Check, AtSign, Mail, Star, ArrowDownUp, ChevronDown,
   ChevronLeft, ChevronRight,
-  ExternalLink, Image as ImageIcon, Heart, Bookmark, Share2,
+  ExternalLink, Heart, Bookmark, Share2, SmilePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -55,9 +55,17 @@ interface Comment {
   replies?: Comment[];
 }
 
+interface SocialAccount {
+  handle: string;
+  displayName: string;
+  initials: string;
+  platform: Platform;
+}
+
 interface Post {
   id: string;
   platform: Platform;
+  account: SocialAccount;
   title: string;
   thumbnail: string;
   imageUrl?: string;
@@ -216,13 +224,45 @@ const PlatformIcon = ({ name, className }: { name: Platform; className?: string 
   }
 };
 
+const PLATFORM_ACCOUNTS: Record<Platform, SocialAccount> = {
+  Instagram: { handle: "@yourbrand", displayName: "yourbrand", initials: "YB", platform: "Instagram" },
+  Facebook:  { handle: "@YourBrandPage", displayName: "Your Brand", initials: "YB", platform: "Facebook" },
+  LinkedIn:  { handle: "@yourbrand-inc", displayName: "YourBrand Inc.", initials: "YB", platform: "LinkedIn" },
+  Twitter:   { handle: "@yourbrand_hq", displayName: "yourbrand", initials: "YB", platform: "Twitter" },
+  GBP:       { handle: "Your Brand – NYC", displayName: "Your Brand", initials: "YB", platform: "GBP" },
+};
+
+const platformAvatarBg: Record<Platform, string> = {
+  Instagram: "bg-gradient-to-br from-pink-500 to-orange-400",
+  Facebook:  "bg-[#1877F2]",
+  LinkedIn:  "bg-[#0A66C2]",
+  Twitter:   "bg-[#1DA1F2]",
+  GBP:       "bg-amber-500",
+};
+
+function AccountAvatar({ account, size = "md" }: { account: SocialAccount; size?: "sm" | "md" }) {
+  const sz = size === "sm" ? "w-7 h-7 text-[10px]" : "w-8 h-8 text-[11px]";
+  const badgeSz = size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5";
+  const iconSz = size === "sm" ? "w-1.5 h-1.5" : "w-2 h-2";
+  return (
+    <div className="relative flex-shrink-0 select-none">
+      <div className={cn("rounded-full flex items-center justify-center text-white font-bold", sz, platformAvatarBg[account.platform])}>
+        {account.initials}
+      </div>
+      <div className={cn("absolute -bottom-0.5 -right-0.5 rounded-full bg-card border border-border flex items-center justify-center", badgeSz)}>
+        <PlatformIcon name={account.platform} className={iconSz} />
+      </div>
+    </div>
+  );
+}
+
 /* ──────────────────────────────────────────────────────────────
    Mock data
    ────────────────────────────────────────────────────────────── */
 
 const POSTS: Post[] = [
   {
-    id: "P-201", platform: "Instagram",
+    id: "P-201", platform: "Instagram", account: PLATFORM_ACCOUNTS.Instagram,
     title: "🎉 Celebrating 5 years of building together!",
     thumbnail: "🎂", imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop", publishedAt: "2h ago",
     commentCount: 247, newCount: 32,
@@ -334,7 +374,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-200", platform: "GBP",
+    id: "P-200", platform: "GBP", account: PLATFORM_ACCOUNTS.GBP,
     title: "Downtown location — new hours announcement",
     thumbnail: "📍", publishedAt: "5h ago",
     commentCount: 128, newCount: 24,
@@ -398,7 +438,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-199", platform: "LinkedIn",
+    id: "P-199", platform: "LinkedIn", account: PLATFORM_ACCOUNTS.LinkedIn,
     title: "We're hiring: Senior Product Designer",
     thumbnail: "💼", publishedAt: "1d ago",
     commentCount: 312, newCount: 47,
@@ -454,7 +494,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-198", platform: "Facebook",
+    id: "P-198", platform: "Facebook", account: PLATFORM_ACCOUNTS.Facebook,
     title: "New product launch — Spring Collection ‘26",
     thumbnail: "🌸", imageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=400&fit=crop", publishedAt: "1d ago",
     commentCount: 96, newCount: 15,
@@ -518,7 +558,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-197", platform: "Twitter",
+    id: "P-197", platform: "Twitter", account: PLATFORM_ACCOUNTS.Twitter,
     title: "Hot take: design systems are products, not deliverables 🧵",
     thumbnail: "🧵", publishedAt: "1d ago",
     commentCount: 184, newCount: 38,
@@ -574,7 +614,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-196", platform: "Instagram",
+    id: "P-196", platform: "Instagram", account: PLATFORM_ACCOUNTS.Instagram,
     title: "Behind the scenes — our packaging redesign ✂️",
     thumbnail: "📦", imageUrl: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=400&fit=crop", publishedAt: "2d ago",
     commentCount: 421, newCount: 53,
@@ -622,7 +662,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-195", platform: "LinkedIn",
+    id: "P-195", platform: "LinkedIn", account: PLATFORM_ACCOUNTS.LinkedIn,
     title: "Q3 wrap: what worked, what didn't, what's next",
     thumbnail: "📊", publishedAt: "2d ago",
     commentCount: 256, newCount: 19,
@@ -662,7 +702,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-194", platform: "GBP",
+    id: "P-194", platform: "GBP", account: PLATFORM_ACCOUNTS.GBP,
     title: "Westside branch — now open Saturdays",
     thumbnail: "🏪", publishedAt: "3d ago",
     commentCount: 64, newCount: 9,
@@ -702,7 +742,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-193", platform: "Facebook",
+    id: "P-193", platform: "Facebook", account: PLATFORM_ACCOUNTS.Facebook,
     title: "Customer story: how Acme Co cut onboarding time by 60%",
     thumbnail: "📈", imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop", publishedAt: "3d ago",
     commentCount: 142, newCount: 11,
@@ -742,7 +782,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-192", platform: "Instagram",
+    id: "P-192", platform: "Instagram", account: PLATFORM_ACCOUNTS.Instagram,
     title: "Giveaway 🎁 — win a year of our Pro plan",
     thumbnail: "🎁", imageUrl: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&h=400&fit=crop", publishedAt: "4d ago",
     commentCount: 1284, newCount: 87,
@@ -2044,30 +2084,6 @@ function BoardView({
                   {draft?.open && (
                     <div className="border-t border-border bg-card rounded-b-xl overflow-hidden">
 
-                      {/* AI suggestion card */}
-                      {draft.isAi && draft.text && (
-                        <div className="mx-3 mt-3 p-3 rounded-2xl border border-primary/20 bg-primary/5">
-                          <div className="flex items-start gap-2 mb-2.5">
-                            <Sparkles className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-foreground leading-relaxed">{draft.text}</p>
-                          </div>
-                          <div className="flex gap-1.5 flex-wrap">
-                            <Button size="sm" variant="outline" className="h-7 text-xs rounded-full px-3"
-                              onClick={() => updateDraft(c.id, { text: draft.text })}>
-                              Use this draft
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full px-3"
-                              onClick={() => updateDraft(c.id, { text: `Thanks for reaching out, ${c.author.split(" ")[0]}! We hear you and our team is on it. Appreciate your patience.` })}>
-                              <RefreshCw className="w-3 h-3 mr-1" /> Regenerate
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full px-3"
-                              onClick={() => toast.info("Edit the draft in the box below")}>
-                              Edit before sending
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
                       {/* Replying to strip */}
                       <div className="flex items-center gap-1.5 px-4 pt-2.5">
                         <span className="text-[11px] text-muted-foreground">Replying to</span>
@@ -2079,8 +2095,8 @@ function BoardView({
 
                       {/* Input row */}
                       <div className="flex items-end gap-2.5 px-3 py-3">
-                        <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 mb-0.5 select-none">
-                          YB
+                        <div className="mb-0.5" title={`Replying as ${c.post.account.handle}`}>
+                          <AccountAvatar account={c.post.account} size="md" />
                         </div>
                         <div className="flex-1 relative">
                           <textarea
@@ -2088,20 +2104,27 @@ function BoardView({
                             onChange={(e) => updateDraft(c.id, { text: e.target.value })}
                             placeholder={`Reply to ${c.author.split(" ")[0]}…`}
                             rows={1}
-                            className="w-full resize-none rounded-[22px] border border-input bg-muted/50 px-4 py-2.5 pr-20 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 leading-relaxed overflow-hidden"
-                            style={{ minHeight: "42px", maxHeight: "120px" }}
+                            className={cn(
+                              "w-full resize-none rounded-[22px] border px-4 py-2.5 pr-20 text-sm outline-none leading-relaxed overflow-hidden transition-all",
+                              draft.isAi
+                                ? "border-primary/50 bg-primary/5 ring-2 ring-primary/15 focus:ring-primary/25 pt-7"
+                                : "border-input bg-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20",
+                            )}
+                            style={{ minHeight: draft.isAi ? "54px" : "42px", maxHeight: "120px" }}
                             onInput={(e) => {
                               const el = e.currentTarget;
-                              el.style.height = "42px";
+                              el.style.height = draft.isAi ? "54px" : "42px";
                               el.style.height = Math.min(el.scrollHeight, 120) + "px";
                             }}
                           />
+                          {draft.isAi && (
+                            <div className="absolute left-3.5 top-2 flex items-center gap-1 text-[10px] font-semibold text-primary pointer-events-none">
+                              <Sparkles className="w-3 h-3" /> AI draft
+                            </div>
+                          )}
                           <div className="absolute right-3 bottom-2.5 flex items-center gap-2.5">
-                            <button onClick={() => toast.info("Attach media coming soon")} className="text-muted-foreground hover:text-foreground transition-colors" title="Attach">
-                              <ImageIcon className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => toast.info("Open Settings → Saved replies")} className="text-muted-foreground hover:text-foreground transition-colors text-base leading-none" title="Saved replies">
-                              💬
+                            <button onClick={() => toast.info("Stickers coming soon")} className="text-muted-foreground hover:text-foreground transition-colors" title="Stickers">
+                              <SmilePlus className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -2118,14 +2141,18 @@ function BoardView({
                       <div className="flex items-center justify-between px-4 pb-3 text-[11px] text-muted-foreground">
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() => openDraft(c.id, !draft.isAi, draft.isAi ? "" : (c.aiDraft ?? ""))}
+                            onClick={() => openDraft(c.id, !draft.isAi, draft.isAi ? "" : (c.aiDraft ?? `Thanks ${c.author.split(" ")[0]}! Appreciate you reaching out — we'll get back to you shortly.`))}
                             className="inline-flex items-center gap-1 font-medium text-primary hover:text-primary/70 transition-colors">
                             <Sparkles className="w-3 h-3" />
                             {draft.isAi ? "Hide AI" : "AI reply"}
                           </button>
-                          <button onClick={() => saveDraft(c)} className="hover:text-foreground transition-colors">
-                            Save draft
-                          </button>
+                          {draft.isAi && (
+                            <button
+                              onClick={() => updateDraft(c.id, { text: `Thanks for reaching out, ${c.author.split(" ")[0]}! We hear you and our team is on it. Appreciate your patience.` })}
+                              className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+                              <RefreshCw className="w-3 h-3" /> Regenerate
+                            </button>
+                          )}
                         </div>
                         <span className="tabular-nums">{draft.text.length}/2200</span>
                       </div>
@@ -2912,6 +2939,9 @@ function ThreadDetailColumn({
   const [showAi, setShowAi] = useState(false);
   const [showSpam, setShowSpam] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [scheduleTime, setScheduleTime] = useState("10:00");
   const highlightRef = useRef<HTMLDivElement | null>(null);
 
   // When the queue swaps the highlighted comment, scroll it into view.
@@ -2997,11 +3027,9 @@ function ThreadDetailColumn({
           <div className="w-full max-w-[420px] rounded-xl border border-border overflow-hidden bg-card shadow-sm">
             {/* Header */}
             <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
-              <div className="w-9 h-9 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-bold flex-shrink-0 select-none">
-                YB
-              </div>
+              <AccountAvatar account={post.account} size="md" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground leading-none">yourbrand</p>
+                <p className="text-sm font-semibold text-foreground leading-none">{post.account.handle}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
                   {post.publishedAt} · <PlatformIcon name={post.platform} className="w-3 h-3" />
                 </p>
@@ -3118,6 +3146,7 @@ function ThreadDetailColumn({
                       toast.success(`Sentiment updated to ${s}`);
                     }}
                     updateComment={updateComment}
+                    onNestedReply={(nested) => { setReplyTarget(nested); setReply(""); setShowAi(false); }}
                   />
                 </div>
               );
@@ -3170,34 +3199,6 @@ function ThreadDetailColumn({
       {/* ── Sticky reply composer — Instagram style ── */}
       <div className="border-t border-border bg-card flex-shrink-0">
 
-        {/* AI suggestion card */}
-        {showAi && (
-          <div className="mx-3 mt-3 p-3 rounded-2xl border border-primary/20 bg-primary/5">
-            <div className="flex items-start gap-2 mb-2.5">
-              <Sparkles className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-foreground leading-relaxed">
-                {replyTarget?.aiDraft ?? `Thanks so much for engaging with this post! We really appreciate your support 💛`}
-              </p>
-            </div>
-            <div className="flex gap-1.5 flex-wrap">
-              <Button size="sm" variant="outline" className="h-7 text-xs rounded-full px-3"
-                onClick={() => setReply(replyTarget?.aiDraft ?? "Thanks so much for engaging with this post! We really appreciate your support 💛")}>
-                Use this draft
-              </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full px-3"
-                onClick={() => {
-                  const fallback = replyTarget?.aiDraft ?? `Thanks ${replyTarget?.author?.split(" ")[0] ?? "for reaching out"}! Our team is on it — appreciate your patience.`;
-                  setReply(fallback);
-                  toast.success("Regenerated AI draft");
-                }}>Regenerate</Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full px-3"
-                onClick={() => { setReply(replyTarget?.aiDraft ?? ""); toast.info("Edit the draft below before sending"); }}>
-                Edit before sending
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Replying-to context strip */}
         {replyTarget && (
           <div className="flex items-center gap-1.5 px-4 pt-2.5">
@@ -3211,9 +3212,9 @@ function ThreadDetailColumn({
 
         {/* Main input row */}
         <div className="flex items-end gap-2.5 px-3 py-3">
-          {/* Brand avatar */}
-          <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 mb-0.5 select-none">
-            YB
+          {/* Account avatar */}
+          <div className="mb-0.5" title={`Replying as ${post.account.handle}`}>
+            <AccountAvatar account={post.account} size="md" />
           </div>
 
           {/* Pill input */}
@@ -3223,21 +3224,28 @@ function ThreadDetailColumn({
               onChange={(e) => setReply(e.target.value)}
               placeholder={replyTarget ? `Reply to ${replyTarget.author.split(" ")[0]}…` : "Add a comment…"}
               rows={1}
-              className="w-full resize-none rounded-[22px] border border-input bg-muted/50 px-4 py-2.5 pr-20 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 leading-relaxed overflow-hidden"
-              style={{ minHeight: "42px", maxHeight: "120px" }}
+              className={cn(
+                "w-full resize-none rounded-[22px] border px-4 py-2.5 pr-20 text-sm outline-none leading-relaxed overflow-hidden transition-all",
+                showAi
+                  ? "border-primary/50 bg-primary/5 ring-2 ring-primary/15 focus:ring-primary/25 pt-7"
+                  : "border-input bg-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20",
+              )}
+              style={{ minHeight: showAi ? "54px" : "42px", maxHeight: "120px" }}
               onInput={(e) => {
                 const el = e.currentTarget;
-                el.style.height = "42px";
+                el.style.height = showAi ? "54px" : "42px";
                 el.style.height = Math.min(el.scrollHeight, 120) + "px";
               }}
             />
+            {showAi && (
+              <div className="absolute left-3.5 top-2 flex items-center gap-1 text-[10px] font-semibold text-primary pointer-events-none">
+                <Sparkles className="w-3 h-3" /> AI draft
+              </div>
+            )}
             {/* Inline icon actions */}
             <div className="absolute right-3 bottom-2.5 flex items-center gap-2.5">
-              <button onClick={() => toast.info("Attach media coming soon")} className="text-muted-foreground hover:text-foreground transition-colors" title="Attach">
-                <ImageIcon className="w-4 h-4" />
-              </button>
-              <button onClick={() => toast.info("Open Settings → Saved replies")} className="text-muted-foreground hover:text-foreground transition-colors text-base leading-none" title="Saved replies">
-                💬
+              <button onClick={() => toast.info("Stickers coming soon")} className="text-muted-foreground hover:text-foreground transition-colors" title="Stickers">
+                <SmilePlus className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -3255,18 +3263,34 @@ function ThreadDetailColumn({
         {/* Secondary toolbar */}
         <div className="flex items-center justify-between px-4 pb-3 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowAi((s) => !s)}
+            <button
+              onClick={() => {
+                if (showAi) {
+                  setShowAi(false);
+                  setReply("");
+                } else {
+                  const draft = replyTarget?.aiDraft ?? `Thanks so much for engaging with this post! We really appreciate your support 💛`;
+                  setReply(draft);
+                  setShowAi(true);
+                }
+              }}
               className="inline-flex items-center gap-1 font-medium text-primary hover:text-primary/70 transition-colors">
               <Sparkles className="w-3 h-3" />
               {showAi ? "Hide AI" : "AI reply"}
             </button>
+            {showAi && (
+              <button
+                onClick={() => {
+                  const regen = `Thanks ${replyTarget?.author?.split(" ")[0] ?? "for reaching out"}! Our team is on it — appreciate your patience.`;
+                  setReply(regen);
+                  toast.success("Regenerated AI draft");
+                }}
+                className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+                <RefreshCw className="w-3 h-3" /> Regenerate
+              </button>
+            )}
             <button
-              onClick={() => { if (!reply.trim()) { toast.error("Nothing to save"); return; } toast.success("Draft saved"); }}
-              className="hover:text-foreground transition-colors">
-              Save draft
-            </button>
-            <button
-              onClick={() => { if (!reply.trim()) { toast.error("Write a reply first"); return; } toast.success("Reply scheduled"); }}
+              onClick={() => { if (!reply.trim()) { toast.error("Write a reply first"); return; } setScheduleOpen(true); }}
               className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
               <Clock className="w-3 h-3" /> Schedule
             </button>
@@ -3274,6 +3298,64 @@ function ThreadDetailColumn({
           <span className="tabular-nums">{reply.length}/2200</span>
         </div>
       </div>
+
+      {/* Schedule reply dialog */}
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" /> Schedule Reply
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="px-3 py-2.5 bg-muted/50 rounded-lg border border-border text-sm text-foreground line-clamp-3 italic">
+              "{reply}"
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Date</label>
+                <input
+                  type="date"
+                  className="input-dark text-sm"
+                  value={scheduleDate}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Time</label>
+                <input
+                  type="time"
+                  className="input-dark text-sm"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Will send on <span className="font-semibold text-foreground">{new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
+              {replyTarget ? <> in reply to <span className="font-semibold text-foreground">@{replyTarget.author}</span></> : ""}
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="secondary" onClick={() => setScheduleOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                const dt = new Date(`${scheduleDate}T${scheduleTime}`);
+                toast.success(`Reply scheduled for ${dt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`);
+                setReply("");
+                setReplyTarget(null);
+                setShowAi(false);
+                setScheduleOpen(false);
+                setScheduleDate(new Date().toISOString().split("T")[0]);
+                setScheduleTime("10:00");
+              }}
+            >
+              <Clock className="w-3.5 h-3.5 mr-1.5" /> Schedule Reply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -3305,7 +3387,7 @@ function ThreadEmptyState({ filter, stats, onClear }: { filter: ThreadOrmFilter;
 }
 
 function CommentItem({
-  comment, isNew, expanded, onToggleReplies, onReply, onAiReply, onAssignTo, onChangeSentiment, updateComment,
+  comment, isNew, expanded, onToggleReplies, onReply, onAiReply, onAssignTo, onChangeSentiment, updateComment, onNestedReply,
 }: {
   comment: Comment;
   isNew: boolean;
@@ -3316,6 +3398,7 @@ function CommentItem({
   onAssignTo: (member: string) => void;
   onChangeSentiment?: (s: Sentiment) => void;
   updateComment?: (id: string, patch: Partial<Comment>) => void;
+  onNestedReply?: (c: Comment) => void;
 }) {
   const triggerTag = comment.trigger ? triggerToTag[comment.trigger] : null;
   const stageCls =
@@ -3388,6 +3471,26 @@ function CommentItem({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            {updateComment && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold capitalize transition-colors hover:opacity-80", priorityStyles[comment.priority])}>
+                    {comment.priority}
+                    <ChevronDown className="w-2.5 h-2.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-36">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Priority</DropdownMenuLabel>
+                  {(["low", "medium", "high"] as Priority[]).map((p) => (
+                    <DropdownMenuItem key={p} className="text-xs capitalize" onClick={() => { updateComment(comment.id, { priority: p }); toast.success(`Priority set to ${p}`); }}>
+                      <span className={cn("w-2 h-2 rounded-full mr-2 flex-shrink-0", p === "low" ? "bg-muted-foreground" : p === "medium" ? "bg-info" : "bg-warning")} />
+                      {p}
+                      {comment.priority === p && <Check className="w-3 h-3 ml-auto text-primary" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Replies (Instagram-style) */}
@@ -3401,7 +3504,7 @@ function CommentItem({
               ) : (
                 <div className="mt-2 pl-7 space-y-3">
                   {shownReplies.map((r) => (
-                    <NestedReply key={r.id} reply={r} depth={1} updateComment={updateComment} />
+                    <NestedReply key={r.id} reply={r} depth={1} updateComment={updateComment} onNestedReply={onNestedReply} />
                   ))}
                   {remainingReplies > 0 && (
                     <button
@@ -3442,7 +3545,7 @@ function CommentItem({
  *  All replies (regardless of depth) render at the same indent under the
  *  top-level comment. Replies to other replies show an "@username" mention
  *  prefix instead of indenting further. */
-function NestedReply({ reply, depth, mentionTo, updateComment }: { reply: Comment; depth: number; mentionTo?: string; updateComment?: (id: string, patch: Partial<Comment>) => void }) {
+function NestedReply({ reply, depth, mentionTo, updateComment, onNestedReply }: { reply: Comment; depth: number; mentionTo?: string; updateComment?: (id: string, patch: Partial<Comment>) => void; onNestedReply?: (c: Comment) => void }) {
   // Flatten all descendants into a single list, preserving order, and remember
   // each one's parent so we can render an "@parent" mention prefix.
   const flatten = (node: Comment, parentAuthor?: string): { node: Comment; parentAuthor?: string }[] => {
@@ -3496,7 +3599,7 @@ function NestedReply({ reply, depth, mentionTo, updateComment }: { reply: Commen
             <span className="inline-flex items-center gap-1">
               <ThumbsUp className="w-3 h-3" /> {reply.likes}
             </span>
-            <button onClick={() => toast.info(`Reply to @${reply.author.toLowerCase().replace(/\s+/g, "")} from the top-level composer`)} className="hover:text-foreground">Reply</button>
+            <button onClick={() => onNestedReply ? onNestedReply(reply) : undefined} className="hover:text-foreground">Reply</button>
           </div>
 
           {isTopLevel && hasChildren && (
@@ -3519,7 +3622,7 @@ function NestedReply({ reply, depth, mentionTo, updateComment }: { reply: Commen
       {isTopLevel && open && (
         <>
           {shown.map(({ node, parentAuthor }) => (
-            <NestedReply key={node.id} reply={node} depth={2} mentionTo={parentAuthor} updateComment={updateComment} />
+            <NestedReply key={node.id} reply={node} depth={2} mentionTo={parentAuthor} updateComment={updateComment} onNestedReply={onNestedReply} />
           ))}
           {remaining > 0 && (
             <button
