@@ -31,6 +31,7 @@ import AgencyClientBilling from "./pages/AgencyClientBilling";
 import StandaloneOrgRegistration from "./pages/StandaloneOrgRegistration";
 
 import ClientLayout from "./components/layout/ClientLayout";
+import AgencyLayout from "./components/layout/AgencyLayout";
 import ClientDashboardPage from "./pages/client/ClientDashboardPage";
 import ClientProjectsPage from "./pages/client/ClientProjectsPage";
 import ClientTeamPage from "./pages/client/ClientTeamPage";
@@ -98,6 +99,30 @@ const App = () => (
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
           <Route path="/agency/profile" element={<ProfileSettingsPage role="agency" />} />
+
+          {/* Agency-managed client routes — same pages as business, within agency sidebar */}
+          <Route element={<AgencyLayout defaultClientId="1" />}>
+            {/* Business level (client selected, no project) */}
+            <Route path="/agency/client/business/dashboard" element={<ClientDashboardPage />} />
+            <Route path="/agency/client/business/projects"  element={<ClientProjectsPage />} />
+            <Route path="/agency/client/business/team"      element={<ClientTeamPage />} />
+
+            {/* Project level (project selected) */}
+            <Route path="/agency/client/project/dashboard"  element={<DashboardPage />} />
+            <Route path="/agency/client/project/team"       element={<ClientTeamPage />} />
+            <Route path="/agency/client/connect"            element={<ConnectPage />} />
+            <Route path="/agency/client/create"             element={<CreatePage />} />
+            <Route path="/agency/client/create/ai"          element={<CreateAiPage />} />
+            <Route path="/agency/client/publish"            element={<PublishPage />} />
+            <Route path="/agency/client/engage"             element={<EngagePage view="board" />} />
+            <Route path="/agency/client/engage/posts"       element={<EngagePage view="threads" />} />
+            <Route path="/agency/client/engage/spam"        element={<EngagePage view="spam" />} />
+            <Route path="/agency/client/engage/auto-replies" element={<EngagePage view="variants" />} />
+            <Route path="/agency/client/analyze"            element={<AnalyzePage />} />
+            <Route path="/agency/client/promote"            element={<PromotePage />} />
+            <Route path="/agency/client/listen"             element={<ListenPage />} />
+            <Route path="/agency/client/settings"           element={<ClientSettingsPage />} />
+          </Route>
 
           {/* Business — two-level navigation */}
           <Route element={<ClientLayout />}>

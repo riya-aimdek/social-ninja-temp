@@ -1,20 +1,14 @@
 import { Users, FolderOpen, Clock, Link2, TrendingUp, TrendingDown, ArrowRight, MoreHorizontal, Plus } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import StatusBadge from "@/components/StatusBadge";
 import {
   teamMembers, activeProjects, connectedAccounts, activities, totalPosts,
 } from "@/data/businessMockData";
 
-const sparkTeam = [{ v: 1 }, { v: 2 }, { v: 2 }, { v: 3 }, { v: 4 }, { v: 5 }, { v: 6 }];
-const sparkProjects = [{ v: 0 }, { v: 1 }, { v: 1 }, { v: 2 }, { v: 2 }, { v: 3 }, { v: 3 }];
-const sparkPending = [{ v: 5 }, { v: 4 }, { v: 3 }, { v: 3 }, { v: 2 }, { v: 2 }, { v: 1 }];
-const sparkAccounts = [{ v: 1 }, { v: 1 }, { v: 2 }, { v: 2 }, { v: 2 }, { v: 3 }, { v: 3 }];
-
 const statCards = [
-  { label: "Team Members", value: teamMembers.length.toString(), change: "+2 this month", up: true, icon: Users, spark: sparkTeam, color: "hsl(358, 97%, 68%)" },
-  { label: "Active Projects", value: activeProjects.length.toString(), change: "+1 this week", up: true, icon: FolderOpen, spark: sparkProjects, color: "hsl(217, 91%, 60%)" },
-  { label: "Total Posts", value: totalPosts.toString(), change: `Across ${activeProjects.length} active projects`, up: true, icon: Clock, spark: sparkPending, color: "hsl(38, 92%, 50%)" },
-  { label: "Connected Accounts", value: connectedAccounts.length.toString(), change: `${connectedAccounts.length} of 7 platforms`, up: true, icon: Link2, spark: sparkAccounts, color: "hsl(142, 71%, 45%)" },
+  { label: "Team Members", value: teamMembers.length.toString(), change: "+2 this month", up: true, icon: Users },
+  { label: "Active Projects", value: activeProjects.length.toString(), change: "+1 this week", up: true, icon: FolderOpen },
+  { label: "Total Posts", value: totalPosts.toString(), change: `Across ${activeProjects.length} active projects`, up: true, icon: Clock },
+  { label: "Connected Accounts", value: connectedAccounts.length.toString(), change: `${connectedAccounts.length} of 7 platforms`, up: true, icon: Link2 },
 ];
 
 export default function ClientDashboardPage() {
@@ -33,7 +27,7 @@ export default function ClientDashboardPage() {
             <div key={card.label} className="bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 rounded-lg bg-muted">
-                  <card.icon className="w-4 h-4" style={{ color: card.color }} />
+                  <card.icon className="w-4 h-4 text-primary" />
                 </div>
                 <div className={`flex items-center gap-1 text-xs font-medium ${card.up ? "text-emerald-600" : "text-amber-600"}`}>
                   {card.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -42,19 +36,6 @@ export default function ClientDashboardPage() {
               </div>
               <p className="text-2xl font-bold text-foreground tabular-nums">{card.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
-              <div className="h-10 mt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={card.spark}>
-                    <defs>
-                      <linearGradient id={`biz-spark-${card.label}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={card.color} stopOpacity={0.3} />
-                        <stop offset="100%" stopColor={card.color} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area type="monotone" dataKey="v" stroke={card.color} strokeWidth={2} fill={`url(#biz-spark-${card.label})`} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
             </div>
           ))}
         </div>

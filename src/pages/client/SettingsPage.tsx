@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   User, CreditCard, Users, Bell, Hash, Shield, Save,
   Upload, Plus, Trash2, MessageSquare, Tag, Check, AlertCircle,
@@ -8,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { teamMembers, connectedAccounts, totalPosts, socialAccounts } from "@/data/businessMockData";
 import { WorkflowSettings } from "@/components/settings/WorkflowSettings";
+import { RolesPermissionsSettings } from "@/components/settings/RolesPermissionsSettings";
 import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
 
 /* ─── Nav ─────────────────────────────────────────────────────── */
@@ -19,6 +21,7 @@ const navItems = [
   { id: "approvals",     label: "Approvals",             icon: CheckCircle2 },
   { id: "queue",         label: "Queue Times",           icon: Clock },
   { id: "workflows",     label: "Workflows",             icon: GitBranch },
+  { id: "roles",         label: "Roles & Permissions",  icon: Shield },
 ];
 
 /* ─── Mock data ───────────────────────────────────────────────── */
@@ -117,6 +120,8 @@ const SettingRow = ({ title, sub, children }: { title: string; sub?: string; chi
 
 /* ─── Page ────────────────────────────────────────────────────── */
 export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: string }) {
+  const location = useLocation();
+  const isAgencyManaged = location.pathname.startsWith("/agency/");
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   // profile
@@ -714,7 +719,14 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
         {/* ── Workflows ───────────────────────────────────────── */}
         {activeTab === "workflows" && (
           <SectionCard className="p-0 overflow-hidden">
-            <WorkflowSettings scope="client" />
+            <WorkflowSettings scope="client" standalone={!isAgencyManaged} />
+          </SectionCard>
+        )}
+
+        {/* ── Roles & Permissions ──────────────────────────────── */}
+        {activeTab === "roles" && (
+          <SectionCard className="p-0 overflow-hidden">
+            <RolesPermissionsSettings scope="client" />
           </SectionCard>
         )}
 

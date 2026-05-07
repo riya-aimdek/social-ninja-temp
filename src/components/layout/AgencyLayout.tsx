@@ -1,219 +1,298 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useLocation, Link, useNavigate, Outlet } from "react-router-dom";
 import {
   LayoutDashboard, Globe, Users, ChevronDown, ChevronUp, ChevronRight,
-  Bell, Check, LogOut, FolderOpen, Sparkles, CalendarDays,
-  MessageSquare, BarChart3, Megaphone, Ear, Settings, Palette, Link2 as LinkIcon,
-  Receipt,
+  Bell, Check, LogOut, FolderOpen, Settings, Link2 as LinkIcon,
+  Receipt, Sparkles, CalendarDays, MessageSquare, BarChart3, Megaphone, Ear, Building2,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
-import agencyLogoSrc from "@/assets/logos/agency-logo.svg";
-import acmeCorpLogoSrc from "@/assets/logos/acme-corp-logo.svg";
-import client1LogoSrc from "@/assets/logos/client-1-logo.svg";
-import socialCampaignLogoSrc from "@/assets/logos/social-campaign-logo.svg";
-import websiteRedesignLogoSrc from "@/assets/logos/website-redesign-logo.svg";
-import brandLaunchLogoSrc from "@/assets/logos/brand-launch-logo.svg";
+import agencyLogoSrc           from "@/assets/logos/agency-logo.svg";
+import acmeCorpLogoSrc         from "@/assets/logos/acme-corp-logo.svg";
+import client1LogoSrc          from "@/assets/logos/client-1-logo.svg";
+import socialCampaignLogoSrc   from "@/assets/logos/social-campaign-logo.svg";
+import websiteRedesignLogoSrc  from "@/assets/logos/website-redesign-logo.svg";
+import brandLaunchLogoSrc      from "@/assets/logos/brand-launch-logo.svg";
 
-const agencyNavItems = [
-  { title: "Dashboard", path: "/agency/dashboard", icon: LayoutDashboard },
-  { title: "Clients", path: "/agency/clients", icon: Globe },
-  { title: "Users", path: "/agency/team", icon: Users },
-  { title: "Social Accounts", path: "/agency/social-accounts", icon: LinkIcon },
-  { title: "Client Billing", path: "/agency/client-billing", icon: Receipt },
-  { title: "Settings", path: "/agency/settings", icon: Settings },
+/* ── Static data ─────────────────────────────────────────────────── */
+const AGENCY = { id: "ag1", name: "Agency", logo: agencyLogoSrc };
+
+const CLIENTS = [
+  { id: "c1", name: "client-1",  logo: client1LogoSrc  },
+  { id: "c2", name: "Acme Corp", logo: acmeCorpLogoSrc },
 ];
 
-const clientNavItems = [
-  { title: "Dashboard", path: "/client/dashboard", icon: LayoutDashboard },
-  { title: "Projects", path: "/client/projects", icon: FolderOpen },
-  { title: "Team", path: "/client/team", icon: Users },
-];
-
-const projectNavItems = [
-  { title: "Dashboard", path: "/client/project/dashboard", icon: LayoutDashboard },
-  { title: "Team", path: "/client/project/team", icon: Users },
-  { title: "Social Profiles", path: "/client/connect", icon: Globe },
-  { title: "Create", path: "/client/create", icon: Sparkles },
-  { title: "Publish", path: "/client/publish", icon: CalendarDays },
-  { title: "Engage", path: "/client/engage", icon: MessageSquare },
-  { title: "Analyze", path: "/client/analyze", icon: BarChart3 },
-  { title: "Promote", path: "/client/promote", icon: Megaphone },
-  { title: "Listen", path: "/client/listen", icon: Ear },
-  { title: "Settings", path: "/client/settings", icon: Settings },
-];
-
-const mockAgencies = [
-  { id: "1", name: "Agency", icon: "🏢", logo: agencyLogoSrc },
-];
-
-const mockClients = [
-  { id: "1", name: "client-1", initials: "C", logo: client1LogoSrc },
-  { id: "2", name: "Acme Corp", initials: "A", logo: acmeCorpLogoSrc },
-];
-
-const mockProjectsByClient: Record<string, { id: string; name: string; logo: string }[]> = {
-  "1": [
-    { id: "p1", name: "Social Campaign", logo: socialCampaignLogoSrc },
+const PROJECTS: Record<string, { id: string; name: string; logo: string }[]> = {
+  c1: [
+    { id: "p1", name: "Social Campaign",  logo: socialCampaignLogoSrc  },
     { id: "p2", name: "Website Redesign", logo: websiteRedesignLogoSrc },
   ],
-  "2": [
+  c2: [
     { id: "p3", name: "Brand Launch", logo: brandLaunchLogoSrc },
   ],
 };
 
-interface AgencyLayoutProps {
-  children: ReactNode;
-  title?: string;
+type Client  = typeof CLIENTS[0];
+type Project = { id: string; name: string; logo: string };
+
+/* ── Nav item lists ──────────────────────────────────────────────── */
+const agencyNav = [
+  { title: "Dashboard",      path: "/agency/dashboard",       icon: LayoutDashboard },
+  { title: "Clients",        path: "/agency/clients",         icon: Globe           },
+  { title: "Users",          path: "/agency/team",            icon: Users           },
+  { title: "Social Accounts",path: "/agency/social-accounts", icon: LinkIcon        },
+  { title: "Client Billing", path: "/agency/client-billing",  icon: Receipt         },
+  { title: "Settings",       path: "/agency/settings",        icon: Settings        },
+];
+
+const clientNav = [
+  { title: "Dashboard", path: "/agency/client/business/dashboard", icon: LayoutDashboard },
+  { title: "Projects",  path: "/agency/client/business/projects",  icon: FolderOpen      },
+  { title: "Team",      path: "/agency/client/business/team",      icon: Users           },
+  { title: "Settings",  path: "/agency/client/settings",           icon: Settings        },
+];
+
+const projectNav = [
+  { title: "Dashboard",       path: "/agency/client/project/dashboard", icon: LayoutDashboard },
+  { title: "Team",            path: "/agency/client/project/team",      icon: Users           },
+  { title: "Social Profiles", path: "/agency/client/connect",           icon: Globe           },
+  { title: "Create",          path: "/agency/client/create",            icon: Sparkles        },
+  { title: "Publish",         path: "/agency/client/publish",           icon: CalendarDays    },
+  { title: "Engage",          path: "/agency/client/engage",            icon: MessageSquare   },
+  { title: "Analyze",         path: "/agency/client/analyze",           icon: BarChart3       },
+  { title: "Promote",         path: "/agency/client/promote",           icon: Megaphone       },
+  { title: "Listen",          path: "/agency/client/listen",            icon: Ear             },
+];
+
+/* ── Session helpers ─────────────────────────────────────────────── */
+const ss = {
+  getClient:  ()  => sessionStorage.getItem("ag_client"),
+  getProject: ()  => sessionStorage.getItem("ag_project"),
+  setClient:  (id: string) => { sessionStorage.setItem("ag_client", id); sessionStorage.removeItem("ag_project"); },
+  setProject: (id: string) => sessionStorage.setItem("ag_project", id),
+  clearAll:   ()  => { sessionStorage.removeItem("ag_client"); sessionStorage.removeItem("ag_project"); },
+};
+
+function initClient(): Client | null {
+  const id = ss.getClient();
+  return id ? CLIENTS.find(c => c.id === id) ?? null : null;
+}
+function initProject(clientId: string | null): Project | null {
+  if (!clientId) return null;
+  const id = ss.getProject();
+  return id ? (PROJECTS[clientId]?.find(p => p.id === id) ?? null) : null;
 }
 
-const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
+/* ── Component ───────────────────────────────────────────────────── */
+interface AgencyLayoutProps { children?: ReactNode; title?: string; defaultClientId?: string; }
+
+const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [selectedAgency] = useState(mockAgencies[0]);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<typeof mockClients[0] | null>(null);
-  const [selectedProject, setSelectedProject] = useState<{ id: string; name: string; logo: string } | null>(null);
+  const navigate  = useNavigate();
+
+  const [client,  setClient]  = useState<Client | null>(() => initClient() ?? (defaultClientId ? CLIENTS.find(c => c.id === defaultClientId) ?? null : null));
+  const [project, setProject] = useState<Project | null>(() => {
+    const cid = ss.getClient() ?? defaultClientId ?? null;
+    return initProject(cid);
+  });
+
+  const [switcherOpen,    setSwitcherOpen]    = useState(false);
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(
+    () => new Set(client ? [client.id] : []),
+  );
   const switcherRef = useRef<HTMLDivElement>(null);
 
+  // Close switcher on outside click
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+    const handler = (e: MouseEvent) => {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node))
         setSwitcherOpen(false);
-      }
     };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Determine context
-  const isClientContext = !!selectedClient;
-  const isProjectContext = !!selectedProject;
+  // Detect context from URL to fix back-navigation
+  const path = location.pathname;
+  const isClientRoute  = path.startsWith("/agency/client/");
+  const isProjectRoute = isClientRoute && !path.startsWith("/agency/client/business/") && !path.startsWith("/agency/client/settings");
 
-  const navItems = isProjectContext
-    ? projectNavItems
-    : isClientContext
-    ? clientNavItems
-    : agencyNavItems;
+  // If URL says we're NOT in a client route but we have a client selected, stay — user may have
+  // navigated to agency pages while a client was selected. Only force-clear if on pure agency routes.
+  const isAgencyOnlyRoute = !isClientRoute;
 
-  const handleSelectAgency = () => {
-    setSelectedClient(null);
-    setSelectedProject(null);
+  const isClientCtx  = isClientRoute ? !!client  : false;
+  const isProjectCtx = isProjectRoute ? !!project : false;
+
+  const navItems = isProjectCtx ? projectNav : isClientCtx ? clientNav : agencyNav;
+
+  /* ── Handlers ── */
+  function selectAgency() {
+    setClient(null);
+    setProject(null);
+    ss.clearAll();
     setSwitcherOpen(false);
     navigate("/agency/dashboard");
-  };
+  }
 
-  const handleSelectClient = (client: typeof mockClients[0]) => {
-    setSelectedClient(client);
-    setSelectedProject(null);
+  function selectClient(c: Client) {
+    setClient(c);
+    setProject(null);
+    ss.setClient(c.id);
+    setExpandedClients(prev => new Set([...prev, c.id]));
     setSwitcherOpen(false);
-    navigate("/client/dashboard");
-  };
+    navigate("/agency/client/business/dashboard");
+  }
 
-  const handleSelectProject = (project: { id: string; name: string }) => {
-    setSelectedProject(project);
+  function selectProject(c: Client, p: Project) {
+    setClient(c);
+    setProject(p);
+    ss.setClient(c.id);
+    ss.setProject(p.id);
     setSwitcherOpen(false);
-    navigate("/client/project/dashboard");
-  };
+    navigate("/agency/client/project/dashboard");
+  }
 
-  const handleBackToClient = () => {
-    setSelectedProject(null);
-    navigate("/client/dashboard");
-  };
+  function backToClient() {
+    setProject(null);
+    sessionStorage.removeItem("ag_project");
+    navigate("/agency/client/business/dashboard");
+  }
 
-  // Breadcrumb
-  const currentNav = navItems.find(n => location.pathname === n.path || location.pathname.startsWith(n.path + "/"));
-  const breadcrumbLabel = title || currentNav?.title || "Dashboard";
+  function toggleExpand(clientId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setExpandedClients(prev => {
+      const n = new Set(prev);
+      n.has(clientId) ? n.delete(clientId) : n.add(clientId);
+      return n;
+    });
+  }
 
-  // Switcher display
-  const switcherLabel = isProjectContext
-    ? selectedProject!.name
-    : isClientContext
-    ? selectedClient!.name
-    : selectedAgency.name;
+  /* ── Labels & assets ── */
+  const switcherLabel = isProjectCtx ? project!.name : isClientCtx ? client!.name : AGENCY.name;
+  const switcherLogo  = isProjectCtx ? project!.logo : isClientCtx ? client!.logo  : AGENCY.logo;
+  const contextLabel  = isProjectCtx ? "Project" : isClientCtx ? "Client" : "Agency";
 
-  const switcherIcon = isProjectContext
-    ? <FolderOpen className="w-3.5 h-3.5 text-primary" />
-    : isClientContext
-    ? <Globe className="w-3.5 h-3.5 text-primary" />
-    : <span className="text-sm">🏢</span>;
+  const currentNav     = navItems.find(n => path === n.path || path.startsWith(n.path + "/"));
+  const breadcrumbPage = title || currentNav?.title || "Dashboard";
 
-  const clientProjects = selectedClient ? (mockProjectsByClient[selectedClient.id] || []) : [];
-
+  /* ── Render ── */
   return (
     <div className="flex min-h-screen w-full">
-      {/* Sidebar */}
-      <aside className="w-[200px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
+
+      {/* ── Sidebar ── */}
+      <aside className="w-[210px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
+
+        {/* Logo */}
         <div className="p-4 border-b border-sidebar-border/50">
           <SocialNinjaLogo size="sm" darkBg />
         </div>
 
-        {/* Switcher */}
+        {/* Context switcher */}
         <div className="px-3 pt-3 relative" ref={switcherRef}>
           <button
-            onClick={() => setSwitcherOpen(!switcherOpen)}
+            onClick={() => setSwitcherOpen(v => !v)}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors"
           >
-            <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-              {switcherIcon}
+            <img src={switcherLogo} alt={switcherLabel} className="w-7 h-7 rounded-lg object-cover shrink-0" />
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest leading-none mb-0.5">{contextLabel}</p>
+              <p className="text-[13px] font-semibold text-white truncate leading-tight">{switcherLabel}</p>
             </div>
-            <span className="text-[13px] font-semibold text-white truncate flex-1 text-left">{switcherLabel}</span>
-            {switcherOpen ? <ChevronUp className="h-3.5 w-3.5 text-sidebar-foreground shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground shrink-0" />}
+            {switcherOpen
+              ? <ChevronUp className="h-3.5 w-3.5 text-sidebar-foreground shrink-0" />
+              : <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground shrink-0" />
+            }
           </button>
 
+          {/* Dropdown */}
           {switcherOpen && (
-            <div className="absolute left-3 right-3 top-full mt-1 w-[220px] bg-sidebar-accent border border-sidebar-border rounded-xl shadow-lg z-50 py-1 max-h-[400px] overflow-y-auto">
-              {/* Agency option */}
+            <div className="absolute left-3 right-0 top-full mt-1 w-[220px] bg-sidebar-accent border border-sidebar-border rounded-xl shadow-xl z-50 py-1.5 max-h-[420px] overflow-y-auto">
+
+              {/* Agency */}
               <button
-                onClick={handleSelectAgency}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-sidebar-border/50 transition-colors"
+                onClick={selectAgency}
+                className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors"
               >
-                <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center text-xs">🏢</div>
-                <span className="text-white text-[13px] flex-1 text-left">{selectedAgency.name}</span>
-                {!isClientContext && <Check className="h-4 w-4 text-primary" />}
+                <img src={AGENCY.logo} alt="Agency" className="w-6 h-6 rounded-lg object-cover shrink-0" />
+                <span className="text-white text-[13px] flex-1 text-left font-medium">{AGENCY.name}</span>
+                {!isClientCtx && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
               </button>
 
-              <div className="border-t border-sidebar-border/50 my-1" />
+              <div className="h-px bg-sidebar-border/50 mx-2 my-1" />
 
-              {/* Clients */}
-              {mockClients.map(client => (
-                <div key={client.id}>
-                  <button
-                    onClick={() => handleSelectClient(client)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-sidebar-border/50 transition-colors ${
-                      selectedClient?.id === client.id && !selectedProject ? 'text-primary' : ''
-                    }`}
-                  >
-                    <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center">
-                      <Globe className="w-3 h-3 text-primary" />
+              {/* Clients + Projects */}
+              {CLIENTS.map(c => {
+                const projects   = PROJECTS[c.id] || [];
+                const isExpanded = expandedClients.has(c.id);
+                const isSelected = client?.id === c.id;
+
+                return (
+                  <div key={c.id}>
+                    {/* Client row */}
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => selectClient(c)}
+                        className="flex-1 flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors min-w-0"
+                      >
+                        <img src={c.logo} alt={c.name} className="w-6 h-6 rounded-lg object-cover shrink-0" />
+                        <span className={cn("text-[13px] flex-1 text-left truncate font-medium", isSelected ? "text-primary" : "text-white")}>
+                          {c.name}
+                        </span>
+                        {isSelected && !isProjectCtx && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                      </button>
+                      {projects.length > 0 && (
+                        <button
+                          onClick={(e) => toggleExpand(c.id, e)}
+                          className="px-2.5 py-2 hover:bg-white/5 transition-colors text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                        >
+                          {isExpanded
+                            ? <ChevronUp className="w-3.5 h-3.5" />
+                            : <ChevronDown className="w-3.5 h-3.5" />
+                          }
+                        </button>
+                      )}
                     </div>
-                    <span className="text-white text-[13px] flex-1 text-left">{client.name}</span>
-                    {selectedClient?.id === client.id && !selectedProject && <Check className="h-4 w-4 text-primary" />}
-                  </button>
-                  {/* Projects under this client */}
-                  {selectedClient?.id === client.id && (mockProjectsByClient[client.id] || []).map(project => (
-                    <button
-                      key={project.id}
-                      onClick={() => handleSelectProject(project)}
-                      className={`w-full flex items-center gap-2.5 pl-8 pr-3 py-1.5 text-sm hover:bg-sidebar-border/50 transition-colors ${
-                        selectedProject?.id === project.id ? 'text-primary' : ''
-                      }`}
-                    >
-                      <FolderOpen className="w-3.5 h-3.5 text-sidebar-foreground shrink-0" />
-                      <span className="text-white text-[13px] flex-1 text-left truncate">{project.name}</span>
-                      {selectedProject?.id === project.id && <Check className="h-3.5 w-3.5 text-primary" />}
-                    </button>
-                  ))}
-                </div>
-              ))}
+
+                    {/* Projects */}
+                    {isExpanded && projects.map(p => {
+                      const isProjSelected = project?.id === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => selectProject(c, p)}
+                          className="w-full flex items-center gap-2 pl-10 pr-3 py-1.5 hover:bg-white/5 transition-colors"
+                        >
+                          <FolderOpen className={cn("w-3.5 h-3.5 shrink-0", isProjSelected ? "text-primary" : "text-sidebar-foreground/50")} />
+                          <span className={cn("text-[12px] flex-1 text-left truncate", isProjSelected ? "text-primary font-semibold" : "text-white/70")}>
+                            {p.name}
+                          </span>
+                          {isProjSelected && <Check className="h-3 w-3 text-primary shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        <nav className="flex-1 px-3 py-3 space-y-1">
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+            const active = path === item.path || path.startsWith(item.path + "/");
             return (
-              <Link key={item.path} to={item.path} className={`nav-item ${isActive ? 'nav-item-active' : ''}`}>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-white",
+                )}
+              >
                 <item.icon className="h-4 w-4 shrink-0" />
                 <span>{item.title}</span>
               </Link>
@@ -221,74 +300,71 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
           })}
         </nav>
 
-        {/* User profile at bottom */}
+        {/* User profile */}
         <div className="px-3 py-3 border-t border-sidebar-border/50">
           <button
             onClick={() => navigate("/agency/profile")}
-            className="w-full flex items-center gap-3 p-1.5 rounded-lg hover:bg-sidebar-accent/60 transition-colors text-left"
-            title="View profile & settings"
+            className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent/60 transition-colors text-left"
           >
             <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">A</div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{selectedAgency.name.toLowerCase()}</p>
-              <p className="text-[11px] text-sidebar-foreground">Agency</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white truncate">agency</p>
+              <p className="text-[11px] text-sidebar-foreground/60">Agency Admin</p>
             </div>
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* ── Main ── */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="py-5 shrink-0 border-b border-border bg-card flex items-center px-6 gap-5">
-          {/* Context identifier */}
-          <div className="flex items-center gap-3 shrink-0 min-w-0 max-w-[200px]">
-            <img
-              src={
-                isProjectContext
-                  ? selectedProject!.logo
-                  : isClientContext
-                  ? selectedClient!.logo
-                  : selectedAgency.logo
-              }
-              alt={switcherLabel}
-              className="w-10 h-10 rounded-xl object-cover shrink-0"
-            />
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">
-                {isProjectContext ? 'Project' : isClientContext ? 'Client' : 'Agency'}
-              </p>
-              <p className="text-sm font-semibold text-foreground truncate">{switcherLabel}</p>
+
+        {/* Header */}
+        <header className="h-16 shrink-0 border-b border-border bg-card flex items-center px-6 gap-4">
+
+          {/* Context logo + label */}
+          <div className="flex items-center gap-3 shrink-0">
+            <img src={switcherLogo} alt={switcherLabel} className="w-9 h-9 rounded-xl object-cover shadow-sm" />
+            <div className="hidden md:block">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest leading-none">{contextLabel}</p>
+              <p className="text-sm font-semibold text-foreground leading-tight mt-0.5">{switcherLabel}</p>
             </div>
           </div>
+
           <div className="w-px self-stretch bg-border shrink-0" />
-          {/* Page title + breadcrumbs */}
-          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-            <h1 className="text-xl font-bold text-foreground truncate">{breadcrumbLabel}</h1>
-            <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
-              {isClientContext ? (
+
+          {/* Breadcrumb */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+              {isClientCtx ? (
                 <>
-                  <span className="text-xs text-muted-foreground shrink-0">Client</span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
-                  {isProjectContext ? (
+                  <button onClick={selectAgency} className="hover:text-foreground transition-colors">Agency</button>
+                  <ChevronRight className="w-3 h-3 shrink-0" />
+                  {isProjectCtx ? (
                     <>
-                      <button onClick={handleBackToClient} className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">{selectedClient!.name}</button>
-                      <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <span className="text-xs text-muted-foreground truncate">{selectedProject!.name}</span>
-                      <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                      <button onClick={backToClient} className="hover:text-foreground transition-colors truncate max-w-[120px]">{client!.name}</button>
+                      <ChevronRight className="w-3 h-3 shrink-0" />
+                      <span className="text-muted-foreground truncate max-w-[120px]">{project!.name}</span>
+                      <ChevronRight className="w-3 h-3 shrink-0" />
                     </>
-                  ) : null}
-                  <span className="text-xs text-foreground font-medium truncate">{breadcrumbLabel}</span>
+                  ) : (
+                    <>
+                      <span className="text-muted-foreground truncate max-w-[120px]">{client!.name}</span>
+                      <ChevronRight className="w-3 h-3 shrink-0" />
+                    </>
+                  )}
+                  <span className="font-semibold text-foreground">{breadcrumbPage}</span>
                 </>
               ) : (
                 <>
-                  <span className="text-xs text-muted-foreground shrink-0">Agency</span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
-                  <span className="text-xs text-foreground font-medium truncate">{breadcrumbLabel}</span>
+                  <span>Agency</span>
+                  <ChevronRight className="w-3 h-3 shrink-0" />
+                  <span className="font-semibold text-foreground">{breadcrumbPage}</span>
                 </>
               )}
             </div>
           </div>
-          {/* Right: user + notifications */}
+
+          {/* Right: notifications + user */}
           <div className="flex items-center gap-2 shrink-0">
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
               <Bell className="h-5 w-5 text-muted-foreground" />
@@ -297,17 +373,18 @@ const AgencyLayout = ({ children, title }: AgencyLayoutProps) => {
             <div className="flex items-center gap-2 pl-3 border-l border-border">
               <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">A</div>
               <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium text-foreground">{selectedAgency.name}</p>
-                <p className="text-[11px] text-muted-foreground">Agency</p>
+                <p className="text-sm font-medium text-foreground">Agency</p>
+                <p className="text-[11px] text-muted-foreground">Agency Admin</p>
               </div>
-              <button onClick={() => navigate("/login")} className="p-1.5 hover:bg-muted rounded-lg transition-colors ml-1">
+              <button onClick={() => navigate("/login")} className="p-1.5 hover:bg-muted rounded-lg transition-colors ml-1" title="Sign out">
                 <LogOut className="h-4 w-4 text-muted-foreground" />
               </button>
             </div>
           </div>
         </header>
+
         <main className="flex-1 p-6 overflow-auto bg-muted/30">
-          {children}
+          {children ?? <Outlet />}
         </main>
       </div>
     </div>

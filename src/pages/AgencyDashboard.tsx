@@ -3,26 +3,11 @@ import AgencyLayout from "@/components/layout/AgencyLayout";
 import { Building2, Users, Globe, Clock, TrendingUp, TrendingDown, ArrowRight, MoreHorizontal } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import ClientLogo from "@/components/ClientLogo";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
-
-const sparkClients = [
-  { v: 2 }, { v: 3 }, { v: 4 }, { v: 4 }, { v: 5 }, { v: 7 }, { v: 8 },
-];
-const sparkUsers = [
-  { v: 5 }, { v: 8 }, { v: 7 }, { v: 10 }, { v: 12 }, { v: 11 }, { v: 14 },
-];
-const sparkCampaigns = [
-  { v: 0 }, { v: 1 }, { v: 2 }, { v: 1 }, { v: 3 }, { v: 4 }, { v: 5 },
-];
-const sparkPending = [
-  { v: 3 }, { v: 2 }, { v: 4 }, { v: 1 }, { v: 2 }, { v: 1 }, { v: 0 },
-];
-
 const statCards = [
-  { label: "Total Clients", value: "8", change: "+2 this month", up: true, icon: Building2, spark: sparkClients, color: "hsl(358, 97%, 68%)" },
-  { label: "Total Users", value: "24", change: "+5 this month", up: true, icon: Users, spark: sparkUsers, color: "hsl(217, 91%, 60%)" },
-  { label: "Active Campaigns", value: "12", change: "+3 this week", up: true, icon: Globe, spark: sparkCampaigns, color: "hsl(142, 71%, 45%)" },
-  { label: "Pending Approvals", value: "3", change: "-2 from yesterday", up: false, icon: Clock, spark: sparkPending, color: "hsl(38, 92%, 50%)" },
+  { label: "Total Clients", value: "8", change: "+2 this month", up: true, icon: Building2 },
+  { label: "Total Users", value: "24", change: "+5 this month", up: true, icon: Users },
+  { label: "Active Campaigns", value: "12", change: "+3 this week", up: true, icon: Globe },
+  { label: "Pending Approvals", value: "3", change: "-2 from yesterday", up: false, icon: Clock },
 ];
 
 const recentClients = [
@@ -62,7 +47,7 @@ const AgencyDashboard = () => {
           <div key={card.label} className="bg-card border border-border rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-2 rounded-lg bg-muted">
-                <card.icon className="h-4 w-4" style={{ color: card.color }} />
+                <card.icon className="h-4 w-4 text-primary" />
               </div>
               <div className={`flex items-center gap-1 text-xs font-medium ${card.up ? "text-emerald-600" : "text-amber-600"}`}>
                 {card.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -71,19 +56,6 @@ const AgencyDashboard = () => {
             </div>
             <p className="text-2xl font-bold text-foreground tabular-nums">{card.value}</p>
             <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
-            <div className="h-10 mt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={card.spark}>
-                  <defs>
-                    <linearGradient id={`ag-spark-${card.label}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={card.color} stopOpacity={0.3} />
-                      <stop offset="100%" stopColor={card.color} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke={card.color} strokeWidth={2} fill={`url(#ag-spark-${card.label})`} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
           </div>
         ))}
       </div>

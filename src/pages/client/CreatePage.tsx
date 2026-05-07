@@ -5,7 +5,7 @@ import {
   AlertCircle, RefreshCw, Check, X, Upload, Loader2, Save, Hash,
   Calendar as CalendarIcon, Clock, Eye, ChevronDown, ChevronRight, Plus,
   MoreHorizontal, Heart, MessageCircle, Repeat2, Send, Settings2, Trash2,
-  CheckCircle2, Globe2,
+  CheckCircle2, Globe2, GalleryVertical,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -45,7 +45,6 @@ const HASHTAG_GROUPS: Record<string, string[]> = {
 };
 
 /* ---------------- Types ---------------- */
-type PlatformMedia = Partial<Record<PlatformKey, string>>; // platform → image url
 type CaptionVariant = { caption: string; useShared: boolean };
 type PlatformOverrides = Partial<Record<PlatformKey, CaptionVariant>>;
 
@@ -61,10 +60,11 @@ export default function CreatePage() {
   const [customizePerNetwork, setCustomizePerNetwork] = useState(false);
   const [activeOverrideTab, setActiveOverrideTab] = useState<PlatformKey | null>(null);
 
-  /* ---- media (per-platform variants) ---- */
-  const [sharedMedia, setSharedMedia] = useState<string | null>(null);
-  const [platformMedia, setPlatformMedia] = useState<PlatformMedia>({});
+  /* ---- media (carousel + per-platform variants) ---- */
+  const [sharedMediaList, setSharedMediaList] = useState<string[]>([]);
+  const [platformMediaList, setPlatformMediaList] = useState<Partial<Record<PlatformKey, string[]>>>({});
   const [mediaVariantsOpen, setMediaVariantsOpen] = useState(false);
+  const [dialogCarouselIdx, setDialogCarouselIdx] = useState<Partial<Record<PlatformKey, number>>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadTarget, setUploadTarget] = useState<PlatformKey | "shared">("shared");
   const sharedTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -101,6 +101,9 @@ export default function CreatePage() {
   ];
   const nextSlot = queueSlots[0];
 
+  /* ---- story ---- */
+  const [publishAsStory, setPublishAsStory] = useState(false);
+
   /* ---- preview ---- */
   const [previewMode, setPreviewMode] = useState<"tabs" | "grid">("tabs");
   const [activePreview, setActivePreview] = useState<PlatformKey>("instagram");
@@ -115,11 +118,15 @@ export default function CreatePage() {
     [selectedAccounts]
   );
 
+  const storyEligible = selectedPlatforms.some((p) => p === "instagram" || p === "facebook");
+  const hasMedia = sharedMediaList.length > 0 || Object.values(platformMediaList).some((arr) => arr && arr.length > 0);
+
   const getCaptionFor = (p: PlatformKey) => {
     if (customizePerNetwork && overrides[p] && !overrides[p]!.useShared) return overrides[p]!.caption;
     return sharedCaption;
   };
-  const getMediaFor = (p: PlatformKey) => platformMedia[p] ?? sharedMedia ?? null;
+  const getMediaListFor = (p: PlatformKey): string[] => platformMediaList[p] ?? sharedMediaList;
+  const getMediaFor = (p: PlatformKey): string | null => getMediaListFor(p)[0] ?? null;
 
   /* ---- account toggle ---- */
   const toggleAccount = (id: string) =>
@@ -141,9 +148,15 @@ export default function CreatePage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const url = e.target?.result as string;
-      if (uploadTarget === "shared") setSharedMedia(url);
-      else setPlatformMedia((prev) => ({ ...prev, [uploadTarget]: url }));
-      toast.success(uploadTarget === "shared" ? "Media added" : `${PLATFORMS[uploadTarget as PlatformKey].name} variant added`);
+      if (uploadTarget === "shared") {
+        setSharedMediaList((prev) => [...prev, url]);
+      } else {
+        setPlatformMediaList((prev) => ({
+          ...prev,
+          [uploadTarget]: [...(prev[uploadTarget as PlatformKey] ?? []), url],
+        }));
+      }
+      toast.success(uploadTarget === "shared" ? "Image added to carousel" : `${PLATFORMS[uploadTarget as PlatformKey].name} variant added`);
     };
     reader.readAsDataURL(file);
   };
@@ -151,9 +164,21 @@ export default function CreatePage() {
     setUploadTarget(target);
     fileInputRef.current?.click();
   };
-  const removeMedia = (target: PlatformKey | "shared") => {
-    if (target === "shared") setSharedMedia(null);
-    else setPlatformMedia((prev) => { const n = { ...prev }; delete n[target]; return n; });
+  const removeMediaItem = (target: PlatformKey | "shared", index: number) => {
+    if (target === "shared") {
+      setSharedMediaList((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setPlatformMediaList((prev) => {
+        const list = (prev[target as PlatformKey] ?? []).filter((_, i) => i !== index);
+        const n = { ...prev };
+        if (list.length === 0) delete n[target as PlatformKey];
+        else n[target as PlatformKey] = list;
+        return n;
+      });
+    }
+  };
+  const clearPlatformVariant = (p: PlatformKey) => {
+    setPlatformMediaList((prev) => { const n = { ...prev }; delete n[p]; return n; });
   };
 
   /* ---- AI generate ---- */
@@ -235,6 +260,9 @@ export default function CreatePage() {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-primary" /> Media
+                {sharedMediaList.length > 0 && (
+                  <span className="text-[11px] font-normal text-muted-foreground">{sharedMediaList.length} image{sharedMediaList.length > 1 ? "s" : ""}</span>
+                )}
               </h3>
               {selectedPlatforms.length > 1 && (
                 <button
@@ -246,47 +274,37 @@ export default function CreatePage() {
               )}
             </div>
 
-            {sharedMedia ? (
-              <div className="relative group">
-                <img src={sharedMedia} alt="Shared media" className="w-full rounded-lg border border-border aspect-video object-cover" />
+            {/* Thumbnail strip */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {sharedMediaList.map((url, i) => (
+                <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removeMediaItem("shared", i)}
+                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ))}
+              {sharedMediaList.length === 0 ? (
                 <button
-                  onClick={() => removeMedia("shared")}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-card/90 hover:bg-card border border-border opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => triggerUpload("shared")}
+                  className="w-full border-2 border-dashed border-border rounded-lg p-6 hover:border-primary hover:bg-accent/40 transition-all flex flex-col items-center gap-2 text-muted-foreground"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Upload className="w-6 h-6" />
+                  <span className="text-xs font-medium">Upload media</span>
+                  <span className="text-[10px]">JPG, PNG, WEBP — up to 10 images</span>
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => triggerUpload("shared")}
-                className="w-full border-2 border-dashed border-border rounded-lg p-6 hover:border-primary hover:bg-accent/40 transition-all flex flex-col items-center gap-2 text-muted-foreground"
-              >
-                <Upload className="w-6 h-6" />
-                <span className="text-xs font-medium">Upload shared media</span>
-                <span className="text-[10px]">JPG, PNG, WEBP — max 10MB</span>
-              </button>
-            )}
-
-            {selectedPlatforms.length > 0 && Object.keys(platformMedia).length > 0 && (
-              <div className="space-y-1.5 pt-1">
-                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground">Platform variants</p>
-                {selectedPlatforms.filter((p) => platformMedia[p]).map((p) => {
-                  const meta = PLATFORMS[p]; const Icon = meta.icon;
-                  return (
-                    <div key={p} className="flex items-center gap-2 p-1.5 pl-2 rounded-md bg-accent/50 text-xs">
-                      <span className={cn("w-5 h-5 rounded flex items-center justify-center text-white", meta.color)}>
-                        <Icon className="w-3 h-3" />
-                      </span>
-                      <span className="flex-1 font-medium truncate">{meta.name}</span>
-                      <span className="text-muted-foreground text-[10px]">{meta.recSize}</span>
-                      <button onClick={() => removeMedia(p)} className="p-0.5 hover:text-destructive">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+              ) : sharedMediaList.length < 10 && (
+                <button
+                  onClick={() => triggerUpload("shared")}
+                  className="w-16 h-16 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-accent/40 transition-all flex items-center justify-center text-muted-foreground shrink-0"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="bg-card rounded-xl shadow-card overflow-hidden">
@@ -449,6 +467,36 @@ export default function CreatePage() {
             )}
           </div>
 
+          {/* Also publish as Story */}
+          {storyEligible && (
+            <div className="bg-card rounded-xl shadow-card p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-pink-50 dark:bg-pink-950/40 shrink-0">
+                  <GalleryVertical className="w-4 h-4 text-pink-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Also publish as Story</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    Posts the first image as a Story for selected Instagram and Facebook accounts.
+                  </p>
+                  {!hasMedia && (
+                    <p className="text-xs font-medium text-amber-600 mt-1.5">Add an image to enable story publishing.</p>
+                  )}
+                </div>
+                <label className={cn("relative inline-flex items-center shrink-0 mt-0.5", !hasMedia && "cursor-not-allowed opacity-50")}>
+                  <input
+                    type="checkbox"
+                    checked={publishAsStory}
+                    disabled={!hasMedia}
+                    onChange={(e) => setPublishAsStory(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <span className="w-11 h-6 rounded-full border-2 border-transparent bg-accent peer-checked:bg-primary transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary/30 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:w-5 after:h-5 after:rounded-full after:shadow-sm after:transition-transform peer-checked:after:translate-x-5" />
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Action bar */}
           <div className="flex items-center justify-between gap-2">
             <button className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors">
@@ -510,7 +558,7 @@ export default function CreatePage() {
                   <PlatformPreview
                     platform={activePreview}
                     caption={getCaptionFor(activePreview)}
-                    media={getMediaFor(activePreview)}
+                    mediaList={getMediaListFor(activePreview)}
                     handle={selectedAccounts.find((a) => a.platform === activePreview)?.handle ?? ""}
                   />
                 </div>
@@ -528,7 +576,7 @@ export default function CreatePage() {
                       <PlatformPreview
                         platform={p}
                         caption={getCaptionFor(p)}
-                        media={getMediaFor(p)}
+                        mediaList={getMediaListFor(p)}
                         handle={selectedAccounts.find((a) => a.platform === p)?.handle ?? ""}
                       />
                     </div>
@@ -577,13 +625,26 @@ export default function CreatePage() {
             <DialogTitle className="flex items-center gap-2">
               <ImageIcon className="w-5 h-5 text-primary" /> Platform-specific media
             </DialogTitle>
-            <p className="text-xs text-muted-foreground">Each platform has different optimal dimensions. Upload tailored variants or fall back to the shared image.</p>
           </DialogHeader>
+
+          {/* Info banner */}
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300">
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span>If you don't upload an image here, the common image you selected will be used for all platforms.</span>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
             {selectedPlatforms.map((p) => {
               const meta = PLATFORMS[p]; const Icon = meta.icon;
-              const url = platformMedia[p] ?? sharedMedia;
-              const isVariant = !!platformMedia[p];
+              const variantList = platformMediaList[p];
+              const displayList = variantList ?? sharedMediaList;
+              const isVariant = !!variantList && variantList.length > 0;
+              const idx = dialogCarouselIdx[p] ?? 0;
+              const safeIdx = Math.min(idx, displayList.length - 1);
+              const currentUrl = displayList[safeIdx] ?? null;
+              const canPrev = safeIdx > 0;
+              const canNext = safeIdx < displayList.length - 1;
+
               return (
                 <div key={p} className="rounded-lg border border-border p-3 space-y-2">
                   <div className="flex items-center justify-between">
@@ -598,18 +659,56 @@ export default function CreatePage() {
                     </div>
                     {isVariant && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">Custom</span>}
                   </div>
-                  <div className="rounded-md border border-dashed border-border bg-muted/30 overflow-hidden flex items-center justify-center" style={{ aspectRatio: meta.aspect }}>
-                    {url ? <img src={url} alt={meta.name} className="w-full h-full object-cover" /> : <span className="text-[11px] text-muted-foreground">No image</span>}
+
+                  {displayList.length > 0 && (
+                    <p className="text-[10px] text-muted-foreground">{displayList.length} shared item{displayList.length > 1 ? "s" : ""}</p>
+                  )}
+
+                  {/* Carousel preview */}
+                  <div className="relative rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center" style={{ aspectRatio: meta.aspect }}>
+                    {currentUrl
+                      ? <img src={currentUrl} alt={meta.name} className="w-full h-full object-cover" />
+                      : <span className="text-[11px] text-muted-foreground">No image</span>
+                    }
+                    {displayList.length > 1 && (
+                      <>
+                        <button
+                          onClick={() => setDialogCarouselIdx((prev) => ({ ...prev, [p]: Math.max(0, safeIdx - 1) }))}
+                          disabled={!canPrev}
+                          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30 hover:bg-black/70 transition-colors"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                        </button>
+                        <button
+                          onClick={() => setDialogCarouselIdx((prev) => ({ ...prev, [p]: Math.min(displayList.length - 1, safeIdx + 1) }))}
+                          disabled={!canNext}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30 hover:bg-black/70 transition-colors"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                        {/* Dot indicators */}
+                        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex gap-1">
+                          {displayList.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setDialogCarouselIdx((prev) => ({ ...prev, [p]: i }))}
+                              className={cn("w-1.5 h-1.5 rounded-full transition-colors", i === safeIdx ? "bg-white" : "bg-white/50")}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => triggerUpload(p)}
                       className="flex-1 px-2 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-accent transition-colors flex items-center justify-center gap-1"
                     >
-                      <Upload className="w-3 h-3" /> {isVariant ? "Replace" : "Upload variant"}
+                      <Upload className="w-3 h-3" /> Upload variant
                     </button>
                     {isVariant && (
-                      <button onClick={() => removeMedia(p)} className="px-2 py-1.5 rounded-md border border-border text-xs hover:bg-destructive/10 hover:text-destructive transition-colors">
+                      <button onClick={() => clearPlatformVariant(p)} className="px-2 py-1.5 rounded-md border border-border text-xs hover:bg-destructive/10 hover:text-destructive transition-colors">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     )}
@@ -916,7 +1015,12 @@ function SelectedAccountsBar({ accounts, onOpen }: { accounts: Account[]; onOpen
 }
 
 /* ---------------- Platform Previews ---------------- */
-function PlatformPreview({ platform, caption, media, handle }: { platform: PlatformKey; caption: string; media: string | null; handle: string }) {
+function PlatformPreview({ platform, caption, mediaList, handle }: { platform: PlatformKey; caption: string; mediaList: string[]; handle: string }) {
+  const [idx, setIdx] = useState(0);
+  const safeIdx = Math.min(idx, Math.max(0, mediaList.length - 1));
+  const media = mediaList[safeIdx] ?? null;
+  const isCarousel = mediaList.length > 1;
+
   const meta = PLATFORMS[platform];
   const Icon = meta.icon;
   const initial = handle.replace(/^@/, "").charAt(0).toUpperCase() || "N";
@@ -938,9 +1042,35 @@ function PlatformPreview({ platform, caption, media, handle }: { platform: Platf
     <p className="px-3 pb-3 text-sm text-muted-foreground italic">Your caption will appear here…</p>
   );
 
-  const Media = media && (
-    <div className="w-full bg-muted overflow-hidden" style={{ aspectRatio: meta.aspect }}>
-      <img src={media} alt="Preview" className="w-full h-full object-cover" />
+  const MediaSlot = (
+    <div className="relative w-full bg-muted overflow-hidden" style={{ aspectRatio: meta.aspect }}>
+      {media
+        ? <img src={media} alt="Preview" className="w-full h-full object-cover" />
+        : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="w-10 h-10 opacity-30 text-muted-foreground" /></div>
+      }
+      {isCarousel && (
+        <>
+          <button
+            onClick={() => setIdx((i) => Math.max(0, i - 1))}
+            disabled={safeIdx === 0}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30 hover:bg-black/70 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" />
+          </button>
+          <button
+            onClick={() => setIdx((i) => Math.min(mediaList.length - 1, i + 1))}
+            disabled={safeIdx === mediaList.length - 1}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30 hover:bg-black/70 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+            {mediaList.map((_, i) => (
+              <button key={i} onClick={() => setIdx(i)} className={cn("w-1.5 h-1.5 rounded-full transition-colors", i === safeIdx ? "bg-white" : "bg-white/50")} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -952,10 +1082,8 @@ function PlatformPreview({ platform, caption, media, handle }: { platform: Platf
           <div className="flex-1 min-w-0">
             <p className="text-sm"><span className="font-semibold">{handle.replace(/^@/, "") || "Your account"}</span> <span className="text-muted-foreground">{handle.startsWith("@") ? handle : `@${handle}`} · now</span></p>
             <p className="text-sm leading-relaxed mt-0.5 whitespace-pre-wrap break-words">{caption || <span className="text-muted-foreground italic">Your tweet will appear here…</span>}</p>
-            {media && (
-              <div className="mt-2 rounded-2xl overflow-hidden border border-border bg-muted" style={{ aspectRatio: meta.aspect }}>
-                <img src={media} alt="Preview" className="w-full h-full object-cover" />
-              </div>
+            {mediaList.length > 0 && (
+              <div className="mt-2 rounded-2xl overflow-hidden border border-border">{MediaSlot}</div>
             )}
             <div className="flex justify-between mt-2 max-w-xs text-muted-foreground text-xs">
               <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> 0</span>
@@ -972,11 +1100,7 @@ function PlatformPreview({ platform, caption, media, handle }: { platform: Platf
     return (
       <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
         {Header}
-        {media ? Media : (
-          <div className="w-full bg-muted flex items-center justify-center text-muted-foreground text-xs" style={{ aspectRatio: meta.aspect }}>
-            <ImageIcon className="w-10 h-10 opacity-30" />
-          </div>
-        )}
+        {MediaSlot}
         <div className="flex items-center gap-3 p-3 text-foreground">
           <Heart className="w-5 h-5" /><MessageCircle className="w-5 h-5" /><Send className="w-5 h-5" />
         </div>
@@ -990,7 +1114,7 @@ function PlatformPreview({ platform, caption, media, handle }: { platform: Platf
       <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
         {Header}
         {Caption}
-        {Media}
+        {MediaSlot}
         <div className="border-t border-border px-3 py-2 flex justify-around text-xs text-muted-foreground">
           <span className="flex items-center gap-1">👍 Like</span>
           <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
@@ -1006,7 +1130,7 @@ function PlatformPreview({ platform, caption, media, handle }: { platform: Platf
     <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
       {Header}
       {Caption}
-      {Media}
+      {MediaSlot}
       <div className="px-3 py-1.5 flex items-center justify-between text-[11px] text-muted-foreground border-t border-border">
         <span>0 reactions</span><span>0 comments</span>
       </div>

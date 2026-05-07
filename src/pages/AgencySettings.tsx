@@ -1,266 +1,353 @@
 import { useState } from "react";
 import AgencyLayout from "@/components/layout/AgencyLayout";
-import { Button } from "@/components/ui/button";
-import { Upload, AlertTriangle } from "lucide-react";
+import {
+  Settings, Bell, Shield, GitBranch, Save,
+  Upload, Eye, EyeOff, Check, AlertCircle,
+  Monitor, Smartphone, X,
+} from "lucide-react";
 import { WorkflowSettings } from "@/components/settings/WorkflowSettings";
+import { RolesPermissionsSettings } from "@/components/settings/RolesPermissionsSettings";
+import { cn } from "@/lib/utils";
 
-const settingsTabs = ['General', 'Notifications', 'Security', 'Workflows', 'Danger Zone'];
-
-const agencyNotifications = [
-  "New client created",
-  "Team member invited",
-  "Team member removed",
-  "Subscription limit approaching (80%)",
-  "Subscription limit reached (100%)",
-  "Failed OAuth connection on any org",
-  "Audit log alert (suspicious activity)",
+/* ── Nav ──────────────────────────────────────────────────────────── */
+const navItems = [
+  { id: "general",      label: "General Settings",     icon: Settings   },
+  { id: "notifications",label: "Notification Settings",icon: Bell       },
+  { id: "security",     label: "Security Settings",    icon: Shield     },
+  { id: "workflows",    label: "Workflows",             icon: GitBranch  },
+  { id: "roles",        label: "Roles & Permissions",  icon: Shield     },
 ];
 
-const orgNotifications = [
-  "New post published",
-  "Approval pending (> 24hrs)",
-  "Inbox message SLA breached",
-  "Social profile disconnected",
+/* ── Mock data ────────────────────────────────────────────────────── */
+const AGENCY_NOTIFS = [
+  { label: "New client created",                    email: true,  inApp: true  },
+  { label: "Team member invited",                   email: true,  inApp: true  },
+  { label: "Team member removed",                   email: true,  inApp: true  },
+  { label: "Subscription limit approaching (80%)",  email: true,  inApp: true  },
+  { label: "Subscription limit reached (100%)",     email: true,  inApp: true  },
+  { label: "Failed OAuth connection on any client", email: false, inApp: true  },
+  { label: "Audit log alert (suspicious activity)", email: true,  inApp: true  },
 ];
 
+const CLIENT_NOTIFS = [
+  { label: "New post published",           email: false, inApp: true },
+  { label: "Approval pending (> 24 hrs)",  email: true,  inApp: true },
+  { label: "Inbox message SLA breached",   email: false, inApp: true },
+  { label: "Social profile disconnected",  email: true,  inApp: true },
+];
+
+const passwordRules = [
+  { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
+  { label: "1 uppercase letter",    test: (p: string) => /[A-Z]/.test(p) },
+  { label: "1 number",              test: (p: string) => /\d/.test(p) },
+  { label: "1 special character",   test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+];
+
+/* ── Reusable atoms (mirrored from client SettingsPage) ───────────── */
+const SectionCard = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div className={cn("bg-card rounded-2xl border border-border p-6", className)}>{children}</div>
+);
+
+const SectionTitle = ({ children, sub }: { children: React.ReactNode; sub?: string }) => (
+  <div className="mb-5">
+    <h2 className="text-base font-semibold text-foreground">{children}</h2>
+    {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+  </div>
+);
+
+const FieldLabel = ({ children }: { children: React.ReactNode }) => (
+  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{children}</label>
+);
+
+const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+  <input
+    {...props}
+    className={cn(
+      "w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all",
+      props.className,
+    )}
+  />
+);
+
+const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
+  <button
+    type="button"
+    onClick={() => onChange(!checked)}
+    className={cn("relative w-11 h-6 rounded-full transition-colors flex-shrink-0", checked ? "bg-primary" : "bg-muted")}
+  >
+    <span className={cn("block w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform", checked ? "translate-x-5" : "translate-x-0.5")} />
+  </button>
+);
+
+const SaveBtn = ({ label = "Save Changes" }: { label?: string }) => (
+  <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+    <Save className="w-3.5 h-3.5" /> {label}
+  </button>
+);
+
+const SettingRow = ({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) => (
+  <div className="flex items-center justify-between py-4 border-b border-border last:border-0">
+    <div className="flex-1 min-w-0 pr-6">
+      <p className="text-sm font-medium text-foreground">{title}</p>
+      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+    </div>
+    {children}
+  </div>
+);
+
+/* ── Page ─────────────────────────────────────────────────────────── */
 const AgencySettings = () => {
-  const [activeTab, setActiveTab] = useState('General');
-  const [agencyToggles, setAgencyToggles] = useState<Record<string, { email: boolean; inApp: boolean }>>(
-    Object.fromEntries(agencyNotifications.map(n => [n, { email: true, inApp: true }]))
-  );
-  const [orgToggles, setOrgToggles] = useState<Record<string, { email: boolean; inApp: boolean }>>(
-    Object.fromEntries(orgNotifications.map(n => [n, { email: false, inApp: true }]))
-  );
-  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
+  const [activeTab, setActiveTab] = useState("general");
 
-  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
-    <button onClick={onChange} className={`w-9 h-5 rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-border'} relative`}>
-      <div className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${checked ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
-    </button>
+  // notifications
+  const [agencyToggles, setAgencyToggles] = useState<Record<string, { email: boolean; inApp: boolean }>>(
+    Object.fromEntries(AGENCY_NOTIFS.map((n) => [n.label, { email: n.email, inApp: n.inApp }])),
   );
+  const [clientToggles, setClientToggles] = useState<Record<string, { email: boolean; inApp: boolean }>>(
+    Object.fromEntries(CLIENT_NOTIFS.map((n) => [n.label, { email: n.email, inApp: n.inApp }])),
+  );
+
+  // security
+  const [newPassword,    setNewPassword]    = useState("");
+  const [showPwd,        setShowPwd]        = useState(false);
+  const [twoFAEnabled,   setTwoFAEnabled]   = useState(false);
+  const [activityLogs,   setActivityLogs]   = useState(false);
+
 
   return (
     <AgencyLayout title="Settings">
-      <div className="flex gap-0 border-b border-border mb-6">
-        {settingsTabs.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2.5 text-sm transition-colors ${activeTab === tab ? 'text-foreground border-b-2 border-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-            {tab}
-          </button>
-        ))}
-      </div>
+      <div className="flex gap-6 animate-fade-in min-h-0">
 
-      {activeTab === 'General' && (
-        <div className="space-y-6 max-w-2xl">
-          <div className="card-surface space-y-4">
-            <h3 className="text-base font-semibold text-foreground">Agency Profile</h3>
-            <div className="flex items-start gap-6">
-              <div className="w-20 h-20 border-2 border-dashed border-border rounded-xl flex items-center justify-center hover:border-primary cursor-pointer transition-colors">
-                <Upload className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="flex-1 space-y-4">
-                <div><label className="text-sm text-muted-foreground mb-1.5 block">Agency Name</label><input className="input-dark" defaultValue="Digital Spark Agency" /></div>
-                <div><label className="text-sm text-muted-foreground mb-1.5 block">Industry</label>
-                  <select className="input-dark"><option>Marketing Agency</option><option>Creative Agency</option><option>Digital Agency</option><option>PR Agency</option></select>
-                </div>
-              </div>
+        {/* ── Left sidebar nav ── */}
+        <div className="w-56 flex-shrink-0">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden sticky top-4">
+            <div className="px-4 py-4 border-b border-border">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Agency Settings</p>
             </div>
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">Website URL</label><input className="input-dark" defaultValue="https://digitalspark.io" /></div>
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">Notes</label><textarea className="input-dark h-20 py-2 resize-none" defaultValue="Leading digital marketing agency specializing in social media management." /></div>
-            <div className="flex justify-end"><Button>Save Changes</Button></div>
+            <nav className="p-2">
+              {navItems.map((item) => {
+                const active = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
+                      active
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <item.icon className="w-4 h-4 flex-shrink-0" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
         </div>
-      )}
 
-      {activeTab === 'Notifications' && (
-        <div className="space-y-6 max-w-3xl">
-          <div className="card-surface">
-            <h3 className="text-base font-semibold text-foreground mb-4">Agency Notifications</h3>
-            {/* Desktop */}
-            <div className="hidden md:block">
-              <table className="w-full">
-                <thead><tr className="border-b border-border">
-                  <th className="text-left text-xs text-muted-foreground font-medium pb-3 w-1/2">Notification</th>
-                  <th className="text-center text-xs text-muted-foreground font-medium pb-3">Email</th>
-                  <th className="text-center text-xs text-muted-foreground font-medium pb-3">In-App</th>
-                </tr></thead>
-                <tbody>
-                  {agencyNotifications.map(n => (
-                    <tr key={n} className="border-b border-border last:border-0">
-                      <td className="py-3 text-sm text-foreground">{n}</td>
-                      <td className="py-3 text-center"><div className="flex justify-center"><Toggle checked={agencyToggles[n].email} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div></td>
-                      <td className="py-3 text-center"><div className="flex justify-center"><Toggle checked={agencyToggles[n].inApp} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Mobile */}
-            <div className="md:hidden space-y-3">
-              {agencyNotifications.map(n => (
-                <div key={n} className="border border-border rounded-lg p-3">
-                  <p className="text-sm text-foreground mb-2">{n}</p>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Email</span><Toggle checked={agencyToggles[n].email} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div>
-                    <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">In-App</span><Toggle checked={agencyToggles[n].inApp} onChange={() => setAgencyToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div>
+        {/* ── Right content ── */}
+        <div className="flex-1 min-w-0 space-y-5">
+
+          {/* ── General ── */}
+          {activeTab === "general" && (
+            <>
+              <SectionCard>
+                <SectionTitle sub="Update your agency's public information and branding.">Agency Profile</SectionTitle>
+
+                <div className="flex items-start gap-5 mb-5">
+                  <div className="w-20 h-20 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center hover:border-primary cursor-pointer transition-colors group shrink-0">
+                    <Upload className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <span className="text-[10px] text-muted-foreground mt-1">Upload Logo</span>
+                  </div>
+                  <div className="flex-1 grid grid-cols-2 gap-4">
+                    <div>
+                      <FieldLabel>Agency Name</FieldLabel>
+                      <Input defaultValue="Digital Spark Agency" />
+                    </div>
+                    <div>
+                      <FieldLabel>Industry</FieldLabel>
+                      <select className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary transition-all">
+                        <option>Marketing Agency</option>
+                        <option>Creative Agency</option>
+                        <option>Digital Agency</option>
+                        <option>PR Agency</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="card-surface">
-             <h3 className="text-base font-semibold text-foreground mb-2">Business-Level Alerts</h3>
-             <p className="text-sm text-muted-foreground mb-4">Receive alerts for activity within your businesses.</p>
-            <div className="hidden md:block">
-              <table className="w-full">
-                <thead><tr className="border-b border-border">
-                  <th className="text-left text-xs text-muted-foreground font-medium pb-3 w-1/2">Notification</th>
-                  <th className="text-center text-xs text-muted-foreground font-medium pb-3">Email</th>
-                  <th className="text-center text-xs text-muted-foreground font-medium pb-3">In-App</th>
-                </tr></thead>
-                <tbody>
-                  {orgNotifications.map(n => (
-                    <tr key={n} className="border-b border-border last:border-0">
-                      <td className="py-3 text-sm text-foreground">{n}</td>
-                      <td className="py-3 text-center"><div className="flex justify-center"><Toggle checked={orgToggles[n].email} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div></td>
-                      <td className="py-3 text-center"><div className="flex justify-center"><Toggle checked={orgToggles[n].inApp} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="md:hidden space-y-3">
-              {orgNotifications.map(n => (
-                <div key={n} className="border border-border rounded-lg p-3">
-                  <p className="text-sm text-foreground mb-2">{n}</p>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Email</span><Toggle checked={orgToggles[n].email} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], email: !prev[n].email } }))} /></div>
-                    <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">In-App</span><Toggle checked={orgToggles[n].inApp} onChange={() => setOrgToggles(prev => ({ ...prev, [n]: { ...prev[n], inApp: !prev[n].inApp } }))} /></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-end"><Button>Save Preferences</Button></div>
-        </div>
-      )}
-
-      {activeTab === 'Security' && (
-        <div className="space-y-6 max-w-2xl">
-          <div className="card-surface space-y-4">
-            <h3 className="text-base font-semibold text-foreground">Change Password</h3>
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">Current Password</label><input className="input-dark" type="password" placeholder="••••••••" /></div>
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">New Password</label><input className="input-dark" type="password" placeholder="••••••••" /></div>
-            <div><label className="text-sm text-muted-foreground mb-1.5 block">Confirm New Password</label><input className="input-dark" type="password" placeholder="••••••••" /></div>
-            <div className="flex justify-end"><Button>Update Password</Button></div>
-          </div>
-
-          <div className="card-surface space-y-4">
-            <h3 className="text-base font-semibold text-foreground">Two-Factor Authentication</h3>
-            <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-foreground">Authenticator App</p>
-                <p className="text-xs text-muted-foreground">Use Google Authenticator or similar app</p>
-              </div>
-              <Button variant="outline" size="sm">Enable</Button>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-foreground">SMS Verification</p>
-                <p className="text-xs text-muted-foreground">Receive codes via text message</p>
-              </div>
-              <Button variant="outline" size="sm">Enable</Button>
-            </div>
-          </div>
-
-          <div className="card-surface space-y-4">
-            <h3 className="text-base font-semibold text-foreground">Active Sessions</h3>
-            <div className="space-y-3">
-              {[
-                { device: "Chrome on MacOS", location: "New York, US", time: "Current session", current: true },
-                { device: "Safari on iPhone", location: "New York, US", time: "2 hrs ago", current: false },
-              ].map((s, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{s.device}</p>
-                    <p className="text-xs text-muted-foreground">{s.location} · {s.time}</p>
+                    <FieldLabel>Website URL</FieldLabel>
+                    <Input defaultValue="https://digitalspark.io" />
                   </div>
-                  {s.current ? (
-                    <span className="text-xs text-success bg-success/10 px-2 py-0.5 rounded-full">Current</span>
-                  ) : (
-                    <button className="text-xs text-error hover:underline">Revoke</button>
+                  <div>
+                    <FieldLabel>Notes</FieldLabel>
+                    <textarea
+                      className="w-full h-24 px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none"
+                      defaultValue="Leading digital marketing agency specializing in social media management."
+                    />
+                  </div>
+                </div>
+              </SectionCard>
+              <div className="flex justify-end">
+                <SaveBtn />
+              </div>
+            </>
+          )}
+
+          {/* ── Notifications ── */}
+          {activeTab === "notifications" && (
+            <>
+              {[
+                { title: "Agency Notifications", sub: "Alerts for agency-level events.", data: AGENCY_NOTIFS, state: agencyToggles, set: setAgencyToggles },
+                { title: "Client-Level Alerts",  sub: "Receive alerts for activity within your managed clients.", data: CLIENT_NOTIFS, state: clientToggles, set: setClientToggles },
+              ].map(({ title, sub, data, state, set }) => (
+                <SectionCard key={title}>
+                  <SectionTitle sub={sub}>{title}</SectionTitle>
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="grid grid-cols-[1fr_80px_80px] text-[11px] uppercase tracking-wider text-muted-foreground font-semibold px-4 py-2.5 bg-muted/40 border-b border-border">
+                      <span>Event</span>
+                      <span className="text-center">Email</span>
+                      <span className="text-center">In-App</span>
+                    </div>
+                    {data.map((n, i) => (
+                      <div key={n.label} className={cn("grid grid-cols-[1fr_80px_80px] items-center px-4 py-3 text-sm", i > 0 && "border-t border-border")}>
+                        <span className="text-foreground">{n.label}</span>
+                        <div className="flex justify-center">
+                          <input type="checkbox" checked={state[n.label].email} onChange={() => set((p) => ({ ...p, [n.label]: { ...p[n.label], email: !p[n.label].email } }))} className="w-4 h-4 accent-primary" />
+                        </div>
+                        <div className="flex justify-center">
+                          <input type="checkbox" checked={state[n.label].inApp} onChange={() => set((p) => ({ ...p, [n.label]: { ...p[n.label], inApp: !p[n.label].inApp } }))} className="w-4 h-4 accent-primary" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </SectionCard>
+              ))}
+              <div className="flex justify-end">
+                <SaveBtn label="Save Preferences" />
+              </div>
+            </>
+          )}
+
+          {/* ── Security ── */}
+          {activeTab === "security" && (
+            <>
+              <SectionCard>
+                <SectionTitle sub="These settings will help you keep your account secure.">Security Settings</SectionTitle>
+                <SettingRow title="Save my activity logs" sub="Save all activity including any unusual activity detected.">
+                  <Toggle checked={activityLogs} onChange={setActivityLogs} />
+                </SettingRow>
+              </SectionCard>
+
+              <SectionCard>
+                <SectionTitle sub="Set a unique password to protect your account.">Change Password</SectionTitle>
+                <div className="space-y-3 mb-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <FieldLabel>Current Password</FieldLabel>
+                      <Input type="password" placeholder="••••••••" />
+                    </div>
+                    <div>
+                      <FieldLabel>New Password</FieldLabel>
+                      <div className="relative">
+                        <Input
+                          type={showPwd ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="pr-10"
+                        />
+                        <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                          {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {newPassword && (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      {passwordRules.map((rule) => (
+                        <div key={rule.label} className={cn("flex items-center gap-2 text-xs", rule.test(newPassword) ? "text-emerald-600" : "text-muted-foreground")}>
+                          {rule.test(newPassword) ? <Check className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                          {rule.label}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground">Last changed: Never</p>
+                  <SaveBtn label="Update Password" />
+                </div>
+              </SectionCard>
 
-      {activeTab === 'Workflows' && (
-        <div className="py-1">
-          <WorkflowSettings scope="agency" />
-        </div>
-      )}
+              <SectionCard>
+                <SettingRow
+                  title="2 Factor Authentication"
+                  sub="Secure your account with 2FA. You'll need to enter a special code from your mobile app at login."
+                >
+                  <div className="flex items-center gap-3">
+                    {twoFAEnabled
+                      ? <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">Enabled</span>
+                      : <span className="text-[11px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Disabled</span>
+                    }
+                    <button
+                      onClick={() => setTwoFAEnabled(!twoFAEnabled)}
+                      className={cn("px-4 py-1.5 rounded-full text-xs font-semibold transition-colors", twoFAEnabled ? "bg-muted text-foreground hover:bg-muted/80" : "bg-primary text-white hover:bg-primary/90")}
+                    >
+                      {twoFAEnabled ? "Disable" : "Enable"}
+                    </button>
+                  </div>
+                </SettingRow>
+              </SectionCard>
 
-      {activeTab === 'Danger Zone' && (
-        <div className="card-surface border-error/30 max-w-2xl">
-          <h3 className="text-base font-semibold text-foreground mb-3">Danger Zone</h3>
-          <p className="text-sm text-muted-foreground mb-4">Irreversible actions. Proceed with caution.</p>
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-warning/30 rounded-lg gap-3">
-              <div>
-                <p className="text-sm font-medium text-foreground">Suspend Agency</p>
-                <p className="text-xs text-muted-foreground">Temporarily disable this agency and all its organizations.</p>
-              </div>
-              <Button variant="outline" className="border-warning text-warning hover:bg-warning/10 shrink-0" size="sm" onClick={() => setShowDeactivateConfirm(true)}>Suspend</Button>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-error/30 rounded-lg gap-3">
-              <div>
-                <p className="text-sm font-medium text-foreground">Delete Agency</p>
-                <p className="text-xs text-muted-foreground">Permanently delete this agency, all organizations, and all data. This cannot be undone.</p>
-              </div>
-              <Button variant="outline" className="border-error text-error hover:bg-error/10 shrink-0" size="sm" onClick={() => setShowDeleteConfirm(true)}>Delete</Button>
-            </div>
-          </div>
-        </div>
-      )}
+              <SectionCard>
+                <SectionTitle sub="Devices currently signed in to your agency account.">Active Sessions</SectionTitle>
+                <div className="space-y-2.5">
+                  {[
+                    { device: "Chrome on MacOS",  location: "New York, US", time: "Current session", current: true,  Icon: Monitor     },
+                    { device: "Safari on iPhone", location: "New York, US", time: "2 hrs ago",        current: false, Icon: Smartphone  },
+                  ].map((s) => (
+                    <div key={s.device} className="flex items-center gap-3 p-3.5 rounded-xl bg-muted/40 border border-border">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <s.Icon className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{s.device}</p>
+                        <p className="text-xs text-muted-foreground">{s.location} · {s.time}</p>
+                      </div>
+                      {s.current
+                        ? <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30">Current</span>
+                        : <button className="text-xs font-medium text-error hover:text-error/80 transition-colors">Revoke</button>
+                      }
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            </>
+          )}
 
-      {/* Confirmation Modals */}
-      {(showDeactivateConfirm || showDeleteConfirm) && (
-        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => { setShowDeactivateConfirm(false); setShowDeleteConfirm(false); setConfirmText(""); }}>
-          <div className="w-[440px] bg-card border border-border rounded-2xl p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 rounded-full ${showDeleteConfirm ? 'bg-error/10' : 'bg-warning/10'}`}>
-                <AlertTriangle className={`h-5 w-5 ${showDeleteConfirm ? 'text-error' : 'text-warning'}`} />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">{showDeleteConfirm ? 'Delete Agency' : 'Suspend Agency'}</h3>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              {showDeleteConfirm
-                ? 'This will permanently delete your agency, all organizations, and all data. This action cannot be undone.'
-                : 'This will temporarily disable your agency and all its organizations. You can reactivate later.'}
-            </p>
-            <div className="mb-4">
-              <label className="text-sm text-muted-foreground mb-1.5 block">Type <strong>Digital Spark Agency</strong> to confirm</label>
-              <input className="input-dark" value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="Type agency name..." />
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => { setShowDeactivateConfirm(false); setShowDeleteConfirm(false); setConfirmText(""); }}>Cancel</Button>
-              <Button
-                className={showDeleteConfirm ? 'bg-error hover:bg-error/90' : 'bg-warning hover:bg-warning/90'}
-                disabled={confirmText !== "Digital Spark Agency"}
-              >
-                {showDeleteConfirm ? 'Delete Permanently' : 'Suspend Agency'}
-              </Button>
-            </div>
-          </div>
+          {/* ── Workflows ── */}
+          {activeTab === "workflows" && (
+            <SectionCard className="p-0 overflow-hidden">
+              <WorkflowSettings scope="agency" />
+            </SectionCard>
+          )}
+
+          {/* ── Roles & Permissions ── */}
+          {activeTab === "roles" && (
+            <SectionCard className="p-0 overflow-hidden">
+              <RolesPermissionsSettings scope="agency" />
+            </SectionCard>
+          )}
+
+
         </div>
-      )}
+      </div>
+
     </AgencyLayout>
   );
 };
