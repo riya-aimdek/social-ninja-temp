@@ -224,12 +224,16 @@ const PlatformIcon = ({ name, className }: { name: Platform; className?: string 
   }
 };
 
-const PLATFORM_ACCOUNTS: Record<Platform, SocialAccount> = {
-  Instagram: { handle: "@yourbrand", displayName: "yourbrand", initials: "YB", platform: "Instagram" },
-  Facebook:  { handle: "@YourBrandPage", displayName: "Your Brand", initials: "YB", platform: "Facebook" },
-  LinkedIn:  { handle: "@yourbrand-inc", displayName: "YourBrand Inc.", initials: "YB", platform: "LinkedIn" },
-  Twitter:   { handle: "@yourbrand_hq", displayName: "yourbrand", initials: "YB", platform: "Twitter" },
-  GBP:       { handle: "Your Brand – NYC", displayName: "Your Brand", initials: "YB", platform: "GBP" },
+const ACC = {
+  ig_main:    { handle: "@yourbrand",        displayName: "yourbrand",         initials: "YB", platform: "Instagram" as Platform },
+  ig_stories: { handle: "@yourbrand.life",   displayName: "yourbrand life",    initials: "XY", platform: "Instagram" as Platform },
+  ig_product: { handle: "@yourbrand.drops",  displayName: "yourbrand drops",   initials: "AB", platform: "Instagram" as Platform },
+  fb_main:    { handle: "@YourBrandPage",    displayName: "Your Brand",        initials: "RK", platform: "Facebook"  as Platform },
+  fb_ads:     { handle: "@YourBrandOffers",  displayName: "Your Brand Offers", initials: "BO", platform: "Facebook"  as Platform },
+  li_corp:    { handle: "@yourbrand-inc",    displayName: "YourBrand Inc.",    initials: "SM", platform: "LinkedIn"  as Platform },
+  tw_main:    { handle: "@yourbrand_hq",     displayName: "yourbrand",         initials: "PJ", platform: "Twitter"   as Platform },
+  gbp_nyc:    { handle: "Your Brand – NYC",  displayName: "Your Brand NYC",    initials: "NY", platform: "GBP"       as Platform },
+  gbp_la:     { handle: "Your Brand – LA",   displayName: "Your Brand LA",     initials: "LA", platform: "GBP"       as Platform },
 };
 
 const platformAvatarBg: Record<Platform, string> = {
@@ -245,7 +249,7 @@ function AccountAvatar({ account, size = "md" }: { account: SocialAccount; size?
   const badgeSz = size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5";
   const iconSz = size === "sm" ? "w-1.5 h-1.5" : "w-2 h-2";
   return (
-    <div className="relative flex-shrink-0 select-none">
+    <div className="relative flex-shrink-0 select-none" title={account.handle}>
       <div className={cn("rounded-full flex items-center justify-center text-white font-bold", sz, platformAvatarBg[account.platform])}>
         {account.initials}
       </div>
@@ -262,7 +266,7 @@ function AccountAvatar({ account, size = "md" }: { account: SocialAccount; size?
 
 const POSTS: Post[] = [
   {
-    id: "P-201", platform: "Instagram", account: PLATFORM_ACCOUNTS.Instagram,
+    id: "P-201", platform: "Instagram", account: ACC.ig_main,
     title: "🎉 Celebrating 5 years of building together!",
     thumbnail: "🎂", imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop", publishedAt: "2h ago",
     commentCount: 247, newCount: 32,
@@ -374,7 +378,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-200", platform: "GBP", account: PLATFORM_ACCOUNTS.GBP,
+    id: "P-200", platform: "GBP", account: ACC.gbp_nyc,
     title: "Downtown location — new hours announcement",
     thumbnail: "📍", publishedAt: "5h ago",
     commentCount: 128, newCount: 24,
@@ -438,7 +442,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-199", platform: "LinkedIn", account: PLATFORM_ACCOUNTS.LinkedIn,
+    id: "P-199", platform: "LinkedIn", account: ACC.li_corp,
     title: "We're hiring: Senior Product Designer",
     thumbnail: "💼", publishedAt: "1d ago",
     commentCount: 312, newCount: 47,
@@ -494,7 +498,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-198", platform: "Facebook", account: PLATFORM_ACCOUNTS.Facebook,
+    id: "P-198", platform: "Facebook", account: ACC.fb_main,
     title: "New product launch — Spring Collection ‘26",
     thumbnail: "🌸", imageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=400&fit=crop", publishedAt: "1d ago",
     commentCount: 96, newCount: 15,
@@ -558,7 +562,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-197", platform: "Twitter", account: PLATFORM_ACCOUNTS.Twitter,
+    id: "P-197", platform: "Twitter", account: ACC.tw_main,
     title: "Hot take: design systems are products, not deliverables 🧵",
     thumbnail: "🧵", publishedAt: "1d ago",
     commentCount: 184, newCount: 38,
@@ -614,7 +618,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-196", platform: "Instagram", account: PLATFORM_ACCOUNTS.Instagram,
+    id: "P-196", platform: "Instagram", account: ACC.ig_stories,
     title: "Behind the scenes — our packaging redesign ✂️",
     thumbnail: "📦", imageUrl: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=400&fit=crop", publishedAt: "2d ago",
     commentCount: 421, newCount: 53,
@@ -662,7 +666,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-195", platform: "LinkedIn", account: PLATFORM_ACCOUNTS.LinkedIn,
+    id: "P-195", platform: "LinkedIn", account: ACC.li_corp,
     title: "Q3 wrap: what worked, what didn't, what's next",
     thumbnail: "📊", publishedAt: "2d ago",
     commentCount: 256, newCount: 19,
@@ -702,7 +706,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-194", platform: "GBP", account: PLATFORM_ACCOUNTS.GBP,
+    id: "P-194", platform: "GBP", account: ACC.gbp_la,
     title: "Westside branch — now open Saturdays",
     thumbnail: "🏪", publishedAt: "3d ago",
     commentCount: 64, newCount: 9,
@@ -742,7 +746,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-193", platform: "Facebook", account: PLATFORM_ACCOUNTS.Facebook,
+    id: "P-193", platform: "Facebook", account: ACC.fb_ads,
     title: "Customer story: how Acme Co cut onboarding time by 60%",
     thumbnail: "📈", imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop", publishedAt: "3d ago",
     commentCount: 142, newCount: 11,
@@ -782,7 +786,7 @@ const POSTS: Post[] = [
     ],
   },
   {
-    id: "P-192", platform: "Instagram", account: PLATFORM_ACCOUNTS.Instagram,
+    id: "P-192", platform: "Instagram", account: ACC.ig_product,
     title: "Giveaway 🎁 — win a year of our Pro plan",
     thumbnail: "🎁", imageUrl: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&h=400&fit=crop", publishedAt: "4d ago",
     commentCount: 1284, newCount: 87,
@@ -933,12 +937,22 @@ export default function EngagePage({ view = "board" }: { view?: Tab }) {
 
   // Flatten non-spam comments for queue/board/sentiment views
   const allCommentsRaw = useMemo(() => {
-    const out: (Comment & { post: Post })[] = [];
-    posts.forEach((p) => p.comments.forEach((c) => {
-      if (!c.isSpam) out.push({ ...c, post: p });
-      c.replies?.forEach((r) => !r.isSpam && out.push({ ...r, post: p }));
-    }));
-    return out;
+    // Round-robin across posts so the first page always shows comments from
+    // different social accounts rather than all from the same post.
+    const byPost: (Comment & { post: Post })[][] = posts.map((p) => {
+      const out: (Comment & { post: Post })[] = [];
+      p.comments.forEach((c) => {
+        if (!c.isSpam) out.push({ ...c, post: p });
+        c.replies?.forEach((r) => !r.isSpam && out.push({ ...r, post: p }));
+      });
+      return out;
+    });
+    const result: (Comment & { post: Post })[] = [];
+    const maxLen = Math.max(...byPost.map((a) => a.length));
+    for (let i = 0; i < maxLen; i++) {
+      byPost.forEach((arr) => { if (i < arr.length) result.push(arr[i]); });
+    }
+    return result;
   }, [posts]);
 
   const spamCommentsRaw = useMemo(
@@ -1938,7 +1952,7 @@ function BoardView({
                     {/* Content */}
                     <div className="flex-1 min-w-0">
 
-                      {/* Row 1: author · time · tags · status right */}
+                      {/* Row 1: author · time · account chip · tags · status right */}
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="text-[13px] font-semibold text-foreground truncate">{c.author}</span>
                         <span className="text-muted-foreground text-xs shrink-0">· {c.at}</span>
@@ -2095,9 +2109,7 @@ function BoardView({
 
                       {/* Input row */}
                       <div className="flex items-end gap-2.5 px-3 py-3">
-                        <div className="mb-0.5" title={`Replying as ${c.post.account.handle}`}>
-                          <AccountAvatar account={c.post.account} size="md" />
-                        </div>
+                        <AccountAvatar account={c.post.account} size="md" />
                         <div className="flex-1 relative">
                           <textarea
                             value={draft.text}
@@ -3213,7 +3225,7 @@ function ThreadDetailColumn({
         {/* Main input row */}
         <div className="flex items-end gap-2.5 px-3 py-3">
           {/* Account avatar */}
-          <div className="mb-0.5" title={`Replying as ${post.account.handle}`}>
+          <div className="mb-0.5">
             <AccountAvatar account={post.account} size="md" />
           </div>
 

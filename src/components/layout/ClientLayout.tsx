@@ -62,7 +62,6 @@ const projectNavItems: NavItem[] = [
   { label: "Promote", icon: Megaphone, path: "/client/promote" },
   { label: "Listen", icon: Ear, path: "/client/listen" },
   { label: "Settings", icon: Settings, path: "/client/settings" },
-  { label: "Customization", icon: Palette, path: "/client/customization" },
 ];
 
 export default function ClientLayout() {

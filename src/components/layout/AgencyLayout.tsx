@@ -40,7 +40,6 @@ const projectNavItems = [
   { title: "Promote", path: "/client/promote", icon: Megaphone },
   { title: "Listen", path: "/client/listen", icon: Ear },
   { title: "Settings", path: "/client/settings", icon: Settings },
-  { title: "Customization", path: "/client/customization", icon: Palette },
 ];
 
 const mockAgencies = [
