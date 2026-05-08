@@ -6,7 +6,7 @@ import {
   ThumbsUp, ThumbsDown, Edit3, RefreshCw, Smile, Meh, Frown, ListTree,
   Bot, Users, Zap, X, Check, AtSign, Mail, Star, ArrowDownUp, ChevronDown,
   ChevronLeft, ChevronRight,
-  ExternalLink, Heart, Bookmark, Share2, SmilePlus,
+  ExternalLink, Heart, Bookmark, Share2, SmilePlus, EyeOff, Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -971,6 +971,11 @@ export default function EngagePage({ view = "board" }: { view?: Tab }) {
   const stageToStatus = (s: Stage): "open" | "in_progress" | "completed" =>
     s === "pending" ? "open" : s === "replied" ? "completed" : "in_progress";
 
+  const hiddenComments = useMemo(
+    () => platformMatched.filter((c) => c.isHidden && !c.isSpam),
+    [platformMatched],
+  );
+
   // Apply search + category + status + tag filters end-to-end
   const allComments = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -1453,7 +1458,7 @@ export default function EngagePage({ view = "board" }: { view?: Tab }) {
 
 
       
-      {tab === "board" && <BoardView comments={allComments} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
+      {tab === "board" && <BoardView comments={allComments} hiddenComments={hiddenComments} updateComment={updateComment} addReply={addReply} openContext={openContext} />}
       {tab === "threads" && <ThreadsView posts={filteredThreadPosts} updateComment={updateComment} addReply={addReply} addTopLevelComment={addTopLevelComment} />}
       {tab === "sentiment" && <SentimentReviewView comments={allComments} updateComment={updateComment} openContext={openContext} />}
       {tab === "spam" && <SpamView spam={filteredSpam} unspam={(id) => updateComment(id, { isSpam: false })} deleteComment={deleteComment} openContext={openContext} />}
@@ -1581,17 +1586,21 @@ type ReplyDraftState = {
 };
 
 function BoardView({
-  comments, updateComment, addReply, openContext,
+  comments, hiddenComments, updateComment, addReply, openContext,
 }: {
   comments: (Comment & { post: Post })[];
+  hiddenComments: (Comment & { post: Post })[];
   updateComment: (id: string, patch: Partial<Comment>) => void;
   addReply: (parentId: string, text: string) => void;
   openContext: (commentId: string, postId: string) => void;
 }) {
   const PAGE_SIZE = 10;
+  const HIDDEN_PAGE_SIZE = 5;
   const [filter, setFilter] = useState<BoardFilter>("all");
   const [sentimentFilter, setSentimentFilter] = useState<BoardSentiment | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [hiddenOpen, setHiddenOpen] = useState(false);
+  const [hiddenPage, setHiddenPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drafts, setDrafts] = useState<Record<string, ReplyDraftState>>({});
   const [bulkAiOpen, setBulkAiOpen] = useState(false);
@@ -2238,6 +2247,150 @@ function BoardView({
         })()}
       </div>
       </div>
+
+      {/* ─── Hidden Comments Accordion ─── */}
+      {hiddenComments.length > 0 && (
+        <div className="mt-4 rounded-xl border border-border bg-card overflow-hidden">
+          {/* Accordion header */}
+          <button
+            onClick={() => { setHiddenOpen((o) => !o); setHiddenPage(1); }}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors text-left"
+          >
+            <div className="p-1.5 rounded-lg bg-muted">
+              <EyeOff className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Hidden Comments</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{hiddenComments.length} comment{hiddenComments.length !== 1 ? "s" : ""} hidden from public view</p>
+            </div>
+            <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{hiddenComments.length}</span>
+            <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform shrink-0", hiddenOpen && "rotate-180")} />
+          </button>
+
+          {hiddenOpen && (
+            <>
+              <ul className="divide-y divide-border border-t border-border">
+                {hiddenComments.slice((hiddenPage - 1) * HIDDEN_PAGE_SIZE, hiddenPage * HIDDEN_PAGE_SIZE).map((c) => {
+                  const PlatIcon = c.post.platform === "Instagram" ? Instagram : c.post.platform === "Facebook" ? Facebook : c.post.platform === "LinkedIn" ? Linkedin : c.post.platform === "Twitter" ? Twitter : null;
+                  return (
+                    <li key={c.id} className="px-4 py-4 bg-muted/10">
+                      <div className="flex items-start gap-3">
+                        {/* Avatar */}
+                        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0 select-none opacity-60">
+                          {c.author.charAt(0).toUpperCase()}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          {/* Author + meta */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-foreground/70">{c.author}</span>
+                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                              {PlatIcon && <PlatIcon className="w-3 h-3" />}
+                              {c.post.platform}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">{c.time}</span>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                              <EyeOff className="w-3 h-3" /> Hidden
+                            </span>
+                          </div>
+
+                          {/* Comment text — dimmed */}
+                          <p className="text-sm text-muted-foreground mt-1 leading-relaxed line-clamp-3">{c.text}</p>
+
+                          {/* Post reference */}
+                          <p className="text-[11px] text-muted-foreground mt-1 truncate">
+                            On: <span className="font-medium">{c.post.title}</span>
+                          </p>
+                        </div>
+
+                        {/* Three-dot menu — only unhide + mark as spam */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            className="w-7 h-7 rounded hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center justify-center shrink-0"
+                            aria-label="More actions"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem
+                              className="text-xs gap-2"
+                              onClick={() => { updateComment(c.id, { isHidden: false }); toast.success("Comment unhidden"); }}
+                            >
+                              <Eye className="w-3 h-3" /> Unhide
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-xs gap-2 text-error focus:text-error"
+                              onClick={() => { updateComment(c.id, { isSpam: true, isHidden: true }); toast.success("Marked as spam"); }}
+                            >
+                              <Shield className="w-3 h-3" /> Mark as spam
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* Hidden comments pagination */}
+              {hiddenComments.length > HIDDEN_PAGE_SIZE && (() => {
+                const totalPages = Math.ceil(hiddenComments.length / HIDDEN_PAGE_SIZE);
+                const start = (hiddenPage - 1) * HIDDEN_PAGE_SIZE + 1;
+                const end = Math.min(hiddenPage * HIDDEN_PAGE_SIZE, hiddenComments.length);
+                const pages: (number | "…")[] = [];
+                if (totalPages <= 7) {
+                  for (let i = 1; i <= totalPages; i++) pages.push(i);
+                } else if (hiddenPage <= 4) {
+                  pages.push(1, 2, 3, 4, 5, "…", totalPages);
+                } else if (hiddenPage >= totalPages - 3) {
+                  pages.push(1, "…", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+                } else {
+                  pages.push(1, "…", hiddenPage - 1, hiddenPage, hiddenPage + 1, "…", totalPages);
+                }
+                return (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      Showing <span className="font-medium text-foreground">{start}–{end}</span> of <span className="font-medium text-foreground">{hiddenComments.length}</span> hidden
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setHiddenPage((p) => Math.max(1, p - 1))}
+                        disabled={hiddenPage === 1}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      {pages.map((p, i) =>
+                        p === "…" ? (
+                          <span key={`e${i}`} className="h-7 w-7 flex items-center justify-center text-xs text-muted-foreground">…</span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setHiddenPage(p as number)}
+                            className={cn(
+                              "h-7 w-7 flex items-center justify-center rounded-lg text-xs font-medium transition-colors",
+                              hiddenPage === p ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted",
+                            )}
+                          >
+                            {p}
+                          </button>
+                        )
+                      )}
+                      <button
+                        onClick={() => setHiddenPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={hiddenPage === totalPages}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Bulk AI review modal */}
       <Dialog open={bulkAiOpen} onOpenChange={(o) => { setBulkAiOpen(o); if (!o) setBulkDrafts({}); }}>
