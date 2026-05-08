@@ -726,7 +726,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
         {/* ── Roles & Permissions ──────────────────────────────── */}
         {activeTab === "roles" && (
           <SectionCard className="p-0 overflow-hidden">
-            <RolesPermissionsSettings scope="client" />
+            <RolesPermissionsSettings scope="client" agencyManaged={isAgencyManaged} />
           </SectionCard>
         )}
 
