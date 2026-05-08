@@ -354,11 +354,10 @@ export default function ClientLayout() {
 
           <div className="w-px self-stretch bg-border shrink-0" />
 
-          {/* Breadcrumb */}
+          {/* Title + Breadcrumb */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-              <span>Business</span>
-              <ChevronRight className="w-3 h-3 shrink-0" />
+            <p className="text-xl font-bold text-foreground leading-tight truncate">{breadcrumb}</p>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap mt-0.5">
               {isProjectCtx ? (
                 <>
                   <button onClick={backToBusiness} className="hover:text-foreground transition-colors truncate max-w-[120px]">
@@ -380,7 +379,7 @@ export default function ClientLayout() {
                   <ChevronRight className="w-3 h-3 shrink-0" />
                 </>
               )}
-              <span className="font-semibold text-foreground">{breadcrumb}</span>
+              <span className="text-foreground">{breadcrumb}</span>
             </div>
           </div>
 
@@ -390,22 +389,13 @@ export default function ClientLayout() {
               <Bell className="w-5 h-5 text-muted-foreground" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
             </button>
-            <div className="flex items-center gap-2 pl-3 border-l border-border">
-              <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {business.name[0]}
-              </div>
-              <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium text-foreground">{business.name}</p>
-                <p className="text-[11px] text-muted-foreground">Business</p>
-              </div>
-              <button
-                onClick={() => navigate("/login")}
-                className="p-1.5 hover:bg-muted rounded-lg transition-colors ml-1"
-                title="Sign out"
-              >
-                <LogOut className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
+            <button
+              onClick={() => navigate("/login")}
+              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4 text-muted-foreground" />
+            </button>
           </div>
         </header>
 

@@ -370,16 +370,9 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
               <Bell className="h-5 w-5 text-muted-foreground" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
             </button>
-            <div className="flex items-center gap-2 pl-3 border-l border-border">
-              <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">A</div>
-              <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium text-foreground">Agency</p>
-                <p className="text-[11px] text-muted-foreground">Agency Admin</p>
-              </div>
-              <button onClick={() => navigate("/login")} className="p-1.5 hover:bg-muted rounded-lg transition-colors ml-1" title="Sign out">
-                <LogOut className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </div>
+            <button onClick={() => navigate("/login")} className="p-1.5 hover:bg-muted rounded-lg transition-colors" title="Sign out">
+              <LogOut className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
         </header>
 
