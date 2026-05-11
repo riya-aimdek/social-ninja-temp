@@ -3,7 +3,9 @@ import { useLocation, Link, useNavigate, Outlet } from "react-router-dom";
 import {
   LayoutDashboard, Globe, Users, ChevronDown, ChevronUp, ChevronRight,
   Bell, Check, LogOut, FolderOpen, Settings, Link2 as LinkIcon,
-  Receipt, Sparkles, CalendarDays, MessageSquare, BarChart3, Megaphone, Ear, Building2,
+  Sparkles, CalendarDays, MessageSquare, BarChart3, Megaphone, Ear,
+  KanbanSquare, FileText, ShieldAlert, Bot,
+  TrendingUp, Trophy, FileDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
@@ -35,31 +37,50 @@ const PROJECTS: Record<string, { id: string; name: string; logo: string }[]> = {
 type Client  = typeof CLIENTS[0];
 type Project = { id: string; name: string; logo: string };
 
+type NavChild = { title: string; path: string; icon: React.FC<{ className?: string }> };
+type NavItem  = { title: string; path: string; icon: React.FC<{ className?: string }>; children?: NavChild[] };
+
 /* ── Nav item lists ──────────────────────────────────────────────── */
-const agencyNav = [
+const agencyNav: NavItem[] = [
   { title: "Dashboard",      path: "/agency/dashboard",       icon: LayoutDashboard },
   { title: "Clients",        path: "/agency/clients",         icon: Globe           },
   { title: "Users",          path: "/agency/team",            icon: Users           },
   { title: "Social Accounts",path: "/agency/social-accounts", icon: LinkIcon        },
-  { title: "Client Billing", path: "/agency/client-billing",  icon: Receipt         },
   { title: "Settings",       path: "/agency/settings",        icon: Settings        },
 ];
 
-const clientNav = [
+const clientNav: NavItem[] = [
   { title: "Dashboard", path: "/agency/client/business/dashboard", icon: LayoutDashboard },
   { title: "Projects",  path: "/agency/client/business/projects",  icon: FolderOpen      },
   { title: "Team",      path: "/agency/client/business/team",      icon: Users           },
   { title: "Settings",  path: "/agency/client/settings",           icon: Settings        },
 ];
 
-const projectNav = [
+const projectNav: NavItem[] = [
   { title: "Dashboard",       path: "/agency/client/project/dashboard", icon: LayoutDashboard },
   { title: "Team",            path: "/agency/client/project/team",      icon: Users           },
   { title: "Social Profiles", path: "/agency/client/connect",           icon: Globe           },
   { title: "Create",          path: "/agency/client/create",            icon: Sparkles        },
   { title: "Publish",         path: "/agency/client/publish",           icon: CalendarDays    },
-  { title: "Engage",          path: "/agency/client/engage",            icon: MessageSquare   },
-  { title: "Analyze",         path: "/agency/client/analyze",           icon: BarChart3       },
+  {
+    title: "Engage", path: "/agency/client/engage", icon: MessageSquare,
+    children: [
+      { title: "Comment Board", path: "/agency/client/engage",             icon: KanbanSquare },
+      { title: "Posts",         path: "/agency/client/engage/posts",       icon: FileText     },
+      { title: "Spam Queue",    path: "/agency/client/engage/spam",        icon: ShieldAlert  },
+      { title: "Auto Replies",  path: "/agency/client/engage/auto-replies",icon: Bot          },
+    ],
+  },
+  {
+    title: "Analyze", path: "/agency/client/analyze", icon: BarChart3,
+    children: [
+      { title: "Intelligence Layer",   icon: Sparkles,   path: "/agency/client/analyze?view=intelligence" },
+      { title: "Post Performance",     icon: FileText,   path: "/agency/client/analyze?view=posts"        },
+      { title: "View Growth Insights", icon: TrendingUp, path: "/agency/client/analyze?view=growth"       },
+      { title: "Competitor Analysis",  icon: Trophy,     path: "/agency/client/analyze?view=competitors"  },
+      { title: "Create Report",        icon: FileDown,   path: "/agency/client/analyze?view=report"       },
+    ],
+  },
   { title: "Promote",         path: "/agency/client/promote",           icon: Megaphone       },
   { title: "Listen",          path: "/agency/client/listen",            icon: Ear             },
 ];
@@ -100,6 +121,7 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
   const [expandedClients, setExpandedClients] = useState<Set<string>>(
     () => new Set(client ? [client.id] : []),
   );
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(["Engage", "Analyze"]));
   const switcherRef = useRef<HTMLDivElement>(null);
 
   // Close switcher on outside click
@@ -113,7 +135,7 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
   }, []);
 
   // Detect context from URL to fix back-navigation
-  const path = location.pathname;
+  const { pathname: path, search: locationSearch } = location;
   const isClientRoute  = path.startsWith("/agency/client/");
   const isProjectRoute = isClientRoute && !path.startsWith("/agency/client/business/") && !path.startsWith("/agency/client/settings");
 
@@ -281,7 +303,54 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
-            const active = path === item.path || path.startsWith(item.path + "/");
+            const activeViaChild = item.children?.some(c => (path + locationSearch) === c.path) ?? false;
+            const active = activeViaChild || path === item.path || path.startsWith(item.path + "/");
+            if (item.children?.length) {
+              const isOpen = expandedMenus.has(item.title);
+              return (
+                <div key={item.path}>
+                  <button
+                    onClick={() => setExpandedMenus(prev => {
+                      const next = new Set(prev);
+                      next.has(item.title) ? next.delete(item.title) : next.add(item.title);
+                      return next;
+                    })}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                      active
+                        ? "text-primary"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-white",
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 text-left">{item.title}</span>
+                    <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isOpen && "rotate-180")} />
+                  </button>
+                  {isOpen && (
+                    <div className="mt-0.5 ml-3 pl-3 border-l border-sidebar-border/50 space-y-0.5">
+                      {item.children.map(child => {
+                        const childActive = (path + locationSearch) === child.path;
+                        return (
+                          <Link
+                            key={child.path}
+                            to={child.path}
+                            className={cn(
+                              "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all",
+                              childActive
+                                ? "bg-primary text-primary-foreground"
+                                : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-white",
+                            )}
+                          >
+                            <child.icon className="h-3.5 w-3.5 shrink-0" />
+                            <span>{child.title}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
             return (
               <Link
                 key={item.path}

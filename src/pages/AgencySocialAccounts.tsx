@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import AgencyLayout from "@/components/layout/AgencyLayout";
-import BulkConnectDialog from "@/components/agency/BulkConnectDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,11 +37,13 @@ import {
   Unplug,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   X,
   ArrowLeft,
   Check,
   Building2,
   MoreHorizontal,
+  Pencil,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -129,6 +130,31 @@ const seedAccounts: Omit<SocialAccount, "id">[] = [
 
 const initialAccounts: SocialAccount[] = seedAccounts.map((a, i) => ({ ...a, id: `acc-${i + 1}` }));
 
+// ───────────────────────── Auto-setup draft types ─────────────────────────
+type DraftProject = { tempId: string; name: string; accountIds: string[] };
+type DraftClient  = { tempId: string; name: string; projects: DraftProject[] };
+
+function extractBrand(name: string): string {
+  const cleaned = name
+    .replace(/\s*(facebook|instagram|linkedin|twitter|youtube|pinterest|fb|ig|page|official|studio|retail|inc|co|tube|on x)\s*/gi, " ")
+    .trim().replace(/\s+/g, " ");
+  return cleaned || name;
+}
+
+function buildDraftClients(accounts: SocialAccount[]): DraftClient[] {
+  const groups = new Map<string, SocialAccount[]>();
+  for (const acc of accounts) {
+    const brand = extractBrand(acc.name);
+    if (!groups.has(brand)) groups.set(brand, []);
+    groups.get(brand)!.push(acc);
+  }
+  return Array.from(groups.entries()).map(([brand, accs], i) => ({
+    tempId: `dc-${i}`,
+    name: brand,
+    projects: [{ tempId: `dp-${i}-0`, name: brand, accountIds: accs.map((a) => a.id) }],
+  }));
+}
+
 // ───────────────────────── Platform meta ─────────────────────────
 const platformMeta: Record<
   Platform,
@@ -148,6 +174,7 @@ const countAssignments = (a: SocialAccount) =>
 // ───────────────────────── Page ─────────────────────────
 const AgencySocialAccounts = () => {
   const [accounts, setAccounts] = useState<SocialAccount[]>(initialAccounts);
+  const [clients, setClients] = useState<Client[]>(mockClients);
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -158,7 +185,7 @@ const AgencySocialAccounts = () => {
   const [manageAccount, setManageAccount] = useState<SocialAccount | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [removeAccount, setRemoveAccount] = useState<SocialAccount | null>(null);
-  const [bulkOpen, setBulkOpen] = useState(false);
+  const [autoSetupOpen, setAutoSetupOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return accounts.filter((a) => {
@@ -257,6 +284,33 @@ const AgencySocialAccounts = () => {
     toast.success(`${a.name} disconnected`);
   };
 
+  const handleAutoSetupConfirm = (drafts: { name: string; projects: { name: string; accountIds: string[] }[] }[]) => {
+    const newClients: Client[] = drafts.map((d, i) => ({
+      id: `auto-c-${Date.now()}-${i}`,
+      name: d.name,
+      projects: d.projects.map((p, j) => ({ id: `auto-p-${Date.now()}-${i}-${j}`, name: p.name })),
+    }));
+    setClients((prev) => [...prev, ...newClients]);
+    setAccounts((prev) =>
+      prev.map((acc) => {
+        const matchingClient = newClients.find((nc) =>
+          nc.projects.some((_, pi) => drafts[newClients.indexOf(nc)]?.projects[pi]?.accountIds.includes(acc.id))
+        );
+        if (!matchingClient) return acc;
+        const projectAssignments: { clientId: string; projectIds: string[] } = { clientId: matchingClient.id, projectIds: [] };
+        matchingClient.projects.forEach((mp, pi) => {
+          if (drafts[newClients.indexOf(matchingClient)]?.projects[pi]?.accountIds.includes(acc.id)) {
+            projectAssignments.projectIds.push(mp.id);
+          }
+        });
+        if (!projectAssignments.projectIds.length) return acc;
+        return { ...acc, assignments: [...acc.assignments, projectAssignments] };
+      })
+    );
+    const totalProjects = drafts.reduce((s, d) => s + d.projects.length, 0);
+    toast.success(`Created ${drafts.length} client${drafts.length !== 1 ? "s" : ""} & ${totalProjects} project${totalProjects !== 1 ? "s" : ""}`);
+  };
+
   const handleRemoveAccount = () => {
     if (!removeAccount) return;
     setAccounts((prev) => prev.filter((a) => a.id !== removeAccount.id));
@@ -273,8 +327,8 @@ const AgencySocialAccounts = () => {
     <AgencyLayout title="Social Accounts">
       <div className="space-y-5">
         <div className="flex items-center justify-end gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-2">
-            <Sparkles className="h-4 w-4 text-primary" /> Bulk connect via master email
+          <Button variant="outline" onClick={() => setAutoSetupOpen(true)} className="gap-2">
+            <Sparkles className="h-4 w-4 text-primary" /> Auto-setup Clients
           </Button>
           <Button className="gap-2 shadow-coral">
             <Plus className="h-4 w-4" /> Connect Account
@@ -595,7 +649,7 @@ const AgencySocialAccounts = () => {
 
       <ManageAssignmentsDialog
         account={manageAccount}
-        clients={mockClients}
+        clients={clients}
         onClose={() => setManageAccount(null)}
         onRemove={handleRemoveAssignment}
       />
@@ -603,7 +657,7 @@ const AgencySocialAccounts = () => {
       <AssignWizardDialog
         open={assignOpen}
         onOpenChange={setAssignOpen}
-        clients={mockClients}
+        clients={clients}
         accounts={accounts.filter((a) => selected.has(a.id))}
         onConfirm={handleBulkAssign}
       />
@@ -628,7 +682,12 @@ const AgencySocialAccounts = () => {
         </DialogContent>
       </Dialog>
 
-      <BulkConnectDialog open={bulkOpen} onOpenChange={setBulkOpen} />
+      <AutoSetupClientsDialog
+        open={autoSetupOpen}
+        onOpenChange={setAutoSetupOpen}
+        accounts={accounts}
+        onConfirm={handleAutoSetupConfirm}
+      />
     </AgencyLayout>
   );
 };
@@ -983,6 +1042,266 @@ function StepPill({
         {label}
       </span>
     </div>
+  );
+}
+
+// ───────────────────────── Auto-setup Clients Dialog ─────────────────────────
+function AutoSetupClientsDialog({
+  open,
+  onOpenChange,
+  accounts,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  accounts: SocialAccount[];
+  onConfirm: (drafts: { name: string; projects: { name: string; accountIds: string[] }[] }[]) => void;
+}) {
+  const [drafts, setDrafts] = useState<DraftClient[]>([]);
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
+  const [editingClientName, setEditingClientName] = useState("");
+  const [editingProjectKey, setEditingProjectKey] = useState<string | null>(null); // `${clientId}:${projectId}`
+  const [editingProjectName, setEditingProjectName] = useState("");
+
+  const unassigned = accounts.filter((a) => a.assignments.length === 0);
+
+  useEffect(() => {
+    if (open) {
+      setDrafts(buildDraftClients(unassigned));
+      setEditingClientId(null);
+      setEditingProjectKey(null);
+    }
+  }, [open]);
+
+  const totalClients = drafts.length;
+  const totalProjects = drafts.reduce((s, c) => s + c.projects.length, 0);
+
+  /* ── client mutations ── */
+  const startEditClient = (c: DraftClient) => { setEditingClientId(c.tempId); setEditingClientName(c.name); };
+  const commitClient = () => {
+    if (editingClientId) setDrafts((p) => p.map((c) => c.tempId === editingClientId ? { ...c, name: editingClientName.trim() || c.name } : c));
+    setEditingClientId(null);
+  };
+  const deleteClient = (id: string) => setDrafts((p) => p.filter((c) => c.tempId !== id));
+
+  /* ── project mutations ── */
+  const startEditProject = (clientId: string, proj: DraftProject) => {
+    setEditingProjectKey(`${clientId}:${proj.tempId}`);
+    setEditingProjectName(proj.name);
+  };
+  const commitProject = () => {
+    if (!editingProjectKey) return;
+    const [clientId, projectId] = editingProjectKey.split(":");
+    setDrafts((p) => p.map((c) => c.tempId === clientId
+      ? { ...c, projects: c.projects.map((pr) => pr.tempId === projectId ? { ...pr, name: editingProjectName.trim() || pr.name } : pr) }
+      : c));
+    setEditingProjectKey(null);
+  };
+  const deleteProject = (clientId: string, projectId: string) =>
+    setDrafts((p) => p.map((c) => c.tempId === clientId ? { ...c, projects: c.projects.filter((pr) => pr.tempId !== projectId) } : c));
+
+  const addProject = (clientId: string) => {
+    const client = drafts.find((c) => c.tempId === clientId);
+    if (!client) return;
+    const np: DraftProject = { tempId: `dp-${Date.now()}`, name: `Project ${client.projects.length + 1}`, accountIds: [] };
+    setDrafts((p) => p.map((c) => c.tempId === clientId ? { ...c, projects: [...c.projects, np] } : c));
+  };
+
+  /* ── account move ── */
+  const moveAccount = (accId: string, fromClientId: string, fromProjectId: string, toClientId: string, toProjectId: string) => {
+    setDrafts((prev) =>
+      prev.map((c) => ({
+        ...c,
+        projects: c.projects.map((pr) => {
+          if (c.tempId === fromClientId && pr.tempId === fromProjectId)
+            return { ...pr, accountIds: pr.accountIds.filter((id) => id !== accId) };
+          if (c.tempId === toClientId && pr.tempId === toProjectId)
+            return { ...pr, accountIds: [...pr.accountIds, accId] };
+          return pr;
+        }),
+      }))
+    );
+  };
+
+  const handleCreate = () => {
+    const valid = drafts.filter((c) => c.projects.some((p) => p.accountIds.length > 0));
+    onConfirm(valid.map((c) => ({
+      name: c.name,
+      projects: c.projects.filter((p) => p.accountIds.length > 0).map((p) => ({ name: p.name, accountIds: p.accountIds })),
+    })));
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl p-0 overflow-hidden">
+        <div className="px-6 pt-5 pb-4 border-b border-border">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Sparkles className="h-4 w-4 text-primary" /> Auto-setup Clients
+          </DialogTitle>
+          <DialogDescription className="text-xs mt-1 leading-relaxed">
+            Each group becomes one client. Add or remove projects within each client, then move accounts between them.
+          </DialogDescription>
+        </div>
+
+        {unassigned.length === 0 ? (
+          <div className="py-14 text-center px-6">
+            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="h-5 w-5 text-success" />
+            </div>
+            <p className="text-sm font-medium text-foreground">All accounts are already assigned</p>
+            <p className="text-xs text-muted-foreground mt-1">There are no unassigned accounts to auto-group into clients.</p>
+          </div>
+        ) : (
+          <div className="max-h-[58vh] overflow-y-auto px-4 py-4 space-y-3">
+            {drafts.map((client) => (
+              <div key={client.tempId} className="border border-border rounded-xl overflow-hidden bg-card">
+                {/* Client header */}
+                <div className="flex items-center gap-2.5 px-3 py-2.5">
+                  <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                    {client.name.charAt(0).toUpperCase()}
+                  </div>
+                  {editingClientId === client.tempId ? (
+                    <input
+                      autoFocus
+                      value={editingClientName}
+                      onChange={(e) => setEditingClientName(e.target.value)}
+                      onBlur={commitClient}
+                      onKeyDown={(e) => { if (e.key === "Enter") commitClient(); if (e.key === "Escape") setEditingClientId(null); }}
+                      className="flex-1 text-sm font-semibold bg-transparent border-b border-primary outline-none"
+                    />
+                  ) : (
+                    <span className="flex-1 text-sm font-semibold text-foreground truncate">{client.name}</span>
+                  )}
+                  <Badge className="text-[10px] px-1.5 py-0 h-5 gradient-coral text-primary-foreground border-0 shrink-0">CLIENT</Badge>
+                  <button onClick={() => startEditClient(client)} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => deleteClient(client.tempId)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {/* Projects */}
+                <div className="px-3 pb-3 space-y-2">
+                  {client.projects.map((proj) => {
+                    const projKey = `${client.tempId}:${proj.tempId}`;
+                    return (
+                      <div key={proj.tempId} className="border border-border rounded-lg bg-muted/10 overflow-hidden">
+                        {/* Project header */}
+                        <div className="flex items-center gap-2 px-3 py-2 bg-muted/20 border-b border-border/60">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary shrink-0">PROJECT</span>
+                          {editingProjectKey === projKey ? (
+                            <input
+                              autoFocus
+                              value={editingProjectName}
+                              onChange={(e) => setEditingProjectName(e.target.value)}
+                              onBlur={commitProject}
+                              onKeyDown={(e) => { if (e.key === "Enter") commitProject(); if (e.key === "Escape") setEditingProjectKey(null); }}
+                              className="flex-1 text-xs font-medium bg-transparent border-b border-primary outline-none"
+                            />
+                          ) : (
+                            <span className="flex-1 text-xs font-medium text-foreground truncate">{proj.name}</span>
+                          )}
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {proj.accountIds.length} acct{proj.accountIds.length !== 1 ? "s" : ""}
+                          </span>
+                          <button onClick={() => startEditProject(client.tempId, proj)} className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button onClick={() => deleteProject(client.tempId, proj.tempId)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        {/* Account rows */}
+                        {proj.accountIds.length === 0 ? (
+                          <p className="text-[11px] text-muted-foreground px-3 py-2 italic">No accounts in this project</p>
+                        ) : (
+                          proj.accountIds.map((accId) => {
+                            const acc = accounts.find((a) => a.id === accId);
+                            if (!acc) return null;
+                            const meta = platformMeta[acc.platform];
+                            const PIcon = meta.Icon;
+                            // all other projects across all clients to move to
+                            const moveTargets = drafts.flatMap((dc) =>
+                              dc.projects
+                                .filter((dp) => dp.tempId !== proj.tempId)
+                                .map((dp) => ({ clientTempId: dc.tempId, clientName: dc.name, projectTempId: dp.tempId, projectName: dp.name }))
+                            );
+                            return (
+                              <div key={accId} className="flex items-center gap-2.5 px-3 py-2 border-t border-border/40 first:border-t-0">
+                                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-foreground shrink-0">
+                                  {acc.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-foreground truncate leading-tight">{acc.name}</p>
+                                  <p className="text-[10px] text-muted-foreground truncate leading-tight">{acc.handle}</p>
+                                </div>
+                                <PIcon className={`h-3.5 w-3.5 shrink-0 ${meta.iconColor}`} />
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button className="flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground border border-border rounded px-1.5 py-0.5 transition-colors shrink-0">
+                                      Move <ChevronDown className="h-3 w-3" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-52">
+                                    {moveTargets.length === 0 ? (
+                                      <div className="px-3 py-2 text-xs text-muted-foreground">No other projects available</div>
+                                    ) : (
+                                      moveTargets.map((t) => (
+                                        <DropdownMenuItem
+                                          key={`${t.clientTempId}-${t.projectTempId}`}
+                                          onClick={() => moveAccount(accId, client.tempId, proj.tempId, t.clientTempId, t.projectTempId)}
+                                          className="text-xs"
+                                        >
+                                          <span className="font-medium">{t.clientName}</span>
+                                          <ChevronRight className="h-3 w-3 mx-1 text-muted-foreground shrink-0" />
+                                          <span className="text-muted-foreground truncate">{t.projectName}</span>
+                                        </DropdownMenuItem>
+                                      ))
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => addProject(client.tempId)}
+                    className="flex items-center gap-1 text-xs font-medium text-primary hover:underline mt-1 px-1"
+                  >
+                    <Plus className="h-3 w-3" /> Add project to {client.name}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="px-5 py-3.5 border-t border-border bg-muted/20 flex items-center justify-between gap-3">
+          <span className="text-sm text-muted-foreground shrink-0">
+            {totalClients} client{totalClients !== 1 ? "s" : ""} &amp; {totalProjects} project{totalProjects !== 1 ? "s" : ""}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={totalClients === 0}
+              onClick={handleCreate}
+              className="gap-1.5 gradient-coral text-primary-foreground shadow-coral hover:opacity-90"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Create {totalClients} Client{totalClients !== 1 ? "s" : ""} &amp; {totalProjects} Project{totalProjects !== 1 ? "s" : ""}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

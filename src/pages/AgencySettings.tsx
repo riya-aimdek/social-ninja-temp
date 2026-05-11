@@ -3,19 +3,24 @@ import AgencyLayout from "@/components/layout/AgencyLayout";
 import {
   Settings, Bell, Shield, GitBranch, Save,
   Upload, Eye, EyeOff, Check, AlertCircle,
-  Monitor, Smartphone, X,
+  Monitor, Smartphone, X, Clock, Plus,
 } from "lucide-react";
 import { WorkflowSettings } from "@/components/settings/WorkflowSettings";
 import { RolesPermissionsSettings } from "@/components/settings/RolesPermissionsSettings";
+import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
 import { cn } from "@/lib/utils";
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+type Day = typeof DAYS[number];
 
 /* ── Nav ──────────────────────────────────────────────────────────── */
 const navItems = [
-  { id: "general",      label: "General Settings",     icon: Settings   },
-  { id: "notifications",label: "Notification Settings",icon: Bell       },
-  { id: "security",     label: "Security Settings",    icon: Shield     },
-  { id: "workflows",    label: "Workflows",             icon: GitBranch  },
-  { id: "roles",        label: "Roles & Permissions",  icon: Shield     },
+  { id: "general",       label: "General Settings",     icon: Settings   },
+  { id: "notifications", label: "Notification Settings",icon: Bell       },
+  { id: "security",      label: "Security Settings",    icon: Shield     },
+  { id: "queue",         label: "Queue Times",          icon: Clock      },
+  { id: "workflows",     label: "Workflows",             icon: GitBranch  },
+  { id: "roles",         label: "Roles & Permissions",  icon: Shield     },
 ];
 
 /* ── Mock data ────────────────────────────────────────────────────── */
@@ -112,6 +117,24 @@ const AgencySettings = () => {
   const [showPwd,        setShowPwd]        = useState(false);
   const [twoFAEnabled,   setTwoFAEnabled]   = useState(false);
   const [activityLogs,   setActivityLogs]   = useState(false);
+
+  // queue times
+  const [queueSlots, setQueueSlots] = useState<Record<Day, string[]>>({
+    Monday:    ["09:00", "13:00", "18:00"],
+    Tuesday:   ["09:00", "13:00", "18:00"],
+    Wednesday: ["09:00", "13:00"],
+    Thursday:  ["09:00", "13:00", "18:00"],
+    Friday:    ["09:00", "17:00"],
+    Saturday:  ["11:00"],
+    Sunday:    [],
+  });
+  const [queueEnabled, setQueueEnabled] = useState<Record<Day, boolean>>({
+    Monday: true, Tuesday: true, Wednesday: true, Thursday: true,
+    Friday: true, Saturday: false, Sunday: false,
+  });
+  const addQueueSlot    = (day: Day) => setQueueSlots((p) => ({ ...p, [day]: [...p[day], "09:00"] }));
+  const removeQueueSlot = (day: Day, idx: number) => setQueueSlots((p) => ({ ...p, [day]: p[day].filter((_, i) => i !== idx) }));
+  const updateQueueSlot = (day: Day, idx: number, val: string) => setQueueSlots((p) => { const s = [...p[day]]; s[idx] = val; return { ...p, [day]: s }; });
 
 
   return (
@@ -327,6 +350,59 @@ const AgencySettings = () => {
                   ))}
                 </div>
               </SectionCard>
+            </>
+          )}
+
+          {/* ── Queue Times ── */}
+          {activeTab === "queue" && (
+            <>
+              <SectionCard>
+                <SectionTitle sub="Set the times posts will be automatically queued for publishing across all agency-managed clients each day.">
+                  Queue Times
+                </SectionTitle>
+                <div className="space-y-3">
+                  {DAYS.map((day) => {
+                    const enabled = queueEnabled[day];
+                    const slots   = queueSlots[day];
+                    return (
+                      <div key={day} className={cn("rounded-xl border border-border p-4 transition-colors", !enabled && "opacity-50")}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Toggle checked={enabled} onChange={(v) => setQueueEnabled((p) => ({ ...p, [day]: v }))} />
+                            <span className="text-sm font-semibold text-foreground w-24">{day}</span>
+                            <span className="text-xs text-muted-foreground">{slots.length} slot{slots.length !== 1 ? "s" : ""}</span>
+                          </div>
+                          <button
+                            disabled={!enabled}
+                            onClick={() => addQueueSlot(day)}
+                            className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:text-primary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add slot
+                          </button>
+                        </div>
+                        {enabled && slots.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {slots.map((t, i) => (
+                              <div key={i} className="flex items-center gap-1">
+                                <TimePickerPopup value={t} onChange={(val) => updateQueueSlot(day, i, val)} />
+                                <button onClick={() => removeQueueSlot(day, i)} className="text-muted-foreground hover:text-destructive transition-colors">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {enabled && slots.length === 0 && (
+                          <p className="text-xs text-muted-foreground italic">No slots — posts won't be queued on this day.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </SectionCard>
+              <div className="flex justify-end">
+                <SaveBtn label="Save Queue Times" />
+              </div>
             </>
           )}
 

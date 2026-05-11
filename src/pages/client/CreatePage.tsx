@@ -397,10 +397,9 @@ export default function CreatePage() {
                   onChange={setSharedCaption}
                   onAiClick={() => setAiOpen(true)}
                 />
-
                 <label className="flex items-center gap-2 text-xs cursor-pointer">
                   <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-muted-foreground">Customize per network</span>
+                  <span className="text-muted-foreground">Customize per platform</span>
                   <input
                     type="checkbox"
                     checked={customizePerNetwork}

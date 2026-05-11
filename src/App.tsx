@@ -118,7 +118,7 @@ const App = () => (
             <Route path="/agency/client/engage/posts"       element={<EngagePage view="threads" />} />
             <Route path="/agency/client/engage/spam"        element={<EngagePage view="spam" />} />
             <Route path="/agency/client/engage/auto-replies" element={<EngagePage view="variants" />} />
-            <Route path="/agency/client/analyze"            element={<AnalyzePage />} />
+            <Route path="/agency/client/analyze"                    element={<AnalyzePage />} />
             <Route path="/agency/client/promote"            element={<PromotePage />} />
             <Route path="/agency/client/listen"             element={<ListenPage />} />
             <Route path="/agency/client/settings"           element={<ClientSettingsPage />} />
@@ -144,7 +144,7 @@ const App = () => (
             <Route path="/client/engage/auto-replies" element={<EngagePage view="variants" />} />
             <Route path="/client/engage/v2" element={<EngageV2Page />} />
             <Route path="/engage/v2" element={<Navigate to="/client/engage/v2" replace />} />
-            <Route path="/client/analyze" element={<AnalyzePage />} />
+            <Route path="/client/analyze"                    element={<AnalyzePage />} />
             <Route path="/client/promote" element={<PromotePage />} />
             <Route path="/client/listen" element={<ListenPage />} />
             <Route path="/client/locations" element={<LocationsPage />} />

@@ -290,12 +290,12 @@ export default function PublishPage() {
       {view === "calendar" && (
         <div className="bg-card rounded-xl shadow-card p-5">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} className="p-1.5 rounded-lg hover:bg-accent">
-              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} className="px-2 py-1 text-muted-foreground hover:text-foreground text-base font-medium transition-colors">
+              &#8249;
             </button>
             <h2 className="text-sm font-semibold text-foreground">{monthLabel}</h2>
-            <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} className="p-1.5 rounded-lg hover:bg-accent">
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} className="px-2 py-1 text-muted-foreground hover:text-foreground text-base font-medium transition-colors">
+              &#8250;
             </button>
           </div>
           <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
@@ -350,12 +350,12 @@ export default function PublishPage() {
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           {/* Month navigation */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            <button onClick={prevMonth} className="px-2 py-1 text-muted-foreground hover:text-foreground text-base font-medium transition-colors">
+              &#8249;
             </button>
             <span className="text-sm font-semibold text-foreground">{monthLabel}</span>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <button onClick={nextMonth} className="px-2 py-1 text-muted-foreground hover:text-foreground text-base font-medium transition-colors">
+              &#8250;
             </button>
           </div>
           <table className="w-full text-sm">
@@ -409,12 +409,12 @@ export default function PublishPage() {
         <div className="space-y-3">
           {/* Month navigation */}
           <div className="bg-card rounded-xl shadow-card flex items-center justify-between px-5 py-3">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            <button onClick={prevMonth} className="px-2 py-1 text-muted-foreground hover:text-foreground text-base font-medium transition-colors">
+              &#8249;
             </button>
             <span className="text-sm font-semibold text-foreground">{monthLabel}</span>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <button onClick={nextMonth} className="px-2 py-1 text-muted-foreground hover:text-foreground text-base font-medium transition-colors">
+              &#8250;
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">

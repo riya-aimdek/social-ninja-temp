@@ -1,451 +1,1761 @@
 import { useState } from "react";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import {
-  BarChart3, TrendingUp, Eye, Users, FileText, Facebook, Instagram, Linkedin, Twitter,
-  Trophy, Calendar, FileDown, Mail, Plus, Trash2, Clock,
+  Sparkles, BarChart3, TrendingUp, Trophy, FileText, ChevronRight,
+  FileDown, Users, Activity, Eye, Zap, ArrowLeft, RefreshCw,
+  AlertTriangle, Star, Hash, Clock, ImageIcon, Heart, MessageSquare,
+  Shield, Share2, Facebook, Instagram, Linkedin, Twitter,
+  Flame, CheckCircle, Plus, Mail, Check,
+  BarChart2, PieChart, Table2, LineChart as LineChartIcon,
 } from "lucide-react";
 import {
-  AreaChart, Area, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, Legend, LineChart, Line,
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 
-// ---------- Performance data ----------
-const growthData = [
-  { date: "Mar 1", followers: 23200 }, { date: "Mar 4", followers: 23450 },
-  { date: "Mar 7", followers: 23800 }, { date: "Mar 10", followers: 24100 },
-  { date: "Mar 13", followers: 24350 }, { date: "Mar 16", followers: 24600 },
-  { date: "Mar 18", followers: 24800 },
+// ── Mock data for all views ──────────────────────────────────────────
+
+// Overview data
+const followerGrowthData = [
+  { date: "Apr 12", followers: 14 },
+  { date: "Apr 15", followers: 14 },
+  { date: "Apr 18", followers: 13 },
+  { date: "Apr 21", followers: 13 },
+  { date: "Apr 24", followers: 12 },
+  { date: "Apr 27", followers: 12 },
+  { date: "Apr 30", followers: 12 },
+  { date: "May 3",  followers: 12 },
+  { date: "May 7",  followers: 12 },
 ];
 
-const engagementData = [
-  { day: "Mon", likes: 120, comments: 45, shares: 28 },
-  { day: "Tue", likes: 180, comments: 62, shares: 35 },
-  { day: "Wed", likes: 95, comments: 38, shares: 22 },
-  { day: "Thu", likes: 210, comments: 78, shares: 41 },
-  { day: "Fri", likes: 165, comments: 55, shares: 30 },
-  { day: "Sat", likes: 140, comments: 48, shares: 25 },
-  { day: "Sun", likes: 88, comments: 32, shares: 18 },
+const engagementTrendData = [
+  { date: "Apr 12", engagement: 12 },
+  { date: "Apr 15", engagement: 8  },
+  { date: "Apr 18", engagement: 15 },
+  { date: "Apr 21", engagement: 20 },
+  { date: "Apr 24", engagement: 5  },
+  { date: "Apr 27", engagement: 10 },
+  { date: "Apr 30", engagement: 18 },
+  { date: "May 3",  engagement: 7  },
+  { date: "May 7",  engagement: 9  },
+];
+
+const reachImpressionsData = [
+  { date: "Apr 12", reach: 0, impressions: 0 },
+  { date: "Apr 15", reach: 0, impressions: 0 },
+  { date: "Apr 18", reach: 0, impressions: 0 },
+  { date: "Apr 21", reach: 0, impressions: 0 },
+  { date: "Apr 24", reach: 0, impressions: 0 },
+  { date: "Apr 27", reach: 0, impressions: 0 },
+  { date: "Apr 30", reach: 0, impressions: 0 },
+  { date: "May 3",  reach: 0, impressions: 0 },
+  { date: "May 7",  reach: 0, impressions: 0 },
+];
+
+const engagementRateData = [
+  { name: "Facebook",  value: 2.1 },
+  { name: "LinkedIn",  value: 1.4 },
+  { name: "Instagram", value: 0.8 },
+];
+
+const reachData = [
+  { name: "Facebook",  value: 0 },
+  { name: "LinkedIn",  value: 0 },
+  { name: "Instagram", value: 0 },
+];
+
+const growthRateData = [
+  { name: "Facebook",  value: 0.5 },
+  { name: "LinkedIn",  value: 0.3 },
+  { name: "Instagram", value: 0.1 },
+];
+
+const postsData = [
+  { name: "Facebook",  value: 50 },
+  { name: "Instagram", value: 20 },
+  { name: "LinkedIn",  value: 5  },
 ];
 
 const kpis = [
-  { label: "Followers", value: "24.8K", change: "+3.2%", icon: Users },
-  { label: "Engagement Rate", value: "4.7%", change: "+0.5%", icon: TrendingUp },
-  { label: "Reach", value: "89.2K", change: "+12.4%", icon: Eye },
-  { label: "Impressions", value: "142K", change: "+8.1%", icon: BarChart3 },
-  { label: "Published", value: "18", change: "+6", icon: FileText },
+  { label: "Total Followers",    value: "12",  icon: Users     },
+  { label: "Net Growth",         value: "0",   icon: TrendingUp },
+  { label: "Posts Published",    value: "150", icon: FileText   },
+  { label: "Total Engagement",   value: "79",  icon: Activity   },
+  { label: "Reach",              value: "0",   icon: Eye        },
+  { label: "Impressions",        value: "0",   icon: Zap        },
 ];
 
-const topPosts = [
-  { platform: "Instagram", caption: "🚀 New AI feature launch!", likes: 567, comments: 82, shares: 45, reach: "12.4K" },
-  { platform: "Facebook", caption: "5 tips to boost engagement", likes: 342, comments: 56, shares: 38, reach: "8.9K" },
-  { platform: "LinkedIn", caption: "We're hiring! Join our team", likes: 189, comments: 45, shares: 23, reach: "6.2K" },
+// Intelligence data
+const intelligenceTimeRanges = ["7 Days", "30 Days", "All Time"] as const;
+type IntelligenceTimeRange = typeof intelligenceTimeRanges[number];
+
+const topPostsByLikes = [
+  {
+    id: 1,
+    avatar: "AT",
+    avatarColor: "bg-blue-500",
+    text: "Excited to share that our AI team has been working on some incredible breakthroughs...",
+    platform: "Instagram",
+    platformColor: "text-pink-500",
+    date: "May 1, 2026",
+    likes: 2,
+    comments: 15,
+    shares: 0,
+  },
+  {
+    id: 2,
+    avatar: "AT",
+    avatarColor: "bg-blue-600",
+    text: "schedule for 21-04-2026 at 16:00",
+    platform: "Facebook",
+    platformColor: "text-blue-600",
+    date: "Apr 21, 2026",
+    likes: 2,
+    comments: 0,
+    shares: 0,
+  },
 ];
 
-// ---------- Competitor data ----------
-const competitors = [
-  { name: "You", followers: 24800, engagement: 4.7, posts: 18, shareOfVoice: 28, color: "hsl(var(--primary))" },
-  { name: "BrandRival", followers: 31200, engagement: 3.9, posts: 22, shareOfVoice: 34, color: "hsl(var(--info))" },
-  { name: "MarketLead", followers: 18900, engagement: 5.4, posts: 14, shareOfVoice: 22, color: "hsl(var(--success))" },
-  { name: "Newcomer Co.", followers: 9400, engagement: 6.2, posts: 26, shareOfVoice: 16, color: "hsl(var(--warning))" },
+const topPostsByComments = [
+  {
+    id: 1,
+    avatar: "AT",
+    avatarColor: "bg-blue-500",
+    text: "Excited to share that our AI team has been working on some incredible breakthroughs...",
+    platform: "Instagram",
+    platformColor: "text-pink-500",
+    date: "May 1, 2026",
+    likes: 2,
+    comments: 15,
+    shares: 0,
+  },
+  {
+    id: 2,
+    avatar: "AT",
+    avatarColor: "bg-purple-500",
+    text: "We are hiring talented engineers! Come join our fast-growing team and shape the future...",
+    platform: "LinkedIn",
+    platformColor: "text-blue-700",
+    date: "Apr 15, 2026",
+    likes: 1,
+    comments: 3,
+    shares: 0,
+  },
 ];
 
-const benchmarkRadar = [
-  { metric: "Followers", You: 70, BrandRival: 88, MarketLead: 53 },
-  { metric: "Engagement", You: 78, BrandRival: 65, MarketLead: 90 },
-  { metric: "Frequency", You: 64, BrandRival: 78, MarketLead: 50 },
-  { metric: "Reach", You: 82, BrandRival: 90, MarketLead: 68 },
-  { metric: "Sentiment", You: 88, BrandRival: 72, MarketLead: 80 },
-];
-
-const sovTrend = [
-  { week: "W1", You: 24, BrandRival: 38, MarketLead: 24, "Newcomer Co.": 14 },
-  { week: "W2", You: 26, BrandRival: 36, MarketLead: 23, "Newcomer Co.": 15 },
-  { week: "W3", You: 27, BrandRival: 35, MarketLead: 22, "Newcomer Co.": 16 },
-  { week: "W4", You: 28, BrandRival: 34, MarketLead: 22, "Newcomer Co.": 16 },
-];
-
-// ---------- Reports data ----------
-interface ScheduledReport {
-  id: string;
-  name: string;
-  cadence: "Daily" | "Weekly" | "Monthly";
-  format: "PDF" | "CSV" | "PDF + CSV";
-  recipients: string[];
-  nextRun: string;
-  lastSent?: string;
-  active: boolean;
+// Posts data
+interface Post {
+  id: number;
+  type: "Image" | "Text" | "Viral";
+  platform: "Facebook" | "Instagram" | "LinkedIn" | "Twitter";
+  date: string;
+  caption: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  impressions: number;
+  reach: number;
+  engagementRate: number;
 }
 
-const initialReports: ScheduledReport[] = [
+const allPosts: Post[] = [
+  { id: 1,  type: "Image", platform: "Instagram", date: "May 1, 2026",  caption: "Excited to share that our AI team has been working on some incredible breakthroughs...", likes: 2,  comments: 15, shares: 0, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 2,  type: "Text",  platform: "Facebook",  date: "Apr 21, 2026", caption: "schedule for 21-04-2026 at 16:00",                                                          likes: 2,  comments: 0,  shares: 0, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 3,  type: "Text",  platform: "Facebook",  date: "May 11, 2026", caption: "schedule post on 89",                                                                        likes: 0,  comments: 0,  shares: 0, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 4,  type: "Image", platform: "LinkedIn",  date: "Apr 15, 2026", caption: "We are hiring talented engineers! Come join our fast-growing team...",                      likes: 1,  comments: 3,  shares: 1, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 5,  type: "Text",  platform: "Facebook",  date: "Apr 10, 2026", caption: "Happy to announce our new partnership with TechCorp to advance AI innovation.",            likes: 3,  comments: 2,  shares: 1, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 6,  type: "Image", platform: "Instagram", date: "Apr 5, 2026",  caption: "Behind the scenes of our latest product photoshoot. The team did an amazing job!",         likes: 5,  comments: 1,  shares: 0, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 7,  type: "Viral", platform: "Twitter",   date: "Mar 28, 2026", caption: "Our latest blog post on the future of AI just hit 10K reads. Thank you all! 🙏",            likes: 12, comments: 4,  shares: 8, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 8,  type: "Text",  platform: "LinkedIn",  date: "Mar 20, 2026", caption: "Thought leadership: Why companies must invest in AI literacy programs for all employees.",  likes: 6,  comments: 8,  shares: 3, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 9,  type: "Image", platform: "Facebook",  date: "Mar 12, 2026", caption: "Check out our new office space in downtown! We're growing fast.",                          likes: 4,  comments: 2,  shares: 1, impressions: 0, reach: 0, engagementRate: 0 },
+  { id: 10, type: "Text",  platform: "Instagram", date: "Mar 5, 2026",  caption: "Spring is here and so is our new product line. Swipe to see all the new features →",      likes: 7,  comments: 3,  shares: 0, impressions: 0, reach: 0, engagementRate: 0 },
+];
+
+const topPerformers = {
+  mostLiked: allPosts.find((p) => p.id === 1)!,
+  mostCommented: allPosts.find((p) => p.id === 1)!,
+  mostShared: allPosts.find((p) => p.id === 7)!,
+};
+
+// Growth data
+const growthChartData = [
+  { date: "Apr 29", current: 12, previous: 14 },
+  { date: "Apr 30", current: 12, previous: 14 },
+  { date: "May 1",  current: 12, previous: 13 },
+  { date: "May 2",  current: 12, previous: 13 },
+  { date: "May 3",  current: 12, previous: 13 },
+  { date: "May 4",  current: 12, previous: 13 },
+  { date: "May 5",  current: 12, previous: 13 },
+  { date: "May 6",  current: 12, previous: 13 },
+  { date: "May 7",  current: 12, previous: 13 },
+  { date: "May 8",  current: 12, previous: 13 },
+  { date: "May 9",  current: 12, previous: 13 },
+  { date: "May 10", current: 12, previous: 13 },
+  { date: "May 11", current: 12, previous: 14 },
+];
+
+const growthEngagementData = [
+  { date: "Apr 29", engagement: 5  },
+  { date: "Apr 30", engagement: 12 },
+  { date: "May 1",  engagement: 18 },
+  { date: "May 2",  engagement: 7  },
+  { date: "May 3",  engagement: 15 },
+  { date: "May 4",  engagement: 9  },
+  { date: "May 5",  engagement: 3  },
+  { date: "May 6",  engagement: 20 },
+  { date: "May 7",  engagement: 11 },
+  { date: "May 8",  engagement: 6  },
+  { date: "May 9",  engagement: 14 },
+  { date: "May 10", engagement: 8  },
+  { date: "May 11", engagement: 10 },
+];
+
+const heatmapDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const heatmapTimes = ["12AM", "3AM", "6AM", "9AM", "12PM", "3PM", "6PM", "9PM"];
+
+const highEngagementCells = new Set([
+  "1-3", "1-4", "2-3", "2-4", "3-3", "4-3", "5-3", "5-4",
+  "0-4", "6-3",
+]);
+const peakCells = new Set(["1-3", "2-3"]);
+
+const bestDays = [
+  { day: "Tuesday",   count: 1, color: "bg-purple-500"  },
+  { day: "Wednesday", count: 1, color: "bg-blue-500"    },
+  { day: "Saturday",  count: 1, color: "bg-cyan-500"    },
+  { day: "Monday",    count: 1, color: "bg-green-500"   },
+  { day: "Thursday",  count: 1, color: "bg-yellow-500"  },
+];
+
+const bestTimeWindows = [
+  { window: "9AM – 11AM",  level: "Peak",  icon: Flame,        color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/30"    },
+  { window: "11AM – 1PM",  level: "High",  icon: Zap,          color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/30" },
+  { window: "10AM – 12PM", level: "Good",  icon: CheckCircle,  color: "text-green-500",  bg: "bg-green-50 dark:bg-green-950/30" },
+];
+
+const platformRecs = [
   {
-    id: "r1", name: "Weekly performance digest", cadence: "Weekly", format: "PDF",
-    recipients: ["client.lead@retailco.com", "marketing@retailco.com"], nextRun: "Mon, 9:00 AM",
-    lastSent: "Mar 18", active: true,
+    name: "Facebook",
+    icon: Facebook,
+    iconColor: "text-blue-600",
+    confidence: 96,
+    confidenceLabel: "High Confidence",
+    confidenceColor: "bg-green-100 text-green-700",
+    bestDays: ["Tuesday", "Wednesday", "Saturday"],
+    bestTimes: "9:00 AM – 11:00 AM",
+    peakEngagement: "Friday 9:00 AM",
   },
   {
-    id: "r2", name: "Monthly executive summary", cadence: "Monthly", format: "PDF + CSV",
-    recipients: ["ceo@retailco.com"], nextRun: "Apr 1, 8:00 AM", lastSent: "Mar 1", active: true,
+    name: "Instagram",
+    icon: Instagram,
+    iconColor: "text-pink-500",
+    confidence: 96,
+    confidenceLabel: "High Confidence",
+    confidenceColor: "bg-green-100 text-green-700",
+    bestDays: ["Monday", "Thursday", "Saturday"],
+    bestTimes: "10:00 AM – 12:00 PM",
+    peakEngagement: "Monday 10:00 AM",
   },
   {
-    id: "r3", name: "Daily ORM brief", cadence: "Daily", format: "PDF",
-    recipients: ["orm@agency.com"], nextRun: "Tomorrow, 7:00 AM", lastSent: "Today", active: false,
+    name: "LinkedIn",
+    icon: Linkedin,
+    iconColor: "text-blue-700",
+    confidence: 55,
+    confidenceLabel: "Moderate",
+    confidenceColor: "bg-yellow-100 text-yellow-700",
+    bestDays: ["Tuesday", "Wednesday", "Thursday"],
+    bestTimes: "8:00 AM – 10:00 AM",
+    peakEngagement: "Tuesday 9:00 AM",
   },
 ];
 
-const platformsList = ["All", "Facebook", "Instagram", "LinkedIn", "Twitter/X"];
-const dateRanges = ["Last 7 days", "Last 30 days", "Last 6 months", "Custom"];
+// Competitors data
+const supportedPlatforms = [
+  { name: "Instagram", icon: Instagram, color: "text-pink-500",  available: true  },
+  { name: "Facebook",  icon: Facebook,  color: "text-blue-600",  available: true  },
+  { name: "LinkedIn",  icon: Linkedin,  color: "text-blue-700",  available: false },
+  { name: "Twitter/X", icon: Twitter,   color: "text-sky-500",   available: true  },
+];
 
-const platformIcon = (name: string) => {
-  switch (name) {
-    case "Instagram": return <Instagram className="w-4 h-4 text-instagram" />;
-    case "Facebook": return <Facebook className="w-4 h-4 text-facebook" />;
-    case "LinkedIn": return <Linkedin className="w-4 h-4 text-linkedin" />;
-    default: return <Twitter className="w-4 h-4 text-twitter" />;
+const filterTabs = ["All 0", "Instagram 0", "Facebook 0", "Twitter/X 0"];
+
+// Report data
+const metricsOptions = [
+  { id: "total_followers",  label: "Total Followers",  defaultChecked: true  },
+  { id: "follower_growth",  label: "Follower Growth",  defaultChecked: true  },
+  { id: "total_engagement", label: "Total Engagement", defaultChecked: true  },
+  { id: "engagement_rate",  label: "Engagement Rate",  defaultChecked: false },
+  { id: "reach",            label: "Reach",            defaultChecked: false },
+  { id: "impressions",      label: "Impressions",      defaultChecked: false },
+  { id: "posts_published",  label: "Posts Published",  defaultChecked: false },
+  { id: "comments",         label: "Comments",         defaultChecked: false },
+  { id: "shares",           label: "Shares",           defaultChecked: false },
+];
+
+const reportAccounts = [
+  { id: "a1", name: "AI trial",           platform: "Facebook",  icon: Facebook,  iconColor: "text-blue-600" },
+  { id: "a2", name: "AI Page trial",      platform: "Facebook",  icon: Facebook,  iconColor: "text-blue-600" },
+  { id: "a3", name: "pank_aaj2000",       platform: "Instagram", icon: Instagram, iconColor: "text-pink-500" },
+  { id: "a4", name: "Harsh Kewalramani", platform: "LinkedIn",  icon: Linkedin,  iconColor: "text-blue-700" },
+];
+
+const vizOptions = [
+  { id: "line",  label: "Line Chart",  icon: LineChartIcon, defaultChecked: true  },
+  { id: "bar",   label: "Bar Chart",   icon: BarChart3,     defaultChecked: true  },
+  { id: "pie",   label: "Pie Chart",   icon: PieChart,      defaultChecked: false },
+  { id: "table", label: "Data Table",  icon: Table2,        defaultChecked: false },
+];
+
+// ── Shared helper components ────────────────────────────────────────
+
+function HorizontalBar({ data, color }: { data: { name: string; value: number }[]; color: string }) {
+  const max = Math.max(...data.map((d) => d.value), 1);
+  return (
+    <div className="space-y-2">
+      {data.map((item) => (
+        <div key={item.name} className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground w-20 shrink-0">{item.name}</span>
+          <div className="flex-1 bg-muted/40 rounded-full h-2">
+            <div
+              className="h-2 rounded-full transition-all"
+              style={{ width: `${(item.value / max) * 100}%`, backgroundColor: color }}
+            />
+          </div>
+          <span className="text-xs text-foreground w-10 text-right tabular-nums">{item.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScoreRing({ score, label, sub }: { score: number; label: string; sub: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative w-24 h-24">
+        <svg className="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+          <circle cx="48" cy="48" r="40" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+          <circle
+            cx="48" cy="48" r="40" fill="none"
+            stroke={score > 50 ? "#22c55e" : score > 20 ? "#f97316" : "#6b7280"}
+            strokeWidth="8"
+            strokeDasharray={`${(score / 100) * 251.2} 251.2`}
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-bold text-foreground">{score}</span>
+        </div>
+      </div>
+      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{label}</span>
+      <span className="text-[11px] text-muted-foreground">{sub}</span>
+    </div>
+  );
+}
+
+function QualityBar({ label, score, color = "#a855f7" }: { label: string; score: number; color?: string }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-xs font-semibold text-foreground">{score}/100</span>
+      </div>
+      <div className="h-1.5 bg-muted rounded-full">
+        <div className="h-1.5 rounded-full transition-all" style={{ width: `${score}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
+}
+
+function IntelPostCard({ post }: { post: typeof topPostsByLikes[0] }) {
+  return (
+    <div className="border border-border rounded-lg p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold", post.avatarColor)}>
+          {post.avatar}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-foreground font-medium line-clamp-2">{post.text}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between text-[11px]">
+        <span className={cn("font-medium", post.platformColor)}>{post.platform}</span>
+        <span className="text-muted-foreground">{post.date}</span>
+      </div>
+      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {post.likes}</span>
+        <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> {post.comments}</span>
+        <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" /> {post.shares}</span>
+      </div>
+    </div>
+  );
+}
+
+function PlatformIcon({ platform, className }: { platform: string; className?: string }) {
+  const base = cn("w-4 h-4", className);
+  switch (platform) {
+    case "Facebook":  return <Facebook  className={cn(base, "text-blue-600")} />;
+    case "Instagram": return <Instagram className={cn(base, "text-pink-500")} />;
+    case "LinkedIn":  return <Linkedin  className={cn(base, "text-blue-700")} />;
+    default:          return <Twitter   className={cn(base, "text-sky-500")}  />;
   }
-};
+}
 
-export default function AnalyzePage() {
-  const [activePlatform, setActivePlatform] = useState("All");
-  const [dateRange, setDateRange] = useState("Last 7 days");
-  const [reports, setReports] = useState<ScheduledReport[]>(initialReports);
-  const [newReportOpen, setNewReportOpen] = useState(false);
-  const [newReport, setNewReport] = useState({ name: "", cadence: "Weekly" as ScheduledReport["cadence"], recipients: "" });
-
-  const addReport = () => {
-    if (!newReport.name || !newReport.recipients) return toast.error("Fill all fields");
-    setReports([
-      ...reports,
-      {
-        id: `r${Date.now()}`,
-        name: newReport.name,
-        cadence: newReport.cadence,
-        format: "PDF",
-        recipients: newReport.recipients.split(",").map((s) => s.trim()),
-        nextRun: "Tomorrow, 9:00 AM",
-        active: true,
-      },
-    ]);
-    toast.success("Scheduled report created");
-    setNewReportOpen(false);
-    setNewReport({ name: "", cadence: "Weekly", recipients: "" });
+function TypeBadge({ type }: { type: Post["type"] }) {
+  const styles = {
+    Image:  "bg-blue-100 text-blue-700",
+    Text:   "bg-gray-100 text-gray-600",
+    Viral:  "bg-orange-100 text-orange-600",
   };
+  return (
+    <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded", styles[type])}>
+      {type}
+    </span>
+  );
+}
+
+function TopPerformerCard({
+  title,
+  headerColor,
+  post,
+  metric,
+  metricValue,
+}: {
+  title: string;
+  headerColor: string;
+  post: Post;
+  metric: string;
+  metricValue: number | string;
+}) {
+  return (
+    <div className="bg-card rounded-xl shadow-card overflow-hidden">
+      <div className={cn("px-4 py-3", headerColor)}>
+        <h3 className="text-xs font-bold text-white uppercase tracking-wider">{title}</h3>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="bg-muted/40 rounded-lg p-3 min-h-[60px] flex items-center">
+          {post.type === "Image" ? (
+            <div className="w-full h-14 bg-gradient-to-br from-gray-200 to-gray-300 rounded flex items-center justify-center">
+              <ImageIcon className="w-6 h-6 text-gray-400" />
+            </div>
+          ) : (
+            <p className="text-xs text-foreground line-clamp-3">{post.caption}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-[11px]">
+          <PlatformIcon platform={post.platform} />
+          <span className="text-muted-foreground">{post.date}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-muted-foreground">{metric}: </span>
+            <span className="font-semibold text-foreground">{metricValue}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Eng. Rate: </span>
+            <span className="font-semibold text-foreground">0%</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Reach: </span>
+            <span className="font-semibold text-foreground">0</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">vs. Avg: </span>
+            <span className="font-semibold text-red-500">-100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PostGridCard({ post }: { post: Post }) {
+  return (
+    <div className="bg-card rounded-xl shadow-card overflow-hidden border border-border hover:border-primary/30 transition-colors">
+      <div className="relative bg-muted h-28 flex items-center justify-center">
+        {post.type === "Image" ? (
+          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+            <ImageIcon className="w-8 h-8 text-blue-400" />
+          </div>
+        ) : post.type === "Viral" ? (
+          <div className="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+            <Zap className="w-8 h-8 text-orange-400" />
+          </div>
+        ) : (
+          <div className="w-full h-full bg-muted/60 flex items-center justify-center p-3">
+            <p className="text-[10px] text-muted-foreground text-center line-clamp-4">{post.caption}</p>
+          </div>
+        )}
+        <div className="absolute top-2 left-2">
+          <TypeBadge type={post.type} />
+        </div>
+      </div>
+      <div className="p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <PlatformIcon platform={post.platform} />
+          <span>{post.date}</span>
+        </div>
+        <p className="text-[11px] text-foreground line-clamp-2">{post.caption}</p>
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1 border-t border-border">
+          <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {post.likes}</span>
+          <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> {post.comments}</span>
+          <span className="flex items-center gap-1"><Share2 className="w-3 h-3" /> {post.shares}</span>
+          <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {post.impressions}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeatmapCell({ dayIdx, timeIdx }: { dayIdx: number; timeIdx: number }) {
+  const key = `${dayIdx}-${timeIdx}`;
+  const isPeak = peakCells.has(key);
+  const isHigh = highEngagementCells.has(key);
+  return (
+    <div
+      className={cn(
+        "h-7 rounded transition-colors",
+        isPeak  ? "bg-gray-800 dark:bg-gray-200"  :
+        isHigh  ? "bg-gray-500 dark:bg-gray-500"  :
+                  "bg-muted/40",
+      )}
+    />
+  );
+}
+
+// ── Sub-view components ─────────────────────────────────────────────
+
+function OverviewView({ navigate, pathname }: { navigate: (path: string) => void; pathname: string }) {
+  const [platform, setPlatform] = useState("All Platforms");
+  const [account, setAccount] = useState("All Accounts");
+  const [timeRange, setTimeRange] = useState("All Time");
+
+  const subPages = [
+    { label: "Intelligence Layer",  icon: Sparkles,   path: `${pathname}?view=intelligence` },
+    { label: "Post Performance",    icon: BarChart3,   path: `${pathname}?view=posts`        },
+    { label: "Growth Insights",     icon: TrendingUp,  path: `${pathname}?view=growth`       },
+    { label: "Competitor Analysis", icon: Trophy,      path: `${pathname}?view=competitors`  },
+    { label: "Create Report",       icon: FileText,    path: `${pathname}?view=report`       },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-end flex-wrap gap-3">
-        <select
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
-        >
-          {dateRanges.map((r) => <option key={r}>{r}</option>)}
-        </select>
-        <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card p-1">
-          {platformsList.map((p) => (
-            <button
-              key={p}
-              onClick={() => setActivePlatform(p)}
-              className={cn(
-                "px-3.5 py-1.5 text-xs font-medium rounded-full transition-colors",
-                activePlatform === p
-                  ? "bg-foreground text-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {p}
-            </button>
-          ))}
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Analytics Overview</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Track performance across all your connected social media accounts
+          </p>
         </div>
-        <Button size="sm" variant="outline" onClick={() => toast.success("Export started — check Downloads")}>
-          <FileDown className="w-3.5 h-3.5" /> Export
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+          >
+            {["All Platforms", "Facebook", "Instagram", "LinkedIn", "Twitter/X"].map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+          <select
+            value={account}
+            onChange={(e) => setAccount(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+          >
+            {["All Accounts", "AI trial", "AI Page trial", "pank_aaj2000", "Harsh Kewalramani"].map((a) => (
+              <option key={a}>{a}</option>
+            ))}
+          </select>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+          >
+            {["All Time", "Last 7 Days", "Last 30 Days", "Last 90 Days"].map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+          <Button size="sm" variant="outline">
+            <FileDown className="w-3.5 h-3.5 mr-1" /> Export
+          </Button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="bg-card rounded-xl p-4 shadow-card">
+            <div className="flex items-center gap-2 mb-2">
+              <kpi.icon className="w-4 h-4 text-primary" />
+              <span className="text-[11px] text-muted-foreground leading-tight">{kpi.label}</span>
+            </div>
+            <p className="text-3xl font-bold tracking-tighter text-foreground tabular-nums">{kpi.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Navigation to Sub-pages */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {subPages.map((sp) => (
+          <button
+            key={sp.path}
+            onClick={() => navigate(sp.path)}
+            className="bg-card rounded-xl p-4 shadow-card border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-left flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <sp.icon className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-xs font-medium text-foreground">{sp.label}</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </button>
+        ))}
+      </div>
+
+      {/* Follower Growth + Engagement Trend */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card rounded-xl shadow-card p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Follower Growth Trend</h2>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={followerGrowthData}>
+              <defs>
+                <linearGradient id="followerGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" domain={[10, 16]} />
+              <Tooltip />
+              <Area type="monotone" dataKey="followers" stroke="#3b82f6" strokeWidth={2} fill="url(#followerGrad)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-card rounded-xl shadow-card p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Engagement Trend</h2>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={engagementTrendData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+              <Tooltip />
+              <Bar dataKey="engagement" fill="#a855f7" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Reach & Impressions */}
+      <div className="bg-card rounded-xl shadow-card p-5">
+        <h2 className="text-sm font-semibold text-foreground mb-4">Reach & Impressions</h2>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={reachImpressionsData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+            <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+            <Tooltip />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Line type="monotone" dataKey="reach" stroke="#f97316" strokeWidth={2} name="Reach" dot={false} />
+            <Line type="monotone" dataKey="impressions" stroke="#3b82f6" strokeWidth={2} name="Impressions" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Platform Comparison */}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground mb-4">Platform Comparison</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="bg-card rounded-xl shadow-card p-5">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Engagement Rate</h3>
+              <HorizontalBar data={engagementRateData} color="#a855f7" />
+            </div>
+            <div className="bg-card rounded-xl shadow-card p-5">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Reach</h3>
+              <HorizontalBar data={reachData} color="#3b82f6" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="bg-card rounded-xl shadow-card p-5">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Growth Rate</h3>
+              <HorizontalBar data={growthRateData} color="#22c55e" />
+            </div>
+            <div className="bg-card rounded-xl shadow-card p-5">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Posts (30 Days)</h3>
+              <HorizontalBar data={postsData} color="#3b82f6" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IntelligenceView({ navigate, pathname }: { navigate: (path: string) => void; pathname: string }) {
+  const [activeRange, setActiveRange] = useState<IntelligenceTimeRange>("30 Days");
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="flex items-start gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate(pathname)} className="mt-0.5">
+            <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh
+          </Button>
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            {intelligenceTimeRanges.map((r) => (
+              <button
+                key={r}
+                onClick={() => setActiveRange(r)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium transition-colors",
+                  activeRange === r
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Title */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
+          <Sparkles className="w-5 h-5 text-purple-500" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Advanced Intelligence Layer</h1>
+          <p className="text-sm text-muted-foreground">AI-powered insights from your real data</p>
+        </div>
+      </div>
+
+      {/* Alert Banner */}
+      <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-purple-500" />
+          <span className="text-sm font-medium text-foreground">
+            0 Intelligence Alerts
+          </span>
+          <span className="text-sm text-muted-foreground">
+            — 0 high priority, 0 medium priority requiring your attention
+          </span>
+        </div>
+        <span className="text-xs bg-purple-500/20 text-purple-600 px-3 py-1 rounded-full font-medium">
+          0 competitors monitored
+        </span>
+      </div>
+
+      {/* Two column cards: Growth Velocity + Engagement Quality */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Growth Velocity Indicator */}
+        <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Growth Velocity Indicator</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Momentum analysis and growth acceleration metrics</p>
+          </div>
+
+          <div className="flex flex-col items-center gap-2 py-2">
+            <ScoreRing score={0} label="Momentum Score" sub="↓ Declining" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">GROWTH ACCELERATION</span>
+              <span className="font-semibold text-foreground">+0.0%</span>
+            </div>
+            <div className="text-xs text-muted-foreground mb-1">VS PREVIOUS PERIOD</div>
+            <div className="h-2 bg-muted rounded-full">
+              <div className="h-2 rounded-full bg-green-500" style={{ width: "50%" }} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border">
+            {[
+              { label: "Follower Velocity", value: "+0/day" },
+              { label: "Engagement Velocity", value: "0/post" },
+              { label: "Content Velocity", value: "23 posts/week" },
+            ].map((m) => (
+              <div key={m.label} className="text-center">
+                <div className="text-sm font-bold text-foreground">{m.value}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">{m.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-muted/40 rounded-lg p-3 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Projected Growth: </span>
+            At current velocity: +0 followers in next 30 days
+          </div>
+        </div>
+
+        {/* Engagement Quality Score */}
+        <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Engagement Quality Score</h2>
+            </div>
+            <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">POOR</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <ScoreRing score={0} label="Overall Quality" sub="0/100" />
+            <div className="flex-1 space-y-3">
+              <QualityBar label="Interaction Depth" score={0} />
+              <QualityBar label="Audience Relevance" score={0} />
+              <QualityBar label="Content Resonance" score={0} />
+              <QualityBar label="Temporal Consistency" score={10} />
+            </div>
+          </div>
+
+          <div className="bg-muted/40 rounded-lg p-3 space-y-1 text-xs">
+            <div className="font-medium text-foreground text-[11px] uppercase tracking-wider">Competitor Benchmark</div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Your Rank</span>
+              <span className="font-semibold text-foreground">#1 of 1</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">vs Average</span>
+              <span className="font-semibold text-foreground">+0 pts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* No Competitor Alerts */}
+      <div className="bg-card rounded-xl shadow-card p-8 flex flex-col items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+          <Shield className="w-6 h-6 text-muted-foreground" />
+        </div>
+        <div className="text-center">
+          <h3 className="text-sm font-semibold text-foreground">No Competitor Alerts</h3>
+          <p className="text-xs text-muted-foreground mt-1">Add competitors to receive intelligent alerts about their activity</p>
+        </div>
+        <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
+          <Users className="w-3.5 h-3.5 mr-1" /> Add Competitors
         </Button>
       </div>
 
-      <Tabs defaultValue="performance">
-        <TabsList>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="competitors">Competitor benchmarking</TabsTrigger>
-          <TabsTrigger value="reports">Scheduled reports</TabsTrigger>
-        </TabsList>
+      {/* AI-Trained Content Insights */}
+      <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-green-500/10 flex items-center justify-center">
+            <Hash className="w-4 h-4 text-green-600" />
+          </div>
+          <h2 className="text-sm font-semibold text-foreground">AI-Trained Content Insights</h2>
+        </div>
 
-        {/* PERFORMANCE */}
-        <TabsContent value="performance" className="space-y-6 mt-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {kpis.map((kpi) => (
-              <div key={kpi.label} className="bg-card rounded-xl shadow-card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <kpi.icon className="w-4 h-4 text-primary" />
-                  <span className="text-[11px] text-muted-foreground">{kpi.label}</span>
-                </div>
-                <p className="text-3xl font-bold tracking-tighter text-foreground tabular-nums">{kpi.value}</p>
-                <span className="text-xs text-success font-medium">{kpi.change}</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Trending Hashtags */}
+          <div className="space-y-2">
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Trending Hashtags</div>
+            {[
+              { tag: "#Python", count: "7x" },
+              { tag: "#AI", count: "7x" },
+              { tag: "#TechJobs", count: "7x" },
+            ].map((h) => (
+              <div key={h.tag} className="flex items-center justify-between bg-muted/40 rounded-lg px-3 py-2">
+                <span className="text-xs font-medium text-primary">{h.tag}</span>
+                <span className="text-[11px] text-muted-foreground">{h.count}</span>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card rounded-xl shadow-card p-5">
-              <h2 className="text-sm font-semibold text-foreground mb-4">Audience Growth</h2>
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={growthData}>
-                  <defs>
-                    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="followers" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#g1)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="bg-card rounded-xl shadow-card p-5">
-              <h2 className="text-sm font-semibold text-foreground mb-4">Engagement Breakdown</h2>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={engagementData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip />
-                  <Bar dataKey="likes" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="comments" fill="hsl(var(--coral-light))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="shares" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+          {/* Best Posting Times */}
+          <div className="space-y-2">
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Best Posting Times</div>
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-start gap-2">
+              <Star className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
+              <div>
+                <div className="text-sm font-bold text-foreground">Friday 9:00 AM</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Based on competitor engagement patterns</div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-card rounded-xl shadow-card overflow-hidden">
-            <div className="p-5 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Top Performing Posts</h2>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                  <th className="px-5 py-3 font-medium">Platform</th>
-                  <th className="px-5 py-3 font-medium">Caption</th>
-                  <th className="px-5 py-3 font-medium text-right">Likes</th>
-                  <th className="px-5 py-3 font-medium text-right">Comments</th>
-                  <th className="px-5 py-3 font-medium text-right">Shares</th>
-                  <th className="px-5 py-3 font-medium text-right">Reach</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topPosts.map((post, i) => (
-                  <tr key={i} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
-                    <td className="px-5 py-3">{platformIcon(post.platform)}</td>
-                    <td className="px-5 py-3 text-foreground">{post.caption}</td>
-                    <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">{post.likes}</td>
-                    <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">{post.comments}</td>
-                    <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">{post.shares}</td>
-                    <td className="px-5 py-3 text-right tabular-nums font-medium text-foreground">{post.reach}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </TabsContent>
-
-        {/* COMPETITORS */}
-        <TabsContent value="competitors" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            {competitors.map((c) => (
-              <div key={c.name} className={cn(
-                "bg-card rounded-xl border p-4",
-                c.name === "You" ? "border-primary" : "border-border",
-              )}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    {c.name === "You" && <Trophy className="w-3.5 h-3.5 text-primary" />}
-                    {c.name}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">SoV {c.shareOfVoice}%</span>
+          {/* Content Type Performance */}
+          <div className="space-y-2">
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Content Type Performance</div>
+            {[
+              { type: "IMAGE", rate: "5.89%", note: "drives majority" },
+              { type: "CAROUSEL", rate: "0%", note: "redesign needed" },
+            ].map((c) => (
+              <div key={c.type} className="bg-muted/40 rounded-lg px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-foreground">{c.type}</span>
+                  <span className="text-xs font-bold text-primary">{c.rate}</span>
                 </div>
-                <div className="text-2xl font-bold text-foreground tabular-nums">{(c.followers / 1000).toFixed(1)}K</div>
-                <div className="text-[11px] text-muted-foreground">followers · {c.engagement}% eng</div>
+                <div className="text-[11px] text-muted-foreground">{c.note}</div>
               </div>
             ))}
           </div>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card rounded-xl shadow-card p-5">
-              <h2 className="text-sm font-semibold text-foreground mb-4">Benchmark vs. competitors</h2>
-              <ResponsiveContainer width="100%" height={260}>
-                <RadarChart data={benchmarkRadar}>
-                  <PolarGrid stroke="hsl(var(--border))" />
-                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
-                  <Radar name="You" dataKey="You" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                  <Radar name="BrandRival" dataKey="BrandRival" stroke="hsl(var(--info))" fill="hsl(var(--info))" fillOpacity={0.15} />
-                  <Radar name="MarketLead" dataKey="MarketLead" stroke="hsl(var(--success))" fill="hsl(var(--success))" fillOpacity={0.15} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="bg-card rounded-xl shadow-card p-5">
-              <h2 className="text-sm font-semibold text-foreground mb-4">Share of Voice trend</h2>
-              <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={sovTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" unit="%" />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="You" stroke="hsl(var(--primary))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="BrandRival" stroke="hsl(var(--info))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="MarketLead" stroke="hsl(var(--success))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="Newcomer Co." stroke="hsl(var(--warning))" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+      {/* Top Posts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4 text-red-500" />
+            <h2 className="text-sm font-semibold text-foreground">Top Posts by Likes</h2>
           </div>
-
-          <div className="bg-card rounded-xl shadow-card overflow-hidden">
-            <div className="p-5 border-b border-border flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Competitor leaderboard</h2>
-              <Button size="sm" variant="outline">+ Add competitor</Button>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-muted-foreground border-b border-border bg-muted/40">
-                  <th className="px-5 py-3 font-medium">Brand</th>
-                  <th className="px-5 py-3 font-medium text-right">Followers</th>
-                  <th className="px-5 py-3 font-medium text-right">Engagement</th>
-                  <th className="px-5 py-3 font-medium text-right">Posts / wk</th>
-                  <th className="px-5 py-3 font-medium text-right">Share of Voice</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...competitors].sort((a, b) => b.shareOfVoice - a.shareOfVoice).map((c) => (
-                  <tr key={c.name} className={cn("border-b border-border last:border-0 hover:bg-accent/30 transition-colors",
-                    c.name === "You" && "bg-primary/5")}>
-                    <td className="px-5 py-3 font-medium text-foreground flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
-                      {c.name}
-                      {c.name === "You" && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">You</span>}
-                    </td>
-                    <td className="px-5 py-3 text-right tabular-nums text-foreground">{c.followers.toLocaleString()}</td>
-                    <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">{c.engagement}%</td>
-                    <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">{c.posts}</td>
-                    <td className="px-5 py-3 text-right tabular-nums font-semibold text-foreground">{c.shareOfVoice}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-3">
+            {topPostsByLikes.map((post) => (
+              <IntelPostCard key={post.id} post={post} />
+            ))}
           </div>
-        </TabsContent>
+        </div>
 
-        {/* SCHEDULED REPORTS */}
-        <TabsContent value="reports" className="space-y-4 mt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Scheduled reports</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Auto-deliver performance digests to clients on a schedule.</p>
-            </div>
-            <Dialog open={newReportOpen} onOpenChange={setNewReportOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm"><Plus className="w-3.5 h-3.5" /> New schedule</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>New scheduled report</DialogTitle></DialogHeader>
-                <div className="space-y-3 py-2">
-                  <div>
-                    <Label>Report name</Label>
-                    <Input value={newReport.name} onChange={(e) => setNewReport({ ...newReport, name: e.target.value })} placeholder="e.g. Weekly performance digest" />
-                  </div>
-                  <div>
-                    <Label>Cadence</Label>
-                    <select
-                      value={newReport.cadence}
-                      onChange={(e) => setNewReport({ ...newReport, cadence: e.target.value as ScheduledReport["cadence"] })}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm"
-                    >
-                      <option>Daily</option><option>Weekly</option><option>Monthly</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label>Recipients (comma separated)</Label>
-                    <Input value={newReport.recipients} onChange={(e) => setNewReport({ ...newReport, recipients: e.target.value })} placeholder="ceo@brand.com, marketing@brand.com" />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setNewReportOpen(false)}>Cancel</Button>
-                  <Button onClick={addReport}>Create</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+        <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-blue-500" />
+            <h2 className="text-sm font-semibold text-foreground">Top Posts by Comments</h2>
           </div>
+          <div className="space-y-3">
+            {topPostsByComments.map((post) => (
+              <IntelPostCard key={post.id} post={post} />
+            ))}
+          </div>
+        </div>
+      </div>
 
-          <div className="bg-card rounded-xl shadow-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-muted-foreground border-b border-border bg-muted/40">
-                  <th className="px-5 py-3 font-medium">Report</th>
-                  <th className="px-5 py-3 font-medium">Cadence</th>
-                  <th className="px-5 py-3 font-medium">Format</th>
-                  <th className="px-5 py-3 font-medium">Recipients</th>
-                  <th className="px-5 py-3 font-medium">Next run</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((r) => (
-                  <tr key={r.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
-                    <td className="px-5 py-3">
-                      <div className="font-medium text-foreground">{r.name}</div>
-                      {r.lastSent && <div className="text-[11px] text-muted-foreground">Last sent {r.lastSent}</div>}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3" /> {r.cadence}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-xs text-muted-foreground">{r.format}</td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1 text-xs text-foreground">
-                        <Mail className="w-3 h-3 text-muted-foreground" /> {r.recipients.length}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground truncate max-w-[180px]">{r.recipients.join(", ")}</div>
-                    </td>
-                    <td className="px-5 py-3 text-xs text-muted-foreground tabular-nums">
-                      <Clock className="w-3 h-3 inline mr-1" />{r.nextRun}
-                    </td>
-                    <td className="px-5 py-3">
-                      <button
-                        onClick={() => setReports(reports.map((x) => x.id === r.id ? { ...x, active: !x.active } : x))}
-                        className={cn(
-                          "text-[11px] px-2 py-1 rounded-full font-medium",
-                          r.active ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {r.active ? "Active" : "Paused"}
-                      </button>
-                    </td>
-                    <td className="px-5 py-3">
-                      <button onClick={() => { setReports(reports.filter((x) => x.id !== r.id)); toast.success("Deleted"); }} className="text-muted-foreground hover:text-error">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Posting Time Recommendation */}
+      <div className="bg-card rounded-xl shadow-card p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Clock className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground">Optimal Posting Window</h2>
+        </div>
+        <div className="bg-muted/40 rounded-lg p-4 text-sm text-muted-foreground">
+          Based on your content patterns and competitor analysis, the best time to post is{" "}
+          <span className="font-semibold text-foreground">Friday between 9:00 AM – 11:00 AM</span>.
+          Posting during this window could increase your engagement rate by up to{" "}
+          <span className="font-semibold text-green-600">23%</span>.
+        </div>
+      </div>
     </div>
   );
+}
+
+function PostsView({ navigate, pathname }: { navigate: (path: string) => void; pathname: string }) {
+  const [platformFilter, setPlatformFilter] = useState("All Platforms");
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [postTypeFilter, setPostTypeFilter] = useState("All Types");
+  const [sortBy, setSortBy] = useState("Highest Engagement Rate");
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate(pathname)}>
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
+        </Button>
+        <Button variant="outline" size="sm">
+          <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh Data
+        </Button>
+      </div>
+
+      <div>
+        <h1 className="text-xl font-bold text-foreground">Post Performance</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Analyze individual post performance and identify your best content
+        </p>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={platformFilter}
+            onChange={(e) => setPlatformFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+          >
+            {["All Platforms", "Facebook", "Instagram", "LinkedIn", "Twitter/X"].map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            {["All", "Published", "Scheduled"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setTypeFilter(f)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium transition-colors",
+                  typeFilter === f
+                    ? "bg-foreground text-background"
+                    : "bg-card text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <select
+            value={postTypeFilter}
+            onChange={(e) => setPostTypeFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+          >
+            {["All Types", "Image", "Text", "Video", "Viral"].map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+        >
+          {["Highest Engagement Rate", "Most Likes", "Most Comments", "Most Shares", "Most Recent"].map((s) => (
+            <option key={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Top Performers */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-sm font-semibold text-foreground">Top Performers</h2>
+          <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Auto-detected insights</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <TopPerformerCard
+            title="Most Liked Post"
+            headerColor="bg-gradient-to-r from-pink-500 to-rose-500"
+            post={topPerformers.mostLiked}
+            metric="Likes"
+            metricValue={2}
+          />
+          <TopPerformerCard
+            title="Most Commented Post"
+            headerColor="bg-gradient-to-r from-purple-600 to-indigo-600"
+            post={topPerformers.mostCommented}
+            metric="Comments"
+            metricValue={15}
+          />
+          <TopPerformerCard
+            title="Most Shared Post"
+            headerColor="bg-gradient-to-r from-green-500 to-emerald-600"
+            post={topPerformers.mostShared}
+            metric="Shares"
+            metricValue={8}
+          />
+        </div>
+      </div>
+
+      {/* All Posts Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground">All Posts</h2>
+          <span className="text-xs text-muted-foreground">150 posts found</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {allPosts.map((post) => (
+            <PostGridCard key={post.id} post={post} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GrowthView({ navigate, pathname }: { navigate: (path: string) => void; pathname: string }) {
+  const [platformFilter, setPlatformFilter] = useState("All Platforms");
+  const [dateFilter, setDateFilter] = useState("Last 30 Days");
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate(pathname)}>
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
+        </Button>
+        <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-100 dark:bg-green-950/40 px-3 py-1 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          Live Data
+        </span>
+      </div>
+
+      <div>
+        <h1 className="text-xl font-bold text-foreground">Audience Growth & Posting Insights</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Real-time growth patterns and optimal posting times across your connected platforms
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <select
+          value={platformFilter}
+          onChange={(e) => setPlatformFilter(e.target.value)}
+          className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+        >
+          {["All Platforms", "Facebook", "Instagram", "LinkedIn"].map((p) => (
+            <option key={p}>{p}</option>
+          ))}
+        </select>
+        <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-card outline-none"
+        >
+          {["Last 7 Days", "Last 30 Days", "Last 90 Days"].map((d) => (
+            <option key={d}>{d}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Net Growth (30D)
+          </div>
+          <div className="text-3xl font-bold text-foreground tabular-nums">±2</div>
+          <div className="text-xs text-muted-foreground mt-1">Total followers: 12</div>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Growth Velocity
+          </div>
+          <div className="flex items-end gap-2">
+            <span className="text-3xl font-bold text-foreground tabular-nums">0</span>
+            <span className="text-sm text-muted-foreground mb-1">/day</span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-muted-foreground">avg. new followers per day</span>
+            <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full font-medium">LOW</span>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Growth Health
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base font-bold text-foreground">Moderate Growth</span>
+            <span className="text-[10px] bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 px-2 py-0.5 rounded-full font-medium">MODERATE</span>
+          </div>
+          <div className="text-xs text-muted-foreground">Growth is stable but could improve with optimized posting.</div>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card rounded-xl shadow-card p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Daily Follower Growth</h2>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={growthChartData}>
+              <defs>
+                <linearGradient id="currentGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="prevGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#9ca3af" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#9ca3af" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="date" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" domain={[10, 16]} />
+              <Tooltip />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Area type="monotone" dataKey="current"  stroke="#3b82f6" strokeWidth={2} fill="url(#currentGrad)" name="Current Period" />
+              <Area type="monotone" dataKey="previous" stroke="#9ca3af" strokeWidth={1.5} fill="url(#prevGrad)" name="Previous Period" strokeDasharray="4 4" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-card rounded-xl shadow-card p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Engagement Trend</h2>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={growthEngagementData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="date" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+              <Tooltip />
+              <Bar dataKey="engagement" fill="#a855f7" radius={[4, 4, 0, 0]} name="Engagement" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Optimal Posting Times Heatmap */}
+      <div className="bg-card rounded-xl shadow-card p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h2 className="text-sm font-semibold text-foreground">Optimal Posting Times</h2>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-muted/40 inline-block" /> Low</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-400 inline-block" /> Medium</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-600 inline-block" /> High</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-800 dark:bg-gray-200 inline-block" /> Peak</span>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <div className="min-w-[520px]">
+            <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: "60px repeat(8, 1fr)" }}>
+              <div />
+              {heatmapTimes.map((t) => (
+                <div key={t} className="text-center text-[10px] text-muted-foreground">{t}</div>
+              ))}
+            </div>
+            {heatmapDays.map((day, dIdx) => (
+              <div key={day} className="grid gap-1 mb-1" style={{ gridTemplateColumns: "60px repeat(8, 1fr)" }}>
+                <div className="text-[11px] text-muted-foreground flex items-center">{day}</div>
+                {heatmapTimes.map((_, tIdx) => (
+                  <HeatmapCell key={tIdx} dayIdx={dIdx} timeIdx={tIdx} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Best Days + Best Time Windows */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card rounded-xl shadow-card p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Best Days to Post</h2>
+          <div className="space-y-2">
+            {bestDays.map((item, i) => (
+              <div key={item.day} className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground w-4 text-right">{i + 1}</span>
+                <span className="text-xs font-medium text-foreground w-24">{item.day}</span>
+                <div className="flex-1 h-2 bg-muted/40 rounded-full">
+                  <div
+                    className={cn("h-2 rounded-full", item.color)}
+                    style={{ width: `${(bestDays.length - i) * 20}%` }}
+                  />
+                </div>
+                <span className="text-[11px] text-muted-foreground">{item.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-card rounded-xl shadow-card p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Best Time Windows</h2>
+          <div className="space-y-3">
+            {bestTimeWindows.map((item) => (
+              <div key={item.window} className={cn("flex items-center gap-3 rounded-lg px-3 py-2.5", item.bg)}>
+                <item.icon className={cn("w-4 h-4 shrink-0", item.color)} />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-foreground">{item.window}</div>
+                </div>
+                <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", item.color === "text-red-500" ? "bg-red-100 text-red-600" : item.color === "text-yellow-500" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700")}>
+                  {item.level}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Platform-Specific Recommendations */}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground mb-4">Platform-Specific Recommendations</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {platformRecs.map((rec) => (
+            <div key={rec.name} className="bg-card rounded-xl shadow-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <rec.icon className={cn("w-5 h-5", rec.iconColor)} />
+                  <span className="text-sm font-semibold text-foreground">{rec.name}</span>
+                </div>
+                <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", rec.confidenceColor)}>
+                  {rec.confidence}% {rec.confidenceLabel}
+                </span>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div>
+                  <div className="text-muted-foreground mb-1">Best Days</div>
+                  <div className="flex flex-wrap gap-1">
+                    {rec.bestDays.map((d) => (
+                      <span key={d} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[11px]">{d}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Best Times</span>
+                  <span className="font-medium text-foreground">{rec.bestTimes}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Peak Engagement</span>
+                  <span className="font-medium text-foreground">{rec.peakEngagement}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompetitorsView({ navigate, pathname }: { navigate: (path: string) => void; pathname: string }) {
+  const [activeTab, setActiveTab] = useState("All 0");
+  const [selectedPlatform, setSelectedPlatform] = useState("Instagram");
+  const [profileInput, setProfileInput] = useState("");
+  const [groupSelect, setGroupSelect] = useState("No groups yet");
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate(pathname)}>
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
+        </Button>
+      </div>
+
+      <div>
+        <h1 className="text-xl font-bold text-foreground">Competitor Watchlist</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Monitor and analyze your competitors' social media performance
+        </p>
+      </div>
+
+      {/* Purple Banner */}
+      <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="text-sm font-semibold text-foreground">Ready to Compare Performance?</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            Benchmark your metrics against competitors and identify opportunities
+          </div>
+        </div>
+        <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
+          View Comparison Dashboard <ChevronRight className="w-3.5 h-3.5 ml-1" />
+        </Button>
+      </div>
+
+      {/* Usage Bar */}
+      <div className="bg-card rounded-xl shadow-card p-5">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <span className="text-sm font-semibold text-foreground">0 of 10 Competitors Used</span>
+            <p className="text-xs text-muted-foreground mt-0.5">10 slots remaining on your current plan</p>
+          </div>
+          <span className="text-xs text-muted-foreground">0%</span>
+        </div>
+        <div className="h-2 bg-muted/40 rounded-full">
+          <div className="h-2 bg-primary rounded-full" style={{ width: "0%" }} />
+        </div>
+      </div>
+
+      {/* Add Competitor */}
+      <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-foreground">Add Competitor</h2>
+        <div className="flex items-end gap-2 flex-wrap">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted-foreground font-medium">Platform</label>
+            <select
+              value={selectedPlatform}
+              onChange={(e) => setSelectedPlatform(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-border text-xs font-medium bg-background outline-none"
+            >
+              {["Instagram", "Facebook", "Twitter/X"].map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
+            <label className="text-xs text-muted-foreground font-medium">Profile URL / Handle / Username</label>
+            <input
+              type="text"
+              value={profileInput}
+              onChange={(e) => setProfileInput(e.target.value)}
+              placeholder="@username or profile URL"
+              className="px-3 py-2 rounded-lg border border-border text-xs bg-background outline-none focus:ring-1 ring-primary placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted-foreground font-medium">Group</label>
+            <select
+              value={groupSelect}
+              onChange={(e) => setGroupSelect(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-border text-xs font-medium bg-background outline-none"
+            >
+              <option>No groups yet</option>
+            </select>
+          </div>
+          <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white h-8 w-8 p-0 rounded-lg">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div>
+          <div className="text-[11px] text-muted-foreground font-medium mb-2 uppercase tracking-wider">Supported Platforms</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {supportedPlatforms.map((p) => (
+              <div
+                key={p.name}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium",
+                  p.available
+                    ? "border-border bg-card"
+                    : "border-dashed border-border bg-muted/30 opacity-60",
+                )}
+              >
+                <p.icon className={cn("w-3.5 h-3.5", p.color)} />
+                {p.name}
+                {!p.available && <span className="text-[10px] text-muted-foreground">(Soon)</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Filter tabs + table */}
+      <div className="bg-card rounded-xl shadow-card overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            {filterTabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-medium transition-colors",
+                  activeTab === tab
+                    ? "bg-foreground text-background"
+                    : "bg-card text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <select className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium bg-background outline-none">
+              <option>All Groups</option>
+            </select>
+            <Button variant="outline" size="sm">
+              <Plus className="w-3 h-3 mr-1" /> New Group
+            </Button>
+            <span className="text-xs text-muted-foreground">Showing 0 competitors</span>
+          </div>
+        </div>
+
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-muted-foreground border-b border-border bg-muted/40">
+              <th className="px-5 py-3 font-medium">Competitor</th>
+              <th className="px-5 py-3 font-medium">Platform</th>
+              <th className="px-5 py-3 font-medium text-right">Followers</th>
+              <th className="px-5 py-3 font-medium text-right">Engagement Rate</th>
+              <th className="px-5 py-3 font-medium">Group</th>
+              <th className="px-5 py-3 font-medium">Last Updated</th>
+              <th className="px-5 py-3 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colSpan={7} className="px-5 py-16 text-center">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                    <Users className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">No competitors yet</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Add your first competitor using the form above</p>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function ReportView({ navigate, pathname }: { navigate: (path: string) => void; pathname: string }) {
+  const [reportName, setReportName] = useState("Monthly Analytics Report");
+  const [dateRange, setDateRange] = useState("Last 30 Days");
+  const [summary, setSummary] = useState("");
+  const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(
+    new Set(metricsOptions.filter((m) => m.defaultChecked).map((m) => m.id))
+  );
+  const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(
+    new Set(reportAccounts.map((a) => a.id))
+  );
+  const [selectedViz, setSelectedViz] = useState<Set<string>>(
+    new Set(vizOptions.filter((v) => v.defaultChecked).map((v) => v.id))
+  );
+
+  const toggleMetric = (id: string) => {
+    setSelectedMetrics((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAccount = (id: string) => {
+    setSelectedAccounts((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleViz = (id: string) => {
+    setSelectedViz((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const deselectAllAccounts = () => setSelectedAccounts(new Set());
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate(pathname)}>
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
+        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Mail className="w-3.5 h-3.5 mr-1" /> Email Report
+          </Button>
+          <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90">
+            <FileDown className="w-3.5 h-3.5 mr-1" /> Generate Report
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <BarChart2 className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Advanced Export & Reporting</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Create custom analytics reports and share insights with stakeholders
+          </p>
+        </div>
+      </div>
+
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Left: 2/3 */}
+        <div className="lg:col-span-2 space-y-5">
+
+          {/* Report Details */}
+          <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Report Details</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Report Name</label>
+                <input
+                  type="text"
+                  value={reportName}
+                  onChange={(e) => setReportName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background outline-none focus:ring-1 ring-primary"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Date Range</label>
+                <select
+                  value={dateRange}
+                  onChange={(e) => setDateRange(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background outline-none"
+                >
+                  {["Last 7 Days", "Last 30 Days", "Last 90 Days", "Custom Range"].map((r) => (
+                    <option key={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Executive Summary</label>
+                <textarea
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  maxLength={500}
+                  rows={4}
+                  placeholder="Add an executive summary..."
+                  className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background outline-none focus:ring-1 ring-primary resize-none placeholder:text-muted-foreground"
+                />
+                <div className="text-[11px] text-muted-foreground text-right mt-0.5">
+                  {summary.length}/500
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Select Metrics */}
+          <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Select Metrics</h2>
+              <span className="text-xs text-muted-foreground">{selectedMetrics.size} selected</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {metricsOptions.map((m) => {
+                const checked = selectedMetrics.has(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleMetric(m.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-colors text-left",
+                      checked
+                        ? "border-primary bg-primary/5 text-foreground"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/50",
+                    )}
+                  >
+                    <div className={cn(
+                      "w-4 h-4 rounded flex items-center justify-center border shrink-0",
+                      checked ? "bg-primary border-primary" : "border-border",
+                    )}>
+                      {checked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                    </div>
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Select Accounts */}
+          <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Select Accounts</h2>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-muted-foreground">All selected</span>
+                <button onClick={deselectAllAccounts} className="text-primary hover:underline">Deselect All</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {reportAccounts.map((acc) => {
+                const checked = selectedAccounts.has(acc.id);
+                return (
+                  <button
+                    key={acc.id}
+                    onClick={() => toggleAccount(acc.id)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors",
+                      checked
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border bg-background hover:border-primary/30",
+                    )}
+                  >
+                    <div className={cn(
+                      "w-4 h-4 rounded-full flex items-center justify-center border shrink-0",
+                      checked ? "bg-green-500 border-green-500" : "border-border",
+                    )}>
+                      {checked && <Check className="w-2.5 h-2.5 text-white" />}
+                    </div>
+                    <acc.icon className={cn("w-4 h-4 shrink-0", acc.iconColor)} />
+                    <div>
+                      <div className="text-xs font-medium text-foreground">{acc.name}</div>
+                      <div className="text-[10px] text-muted-foreground">{acc.platform}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Include Competitors */}
+          <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Include Competitors</h2>
+              <span className="text-xs text-muted-foreground">0 selected</span>
+            </div>
+            <div className="bg-muted/40 rounded-lg p-4 text-center text-xs text-muted-foreground">
+              No competitors added yet.{" "}
+              <button
+                onClick={() => navigate(`${pathname}?view=competitors`)}
+                className="text-primary hover:underline"
+              >
+                Add competitors
+              </button>
+            </div>
+          </div>
+
+          {/* Select Visualizations */}
+          <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Select Visualizations</h2>
+              <span className="text-xs text-muted-foreground">{selectedViz.size} selected</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {vizOptions.map((v) => {
+                const checked = selectedViz.has(v.id);
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => toggleViz(v.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 px-3 py-4 rounded-lg border text-xs font-medium transition-colors",
+                      checked
+                        ? "border-primary bg-primary/5 text-foreground"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/50",
+                    )}
+                  >
+                    <v.icon className={cn("w-5 h-5", checked ? "text-primary" : "text-muted-foreground")} />
+                    {v.label}
+                    {checked && (
+                      <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: 1/3 sticky */}
+        <div className="lg:sticky lg:top-6">
+          <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Report Summary</h2>
+            <div className="space-y-3">
+              {[
+                { label: "METRICS",        value: `${selectedMetrics.size} selected`  },
+                { label: "PLATFORMS",      value: selectedAccounts.size === reportAccounts.length ? "All Accounts" : `${selectedAccounts.size} accounts` },
+                { label: "COMPETITORS",    value: "0 included"   },
+                { label: "VISUALIZATIONS", value: `${selectedViz.size} types`          },
+                { label: "FORMAT",         value: "PDF"           },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between border-b border-border pb-2 last:border-0 last:pb-0">
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{item.label}</span>
+                  <span className="text-xs font-medium text-foreground">{item.value}</span>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" className="w-full text-sm">
+              Preview Report
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main export ──────────────────────────────────────────────────────
+
+export default function AnalyzePage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const view = searchParams.get("view") ?? "overview";
+
+  if (view === "intelligence") return <IntelligenceView navigate={navigate} pathname={pathname} />;
+  if (view === "posts")        return <PostsView navigate={navigate} pathname={pathname} />;
+  if (view === "growth")       return <GrowthView navigate={navigate} pathname={pathname} />;
+  if (view === "competitors")  return <CompetitorsView navigate={navigate} pathname={pathname} />;
+  if (view === "report")       return <ReportView navigate={navigate} pathname={pathname} />;
+  return <OverviewView navigate={navigate} pathname={pathname} />;
 }

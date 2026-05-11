@@ -4,6 +4,7 @@ import {
   LayoutDashboard, FolderOpen, Users, Link2, Sparkles, CalendarDays, MessageSquare,
   BarChart3, Megaphone, Ear, Settings, Bell, ChevronDown, ChevronUp, ChevronRight,
   LogOut, Globe, KanbanSquare, FileText, ShieldAlert, Bot, Check,
+  TrendingUp, Trophy, FileDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
@@ -62,7 +63,16 @@ const projectNav: NavItem[] = [
       { label: "Auto Replies",  icon: Bot,          path: "/client/engage/auto-replies"},
     ],
   },
-  { label: "Analyze", icon: BarChart3, path: "/client/analyze" },
+  {
+    label: "Analyze", icon: BarChart3, path: "/client/analyze",
+    children: [
+      { label: "Intelligence Layer",   icon: Sparkles,   path: "/client/analyze?view=intelligence" },
+      { label: "Post Performance",     icon: FileText,   path: "/client/analyze?view=posts"        },
+      { label: "View Growth Insights", icon: TrendingUp, path: "/client/analyze?view=growth"       },
+      { label: "Competitor Analysis",  icon: Trophy,     path: "/client/analyze?view=competitors"  },
+      { label: "Create Report",        icon: FileDown,   path: "/client/analyze?view=report"       },
+    ],
+  },
   { label: "Promote", icon: Megaphone, path: "/client/promote" },
   { label: "Listen",  icon: Ear,       path: "/client/listen"  },
 ];
@@ -94,7 +104,7 @@ export default function ClientLayout() {
   const [project,  setProject]  = useState<Project | null>(() => initProject(initBusiness().id));
   const [switcherOpen,    setSwitcherOpen]    = useState(false);
   const [expandedBiz,     setExpandedBiz]     = useState<Set<string>>(() => new Set([initBusiness().id]));
-  const [expandedMenus,   setExpandedMenus]   = useState<Set<string>>(new Set(["Engage"]));
+  const [expandedMenus,   setExpandedMenus]   = useState<Set<string>>(new Set(["Engage", "Analyze"]));
 
   const switcherRef = useRef<HTMLDivElement>(null);
 
@@ -253,7 +263,7 @@ export default function ClientLayout() {
           {(navItems as NavItem[]).map(item => {
             const hasChildren = !!item.children?.length;
             const isActive    = hasChildren
-              ? item.children!.some(c => location.pathname === c.path)
+              ? item.children!.some(c => (location.pathname + location.search) === c.path)
               : location.pathname === item.path || location.pathname.startsWith(item.path + "/");
             const isExpanded  = expandedMenus.has(item.label);
 
@@ -281,7 +291,7 @@ export default function ClientLayout() {
                     {isExpanded && (
                       <div className="mt-0.5 ml-3 pl-3 border-l border-sidebar-border/50 space-y-0.5">
                         {item.children!.map(child => {
-                          const childActive = location.pathname === child.path;
+                          const childActive = (location.pathname + location.search) === child.path;
                           return (
                             <Link
                               key={child.label}
