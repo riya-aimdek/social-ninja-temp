@@ -16,15 +16,40 @@ import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
 
 /* ---------------- Platform model ---------------- */
 type PlatformKey = "instagram" | "facebook" | "linkedin" | "twitter";
+type AspectOption = { ratio: string; label: string; size: string };
 
 const PLATFORMS: Record<PlatformKey, {
   name: string; icon: typeof Instagram; color: string; charLimit: number;
   hashtagLimit: number; aspect: string; aspectLabel: string; recSize: string;
+  aspects?: AspectOption[];
 }> = {
-  instagram: { name: "Instagram", icon: Instagram, color: "bg-[hsl(var(--instagram))]", charLimit: 2200, hashtagLimit: 30, aspect: "1 / 1", aspectLabel: "1:1 Square", recSize: "1080×1080" },
-  facebook:  { name: "Facebook",  icon: Facebook,  color: "bg-[hsl(var(--facebook))]",  charLimit: 63206, hashtagLimit: 30, aspect: "4 / 5", aspectLabel: "4:5 Vertical", recSize: "1080×1350" },
-  linkedin:  { name: "LinkedIn",  icon: Linkedin,  color: "bg-[hsl(var(--linkedin))]",  charLimit: 3000,  hashtagLimit: 5,  aspect: "1.91 / 1", aspectLabel: "1.91:1 Landscape", recSize: "1200×627" },
-  twitter:   { name: "X",         icon: Twitter,   color: "bg-[hsl(var(--twitter))]",   charLimit: 280,   hashtagLimit: 10, aspect: "16 / 9", aspectLabel: "16:9 Landscape",  recSize: "1600×900" },
+  instagram: { name: "Instagram", icon: Instagram, color: "bg-[hsl(var(--instagram))]", charLimit: 2200, hashtagLimit: 30, aspect: "4 / 5", aspectLabel: "4:5 Vertical", recSize: "1080×1350",
+    aspects: [
+      { ratio: "4 / 5",    label: "4:5 Vertical",    size: "1080×1350" },
+      { ratio: "1 / 1",    label: "1:1 Square",       size: "1080×1080" },
+      { ratio: "1.91 / 1", label: "1.91:1 Landscape", size: "1080×566"  },
+    ],
+  },
+  facebook:  { name: "Facebook",  icon: Facebook,  color: "bg-[hsl(var(--facebook))]",  charLimit: 63206, hashtagLimit: 30, aspect: "4 / 5", aspectLabel: "4:5 Vertical", recSize: "1080×1350",
+    aspects: [
+      { ratio: "4 / 5",    label: "4:5 Vertical",    size: "1080×1350" },
+      { ratio: "1 / 1",    label: "1:1 Square",       size: "1080×1080" },
+      { ratio: "1.91 / 1", label: "1.91:1 Landscape", size: "1200×630"  },
+    ],
+  },
+  linkedin:  { name: "LinkedIn",  icon: Linkedin,  color: "bg-[hsl(var(--linkedin))]",  charLimit: 3000,  hashtagLimit: 5,  aspect: "1.91 / 1", aspectLabel: "1.91:1 Landscape", recSize: "1200×627",
+    aspects: [
+      { ratio: "1.91 / 1", label: "1.91:1 Landscape", size: "1200×627"  },
+      { ratio: "1 / 1",    label: "1:1 Square",        size: "1080×1080" },
+      { ratio: "4 / 5",    label: "4:5 Vertical",      size: "1080×1350" },
+    ],
+  },
+  twitter:   { name: "X",         icon: Twitter,   color: "bg-[hsl(var(--twitter))]",   charLimit: 280,   hashtagLimit: 10, aspect: "16 / 9", aspectLabel: "16:9 Landscape",  recSize: "1600×900",
+    aspects: [
+      { ratio: "16 / 9", label: "16:9 Landscape", size: "1600×900"  },
+      { ratio: "1 / 1",  label: "1:1 Square",      size: "1080×1080" },
+    ],
+  },
 };
 
 /* ---------------- Mock connected accounts ---------------- */
@@ -108,6 +133,7 @@ export default function CreatePage() {
   /* ---- preview ---- */
   const [previewMode, setPreviewMode] = useState<"tabs" | "grid">("tabs");
   const [activePreview, setActivePreview] = useState<PlatformKey>("instagram");
+  const [platformAspect, setPlatformAspect] = useState<Partial<Record<PlatformKey, string>>>({});
 
   /* ---- derived ---- */
   const selectedAccounts = useMemo(
@@ -128,6 +154,7 @@ export default function CreatePage() {
   };
   const getMediaListFor = (p: PlatformKey): MediaItem[] => platformMediaList[p] ?? sharedMediaList;
   const getMediaFor = (p: PlatformKey): MediaItem | null => getMediaListFor(p)[0] ?? null;
+  const getAspectFor = (p: PlatformKey): string => platformAspect[p] ?? PLATFORMS[p].aspect;
 
   /* ---- account toggle ---- */
   const toggleAccount = (id: string) =>
@@ -564,12 +591,40 @@ export default function CreatePage() {
                     );
                   })}
                 </div>
+                {/* Aspect ratio picker — shown for platforms that support multiple ratios */}
+                {PLATFORMS[activePreview].aspects && (
+                  <div className="px-4 py-2 border-b border-border flex items-center gap-2 flex-wrap bg-muted/10">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Ratio</span>
+                    {PLATFORMS[activePreview].aspects!.map((opt) => {
+                      const active = getAspectFor(activePreview) === opt.ratio;
+                      return (
+                        <button
+                          key={opt.ratio}
+                          onClick={() => setPlatformAspect((prev) => ({ ...prev, [activePreview]: opt.ratio }))}
+                          title={opt.size}
+                          className={cn(
+                            "px-2.5 py-0.5 rounded text-[11px] font-medium transition-all border",
+                            active
+                              ? "gradient-coral text-primary-foreground border-transparent shadow-sm"
+                              : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-primary/40"
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                    <span className="text-[10px] text-muted-foreground ml-auto">
+                      {PLATFORMS[activePreview].aspects!.find((o) => o.ratio === getAspectFor(activePreview))?.size}
+                    </span>
+                  </div>
+                )}
                 <div className="p-4">
                   <PlatformPreview
                     platform={activePreview}
                     caption={getCaptionFor(activePreview)}
                     mediaList={getMediaListFor(activePreview)}
                     handle={selectedAccounts.find((a) => a.platform === activePreview)?.handle ?? ""}
+                    aspectOverride={getAspectFor(activePreview)}
                   />
                 </div>
               </>
@@ -581,6 +636,25 @@ export default function CreatePage() {
                       <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
                       {(() => { const Icon = PLATFORMS[p].icon; return <Icon className="w-3.5 h-3.5" />; })()}
                       {PLATFORMS[p].name}
+                      {PLATFORMS[p].aspects && (
+                        <span className="ml-auto flex items-center gap-1 font-normal">
+                          {PLATFORMS[p].aspects!.map((opt) => {
+                            const active = getAspectFor(p) === opt.ratio;
+                            return (
+                              <button
+                                key={opt.ratio}
+                                onClick={(e) => { e.preventDefault(); setPlatformAspect((prev) => ({ ...prev, [p]: opt.ratio })); }}
+                                className={cn(
+                                  "px-1.5 py-0.5 rounded text-[10px] font-medium border transition-all",
+                                  active
+                                    ? "gradient-coral text-primary-foreground border-transparent"
+                                    : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                                )}
+                              >{opt.label}</button>
+                            );
+                          })}
+                        </span>
+                      )}
                     </summary>
                     <div className="p-3">
                       <PlatformPreview
@@ -588,6 +662,7 @@ export default function CreatePage() {
                         caption={getCaptionFor(p)}
                         mediaList={getMediaListFor(p)}
                         handle={selectedAccounts.find((a) => a.platform === p)?.handle ?? ""}
+                        aspectOverride={getAspectFor(p)}
                       />
                     </div>
                   </details>
@@ -664,18 +739,44 @@ export default function CreatePage() {
                       </span>
                       <div>
                         <p className="text-sm font-semibold leading-tight">{meta.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{meta.recSize} · {meta.aspectLabel}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {meta.aspects
+                            ? (meta.aspects.find((o) => o.ratio === getAspectFor(p))?.size ?? meta.recSize)
+                            : meta.recSize} · {meta.aspects
+                            ? (meta.aspects.find((o) => o.ratio === getAspectFor(p))?.label ?? meta.aspectLabel)
+                            : meta.aspectLabel}
+                        </p>
                       </div>
                     </div>
                     {isVariant && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">Custom</span>}
                   </div>
+                  {/* Per-platform aspect ratio picker */}
+                  {meta.aspects && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {meta.aspects.map((opt) => {
+                        const active = getAspectFor(p) === opt.ratio;
+                        return (
+                          <button
+                            key={opt.ratio}
+                            onClick={() => setPlatformAspect((prev) => ({ ...prev, [p]: opt.ratio }))}
+                            className={cn(
+                              "px-2 py-0.5 rounded text-[10px] font-medium border transition-all",
+                              active
+                                ? "gradient-coral text-primary-foreground border-transparent"
+                                : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                            )}
+                          >{opt.label}</button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {displayList.length > 0 && (
                     <p className="text-[10px] text-muted-foreground">{displayList.length} shared item{displayList.length > 1 ? "s" : ""}</p>
                   )}
 
                   {/* Carousel preview */}
-                  <div className="relative rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center" style={{ aspectRatio: meta.aspect }}>
+                  <div className="relative rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center" style={{ aspectRatio: getAspectFor(p) }}>
                     {currentItem
                       ? currentItem.type === "video"
                         ? <video src={currentItem.url} className="w-full h-full object-cover" muted autoPlay loop playsInline />
@@ -1027,13 +1128,14 @@ function SelectedAccountsBar({ accounts, onOpen }: { accounts: Account[]; onOpen
 }
 
 /* ---------------- Platform Previews ---------------- */
-function PlatformPreview({ platform, caption, mediaList, handle }: { platform: PlatformKey; caption: string; mediaList: MediaItem[]; handle: string }) {
+function PlatformPreview({ platform, caption, mediaList, handle, aspectOverride }: { platform: PlatformKey; caption: string; mediaList: MediaItem[]; handle: string; aspectOverride?: string }) {
   const [idx, setIdx] = useState(0);
   const safeIdx = Math.min(idx, Math.max(0, mediaList.length - 1));
   const currentItem = mediaList[safeIdx] ?? null;
   const isCarousel = mediaList.length > 1;
 
   const meta = PLATFORMS[platform];
+  const aspect = aspectOverride ?? meta.aspect;
   const Icon = meta.icon;
   const initial = handle.replace(/^@/, "").charAt(0).toUpperCase() || "N";
 
@@ -1055,7 +1157,7 @@ function PlatformPreview({ platform, caption, mediaList, handle }: { platform: P
   );
 
   const MediaSlot = (
-    <div className="relative w-full bg-muted overflow-hidden" style={{ aspectRatio: meta.aspect }}>
+    <div className="relative w-full bg-muted overflow-hidden" style={{ aspectRatio: aspect }}>
       {currentItem
         ? currentItem.type === "video"
           ? <video src={currentItem.url} className="w-full h-full object-cover" muted autoPlay loop playsInline />
