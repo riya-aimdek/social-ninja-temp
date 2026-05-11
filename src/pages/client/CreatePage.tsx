@@ -5,7 +5,7 @@ import {
   AlertCircle, RefreshCw, Check, X, Upload, Loader2, Save, Hash,
   Calendar as CalendarIcon, Clock, Eye, ChevronDown, ChevronRight, Plus,
   MoreHorizontal, Heart, MessageCircle, Repeat2, Send, Settings2, Trash2,
-  CheckCircle2, Globe2, GalleryVertical,
+  CheckCircle2, Globe2, GalleryVertical, Play,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,7 +22,7 @@ const PLATFORMS: Record<PlatformKey, {
   hashtagLimit: number; aspect: string; aspectLabel: string; recSize: string;
 }> = {
   instagram: { name: "Instagram", icon: Instagram, color: "bg-[hsl(var(--instagram))]", charLimit: 2200, hashtagLimit: 30, aspect: "1 / 1", aspectLabel: "1:1 Square", recSize: "1080×1080" },
-  facebook:  { name: "Facebook",  icon: Facebook,  color: "bg-[hsl(var(--facebook))]",  charLimit: 63206, hashtagLimit: 30, aspect: "1.91 / 1", aspectLabel: "1.91:1 Landscape", recSize: "1200×630" },
+  facebook:  { name: "Facebook",  icon: Facebook,  color: "bg-[hsl(var(--facebook))]",  charLimit: 63206, hashtagLimit: 30, aspect: "4 / 5", aspectLabel: "4:5 Vertical", recSize: "1080×1350" },
   linkedin:  { name: "LinkedIn",  icon: Linkedin,  color: "bg-[hsl(var(--linkedin))]",  charLimit: 3000,  hashtagLimit: 5,  aspect: "1.91 / 1", aspectLabel: "1.91:1 Landscape", recSize: "1200×627" },
   twitter:   { name: "X",         icon: Twitter,   color: "bg-[hsl(var(--twitter))]",   charLimit: 280,   hashtagLimit: 10, aspect: "16 / 9", aspectLabel: "16:9 Landscape",  recSize: "1600×900" },
 };
@@ -45,6 +45,7 @@ const HASHTAG_GROUPS: Record<string, string[]> = {
 };
 
 /* ---------------- Types ---------------- */
+type MediaItem = { url: string; type: "image" | "video" };
 type CaptionVariant = { caption: string; useShared: boolean };
 type PlatformOverrides = Partial<Record<PlatformKey, CaptionVariant>>;
 
@@ -61,8 +62,8 @@ export default function CreatePage() {
   const [activeOverrideTab, setActiveOverrideTab] = useState<PlatformKey | null>(null);
 
   /* ---- media (carousel + per-platform variants) ---- */
-  const [sharedMediaList, setSharedMediaList] = useState<string[]>([]);
-  const [platformMediaList, setPlatformMediaList] = useState<Partial<Record<PlatformKey, string[]>>>({});
+  const [sharedMediaList, setSharedMediaList] = useState<MediaItem[]>([]);
+  const [platformMediaList, setPlatformMediaList] = useState<Partial<Record<PlatformKey, MediaItem[]>>>({});
   const [mediaVariantsOpen, setMediaVariantsOpen] = useState(false);
   const [dialogCarouselIdx, setDialogCarouselIdx] = useState<Partial<Record<PlatformKey, number>>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -125,8 +126,8 @@ export default function CreatePage() {
     if (customizePerNetwork && overrides[p] && !overrides[p]!.useShared) return overrides[p]!.caption;
     return sharedCaption;
   };
-  const getMediaListFor = (p: PlatformKey): string[] => platformMediaList[p] ?? sharedMediaList;
-  const getMediaFor = (p: PlatformKey): string | null => getMediaListFor(p)[0] ?? null;
+  const getMediaListFor = (p: PlatformKey): MediaItem[] => platformMediaList[p] ?? sharedMediaList;
+  const getMediaFor = (p: PlatformKey): MediaItem | null => getMediaListFor(p)[0] ?? null;
 
   /* ---- account toggle ---- */
   const toggleAccount = (id: string) =>
@@ -145,18 +146,19 @@ export default function CreatePage() {
 
   /* ---- media upload (mock) ---- */
   const handleFile = (file: File) => {
+    const isVideo = file.type.startsWith("video/");
     const reader = new FileReader();
     reader.onload = (e) => {
-      const url = e.target?.result as string;
+      const item: MediaItem = { url: e.target?.result as string, type: isVideo ? "video" : "image" };
       if (uploadTarget === "shared") {
-        setSharedMediaList((prev) => [...prev, url]);
+        setSharedMediaList((prev) => [...prev, item]);
       } else {
         setPlatformMediaList((prev) => ({
           ...prev,
-          [uploadTarget]: [...(prev[uploadTarget as PlatformKey] ?? []), url],
+          [uploadTarget]: [...(prev[uploadTarget as PlatformKey] ?? []), item],
         }));
       }
-      toast.success(uploadTarget === "shared" ? "Image added to carousel" : `${PLATFORMS[uploadTarget as PlatformKey].name} variant added`);
+      toast.success(uploadTarget === "shared" ? `${isVideo ? "Video" : "Image"} added to carousel` : `${PLATFORMS[uploadTarget as PlatformKey].name} variant added`);
     };
     reader.readAsDataURL(file);
   };
@@ -261,7 +263,7 @@ export default function CreatePage() {
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-primary" /> Media
                 {sharedMediaList.length > 0 && (
-                  <span className="text-[11px] font-normal text-muted-foreground">{sharedMediaList.length} image{sharedMediaList.length > 1 ? "s" : ""}</span>
+                  <span className="text-[11px] font-normal text-muted-foreground">{sharedMediaList.length} item{sharedMediaList.length > 1 ? "s" : ""}</span>
                 )}
               </h3>
               {selectedPlatforms.length > 1 && (
@@ -276,9 +278,17 @@ export default function CreatePage() {
 
             {/* Thumbnail strip */}
             <div className="flex items-center gap-2 flex-wrap">
-              {sharedMediaList.map((url, i) => (
-                <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+              {sharedMediaList.map((item, i) => (
+                <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0 bg-black">
+                  {item.type === "video"
+                    ? <video src={item.url} className="w-full h-full object-cover opacity-80" muted playsInline />
+                    : <img src={item.url} alt="" className="w-full h-full object-cover" />
+                  }
+                  {item.type === "video" && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <Play className="w-5 h-5 text-white drop-shadow" />
+                    </div>
+                  )}
                   <button
                     onClick={() => removeMediaItem("shared", i)}
                     className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
@@ -294,7 +304,7 @@ export default function CreatePage() {
                 >
                   <Upload className="w-6 h-6" />
                   <span className="text-xs font-medium">Upload media</span>
-                  <span className="text-[10px]">JPG, PNG, WEBP — up to 10 images</span>
+                  <span className="text-[10px]">JPG, PNG, WEBP, MP4, MOV — up to 10 items</span>
                 </button>
               ) : sharedMediaList.length < 10 && (
                 <button
@@ -596,7 +606,7 @@ export default function CreatePage() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
       />
@@ -641,7 +651,7 @@ export default function CreatePage() {
               const isVariant = !!variantList && variantList.length > 0;
               const idx = dialogCarouselIdx[p] ?? 0;
               const safeIdx = Math.min(idx, displayList.length - 1);
-              const currentUrl = displayList[safeIdx] ?? null;
+              const currentItem = displayList[safeIdx] ?? null;
               const canPrev = safeIdx > 0;
               const canNext = safeIdx < displayList.length - 1;
 
@@ -666,9 +676,11 @@ export default function CreatePage() {
 
                   {/* Carousel preview */}
                   <div className="relative rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center" style={{ aspectRatio: meta.aspect }}>
-                    {currentUrl
-                      ? <img src={currentUrl} alt={meta.name} className="w-full h-full object-cover" />
-                      : <span className="text-[11px] text-muted-foreground">No image</span>
+                    {currentItem
+                      ? currentItem.type === "video"
+                        ? <video src={currentItem.url} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+                        : <img src={currentItem.url} alt={meta.name} className="w-full h-full object-cover" />
+                      : <span className="text-[11px] text-muted-foreground">No media</span>
                     }
                     {displayList.length > 1 && (
                       <>
@@ -1015,10 +1027,10 @@ function SelectedAccountsBar({ accounts, onOpen }: { accounts: Account[]; onOpen
 }
 
 /* ---------------- Platform Previews ---------------- */
-function PlatformPreview({ platform, caption, mediaList, handle }: { platform: PlatformKey; caption: string; mediaList: string[]; handle: string }) {
+function PlatformPreview({ platform, caption, mediaList, handle }: { platform: PlatformKey; caption: string; mediaList: MediaItem[]; handle: string }) {
   const [idx, setIdx] = useState(0);
   const safeIdx = Math.min(idx, Math.max(0, mediaList.length - 1));
-  const media = mediaList[safeIdx] ?? null;
+  const currentItem = mediaList[safeIdx] ?? null;
   const isCarousel = mediaList.length > 1;
 
   const meta = PLATFORMS[platform];
@@ -1044,8 +1056,10 @@ function PlatformPreview({ platform, caption, mediaList, handle }: { platform: P
 
   const MediaSlot = (
     <div className="relative w-full bg-muted overflow-hidden" style={{ aspectRatio: meta.aspect }}>
-      {media
-        ? <img src={media} alt="Preview" className="w-full h-full object-cover" />
+      {currentItem
+        ? currentItem.type === "video"
+          ? <video src={currentItem.url} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+          : <img src={currentItem.url} alt="Preview" className="w-full h-full object-cover" />
         : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="w-10 h-10 opacity-30 text-muted-foreground" /></div>
       }
       {isCarousel && (
@@ -1082,7 +1096,7 @@ function PlatformPreview({ platform, caption, mediaList, handle }: { platform: P
           <div className="flex-1 min-w-0">
             <p className="text-sm"><span className="font-semibold">{handle.replace(/^@/, "") || "Your account"}</span> <span className="text-muted-foreground">{handle.startsWith("@") ? handle : `@${handle}`} · now</span></p>
             <p className="text-sm leading-relaxed mt-0.5 whitespace-pre-wrap break-words">{caption || <span className="text-muted-foreground italic">Your tweet will appear here…</span>}</p>
-            {mediaList.length > 0 && (
+            {currentItem && (
               <div className="mt-2 rounded-2xl overflow-hidden border border-border">{MediaSlot}</div>
             )}
             <div className="flex justify-between mt-2 max-w-xs text-muted-foreground text-xs">
