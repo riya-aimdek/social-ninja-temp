@@ -76,7 +76,7 @@ const projectNav: NavItem[] = [
     children: [
       { title: "Intelligence Layer",   icon: Sparkles,   path: "/agency/client/analyze?view=intelligence" },
       { title: "Post Performance",     icon: FileText,   path: "/agency/client/analyze?view=posts"        },
-      { title: "View Growth Insights", icon: TrendingUp, path: "/agency/client/analyze?view=growth"       },
+      { title: "Growth Insights", icon: TrendingUp, path: "/agency/client/analyze?view=growth"       },
       { title: "Competitor Analysis",  icon: Trophy,     path: "/agency/client/analyze?view=competitors"  },
       { title: "Create Report",        icon: FileDown,   path: "/agency/client/analyze?view=report"       },
     ],
@@ -310,11 +310,10 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
               return (
                 <div key={item.path}>
                   <button
-                    onClick={() => setExpandedMenus(prev => {
-                      const next = new Set(prev);
-                      next.has(item.title) ? next.delete(item.title) : next.add(item.title);
-                      return next;
-                    })}
+                    onClick={() => {
+                      navigate(item.path);
+                      setExpandedMenus(prev => { const next = new Set(prev); next.add(item.title); return next; });
+                    }}
                     className={cn(
                       "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                       active
@@ -324,7 +323,19 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
                   >
                     <item.icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1 text-left">{item.title}</span>
-                    <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isOpen && "rotate-180")} />
+                    <span
+                      onClick={e => {
+                        e.stopPropagation();
+                        setExpandedMenus(prev => {
+                          const next = new Set(prev);
+                          next.has(item.title) ? next.delete(item.title) : next.add(item.title);
+                          return next;
+                        });
+                      }}
+                      className="p-0.5 rounded hover:bg-white/10"
+                    >
+                      <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isOpen && "rotate-180")} />
+                    </span>
                   </button>
                   {isOpen && (
                     <div className="mt-0.5 ml-3 pl-3 border-l border-sidebar-border/50 space-y-0.5">

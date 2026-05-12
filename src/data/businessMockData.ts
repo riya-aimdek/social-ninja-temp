@@ -49,20 +49,25 @@ export const projects: Project[] = [
 
 // ── Connected Social Accounts ─────────────────────────────────
 export interface SocialAccount {
+  id: string;
   name: string;
   connected: boolean;
   profile: string;
+  handle: string;
   lastSync: string;
+  followers: string;
+  postsCount: number;
+  queueTime: string;
 }
 
 export const socialAccounts: SocialAccount[] = [
-  { name: "Facebook", connected: true, profile: "Acme Business Page", lastSync: "2 min ago" },
-  { name: "Instagram", connected: true, profile: "@acmebusiness", lastSync: "5 min ago" },
-  { name: "LinkedIn", connected: true, profile: "Acme Business Inc.", lastSync: "10 min ago" },
-  { name: "Twitter / X", connected: false, profile: "", lastSync: "" },
-  { name: "Pinterest", connected: false, profile: "", lastSync: "" },
-  { name: "YouTube", connected: false, profile: "", lastSync: "" },
-  { name: "Shopify", connected: false, profile: "", lastSync: "" },
+  { id: "sa1", name: "Facebook",    connected: true,  profile: "Acme Business Page",  handle: "acmebusiness",  lastSync: "2 min ago",  followers: "1.2K", postsCount: 48, queueTime: "9:00 AM – 11:00 AM"  },
+  { id: "sa2", name: "Instagram",   connected: true,  profile: "@acmebusiness",        handle: "acmebusiness",  lastSync: "5 min ago",  followers: "3.8K", postsCount: 72, queueTime: "10:00 AM – 12:00 PM" },
+  { id: "sa3", name: "LinkedIn",    connected: true,  profile: "Acme Business Inc.",   handle: "acme-business", lastSync: "10 min ago", followers: "560",  postsCount: 31, queueTime: "8:00 AM – 10:00 AM"  },
+  { id: "sa4", name: "Twitter / X", connected: false, profile: "", handle: "", lastSync: "", followers: "", postsCount: 0, queueTime: "" },
+  { id: "sa5", name: "Pinterest",   connected: false, profile: "", handle: "", lastSync: "", followers: "", postsCount: 0, queueTime: "" },
+  { id: "sa6", name: "YouTube",     connected: false, profile: "", handle: "", lastSync: "", followers: "", postsCount: 0, queueTime: "" },
+  { id: "sa7", name: "Shopify",     connected: false, profile: "", handle: "", lastSync: "", followers: "", postsCount: 0, queueTime: "" },
 ];
 
 // ── Derived stats (computed once, reusable) ───────────────────

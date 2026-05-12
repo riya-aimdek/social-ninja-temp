@@ -524,7 +524,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
               </SectionTitle>
 
               {/* Auto-publish */}
-              <div className="rounded-xl border border-border p-4 mb-4">
+              <div className="rounded-xl border border-border p-4 mb-4 cursor-pointer" onClick={() => setAutoPublish(v => !v)}>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Zap className="w-4 h-4 text-warning" />
@@ -532,11 +532,11 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-foreground">Auto-publish if not approved in time</p>
-                      <input type="checkbox" checked={autoPublish} onChange={e => setAutoPublish(e.target.checked)} className="w-4 h-4 accent-primary" />
+                      <input type="checkbox" checked={autoPublish} onChange={e => { e.stopPropagation(); setAutoPublish(e.target.checked); }} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-primary" />
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">If approval isn't received within the defined window, the system will act automatically.</p>
                     {autoPublish && (
-                      <div className="mt-4 pt-4 border-t border-border space-y-3">
+                      <div className="mt-4 pt-4 border-t border-border space-y-3" onClick={e => e.stopPropagation()}>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <FieldLabel>Wait time before action</FieldLabel>
@@ -571,19 +571,19 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
               </div>
 
               {/* Reminders */}
-              <div className="rounded-xl border border-border p-4 mb-4">
+              <div className="rounded-xl border border-border p-4 mb-4 cursor-pointer" onClick={() => setReminderEnabled(v => !v)}>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <BellRing className="w-4 h-4 text-info" />
                   </div>
                   <div className="flex-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={reminderEnabled} onChange={e => setReminderEnabled(e.target.checked)} className="w-4 h-4 accent-primary shrink-0" />
+                    <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-foreground">Send reminders for pending approvals</p>
-                    </label>
+                      <input type="checkbox" checked={reminderEnabled} onChange={e => { e.stopPropagation(); setReminderEnabled(e.target.checked); }} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-primary shrink-0" />
+                    </div>
                     <p className="text-xs text-muted-foreground mt-0.5">Nudge approvers automatically so posts don't sit idle in the queue.</p>
                     {reminderEnabled && (
-                      <div className="mt-4 pt-4 border-t border-border space-y-3">
+                      <div className="mt-4 pt-4 border-t border-border space-y-3" onClick={e => e.stopPropagation()}>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <FieldLabel>First reminder after</FieldLabel>

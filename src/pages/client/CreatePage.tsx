@@ -5,7 +5,7 @@ import {
   AlertCircle, RefreshCw, Check, X, Upload, Loader2, Save, Hash,
   Calendar as CalendarIcon, Clock, Eye, ChevronDown, ChevronRight, Plus,
   MoreHorizontal, Heart, MessageCircle, Repeat2, Send, Settings2, Trash2,
-  CheckCircle2, Globe2, GalleryVertical, Play,
+  CheckCircle2, Globe2, GalleryVertical, Play, AlignLeft, Music,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -95,6 +95,8 @@ export default function CreatePage() {
   const [uploadTarget, setUploadTarget] = useState<PlatformKey | "shared">("shared");
   const sharedTextareaRef = useRef<HTMLTextAreaElement>(null);
   const overrideTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const storyFileInputRef = useRef<HTMLInputElement>(null);
+  const reelFileInputRef = useRef<HTMLInputElement>(null);
 
   /* ---- AI ---- */
   const [aiOpen, setAiOpen] = useState(false);
@@ -126,6 +128,13 @@ export default function CreatePage() {
     { day: "Friday",    time: "17:00" },
   ];
   const nextSlot = queueSlots[0];
+
+  /* ---- content type ---- */
+  const [contentType, setContentType] = useState<"post" | "story" | "reel">("post");
+  const [storyMedia, setStoryMedia] = useState<MediaItem | null>(null);
+  const [storyCaption, setStoryCaption] = useState("");
+  const [reelVideo, setReelVideo] = useState<MediaItem | null>(null);
+  const [reelCaption, setReelCaption] = useState("");
 
   /* ---- story ---- */
   const [publishAsStory, setPublishAsStory] = useState(false);
@@ -210,6 +219,26 @@ export default function CreatePage() {
     setPlatformMediaList((prev) => { const n = { ...prev }; delete n[p]; return n; });
   };
 
+  const handleStoryFile = (file: File) => {
+    const isVideo = file.type.startsWith("video/");
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setStoryMedia({ url: e.target?.result as string, type: isVideo ? "video" : "image" });
+      toast.success(isVideo ? "Story video added" : "Story image added");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleReelFile = (file: File) => {
+    if (!file.type.startsWith("video/")) { toast.error("Reels require a video file"); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setReelVideo({ url: e.target?.result as string, type: "video" });
+      toast.success("Reel video added");
+    };
+    reader.readAsDataURL(file);
+  };
+
   /* ---- AI generate ---- */
   const handleAiGenerate = useCallback(() => {
     if (aiPrompt.trim().split(/\s+/).filter(Boolean).length < 4) {
@@ -258,26 +287,48 @@ export default function CreatePage() {
 
   return (
     <div className="space-y-5 animate-fade-in pb-8 pt-4">
-      {/* ============ Action bar ============ */}
-      <div className="flex items-center justify-end gap-2">
-        <button
-          onClick={() => toast.success("Draft saved")}
-          className="px-3.5 py-2 rounded-lg text-xs font-medium border border-border bg-card text-foreground hover:bg-accent transition-colors flex items-center gap-1.5"
-        >
-          <Save className="w-3.5 h-3.5" /> Save Draft
-        </button>
-        <button
-          onClick={() => navigate("/client/create/ai")}
-          className="px-3.5 py-2 rounded-lg gradient-coral text-primary-foreground text-xs font-semibold shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-1.5"
-        >
-          <Sparkles className="w-3.5 h-3.5" /> Create with AI
-        </button>
+      {/* ============ Action bar + Content Type Picker ============ */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="inline-flex items-center bg-card border border-border rounded-lg p-1 gap-0.5">
+          {([
+            { id: "post" as const, label: "Post", icon: AlignLeft },
+            { id: "story" as const, label: "Story", icon: GalleryVertical },
+            { id: "reel" as const, label: "Reel", icon: Play },
+          ]).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setContentType(id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap",
+                contentType === id
+                  ? "gradient-coral text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => toast.success("Draft saved")}
+            className="px-3.5 py-2 rounded-lg text-xs font-medium border border-border bg-card text-foreground hover:bg-accent transition-colors flex items-center gap-1.5"
+          >
+            <Save className="w-3.5 h-3.5" /> Save Draft
+          </button>
+          <button
+            onClick={() => navigate("/client/create/ai")}
+            className="px-3.5 py-2 rounded-lg gradient-coral text-primary-foreground text-xs font-semibold shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Create with AI
+          </button>
+        </div>
       </div>
 
       {/* ============ 2-col Layout ============ */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
         {/* ===== LEFT: Accounts + Media + Composer ===== */}
-        <section className="xl:col-span-7 space-y-4">
+        <section className="xl:col-span-8 space-y-4">
           <ConnectedAccountsPanel
             accounts={MOCK_ACCOUNTS}
             selectedIds={selectedAccountIds}
@@ -285,6 +336,112 @@ export default function CreatePage() {
             onClearAll={() => setSelectedAccountIds([])}
           />
 
+          {/* ---- Story-specific section ---- */}
+          {contentType === "story" && (
+            <>
+              <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800 text-xs text-pink-700 dark:text-pink-300">
+                <GalleryVertical className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>Stories are vertical (9:16) and visible for 24 hours. Supported on Instagram and Facebook.</span>
+              </div>
+              <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-primary" /> Story Media
+                  <span className="text-[11px] font-normal text-muted-foreground">Image or video · 9:16 vertical</span>
+                </h3>
+                {storyMedia ? (
+                  <div className="relative group rounded-xl overflow-hidden bg-black mx-auto" style={{ aspectRatio: "9/16", maxHeight: 340 }}>
+                    {storyMedia.type === "video"
+                      ? <video src={storyMedia.url} className="w-full h-full object-cover" muted playsInline controls />
+                      : <img src={storyMedia.url} alt="Story" className="w-full h-full object-cover" />}
+                    <button
+                      onClick={() => setStoryMedia(null)}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => storyFileInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-border rounded-lg p-8 hover:border-primary hover:bg-accent/40 transition-all flex flex-col items-center gap-2 text-muted-foreground"
+                  >
+                    <Upload className="w-7 h-7" />
+                    <span className="text-sm font-medium">Upload Story media</span>
+                    <span className="text-xs">Image or short video (up to 15s) · 9:16 recommended</span>
+                  </button>
+                )}
+              </div>
+              <div className="bg-card rounded-xl shadow-card p-4 space-y-2">
+                <h3 className="text-sm font-semibold">Text Overlay <span className="text-[11px] font-normal text-muted-foreground ml-1">Optional</span></h3>
+                <textarea
+                  value={storyCaption}
+                  onChange={(e) => setStoryCaption(e.target.value)}
+                  placeholder="Add text shown on your story…"
+                  className="w-full min-h-[80px] resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent leading-relaxed"
+                  maxLength={200}
+                />
+                <p className="text-[11px] text-muted-foreground text-right">{storyCaption.length}/200</p>
+              </div>
+            </>
+          )}
+
+          {/* ---- Reel-specific section ---- */}
+          {contentType === "reel" && (
+            <>
+              <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 text-xs text-violet-700 dark:text-violet-300">
+                <Play className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>Reels are short vertical videos (9:16). Supported on Instagram and Facebook. Max 90 seconds on Instagram.</span>
+              </div>
+              <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Play className="w-4 h-4 text-primary" /> Reel Video
+                  <span className="text-[11px] font-normal text-muted-foreground">MP4 or MOV · 9:16 · up to 90s</span>
+                </h3>
+                {reelVideo ? (
+                  <div className="relative group rounded-xl overflow-hidden bg-black mx-auto" style={{ aspectRatio: "9/16", maxHeight: 340 }}>
+                    <video src={reelVideo.url} className="w-full h-full object-cover" muted playsInline controls />
+                    <button
+                      onClick={() => setReelVideo(null)}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => reelFileInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-border rounded-lg p-8 hover:border-primary hover:bg-accent/40 transition-all flex flex-col items-center gap-2 text-muted-foreground"
+                  >
+                    <Play className="w-7 h-7" />
+                    <span className="text-sm font-medium">Upload Reel video</span>
+                    <span className="text-xs">MP4, MOV, WEBM — 9:16 vertical recommended</span>
+                  </button>
+                )}
+              </div>
+              <div className="bg-card rounded-xl shadow-card overflow-hidden">
+                <div className="p-4 space-y-3">
+                  <textarea
+                    value={reelCaption}
+                    onChange={(e) => setReelCaption(e.target.value)}
+                    placeholder="Write a caption for your Reel…"
+                    className="w-full min-h-[120px] resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent leading-relaxed"
+                  />
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <p className="text-[11px] text-muted-foreground">{reelCaption.length}/2200</p>
+                    <button
+                      onClick={() => setAiOpen(true)}
+                      className="text-[11px] font-medium text-primary flex items-center gap-1 hover:underline"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> Generate with AI
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ---- Post-specific section ---- */}
+          {contentType === "post" && <>
           <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold flex items-center gap-2">
@@ -456,6 +613,8 @@ export default function CreatePage() {
             </div>
           </div>
 
+          </>}
+
           {/* Scheduling */}
           <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
@@ -504,7 +663,7 @@ export default function CreatePage() {
           </div>
 
           {/* Also publish as Story */}
-          {storyEligible && (
+          {contentType === "post" && storyEligible && (
             <div className="bg-card rounded-xl shadow-card p-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-pink-50 dark:bg-pink-950/40 shrink-0">
@@ -542,28 +701,35 @@ export default function CreatePage() {
               onClick={handlePublish}
               className="px-5 py-2.5 rounded-lg gradient-coral text-primary-foreground font-semibold text-sm shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2"
             >
-              {scheduleMode === "now" ? <><Send className="w-4 h-4" /> Publish Now</> : scheduleMode === "queue" ? <><CalendarIcon className="w-4 h-4" /> Queue Post</> : <><Clock className="w-4 h-4" /> Schedule Post</>}
+              {scheduleMode === "now"
+              ? <><Send className="w-4 h-4" /> {contentType === "story" ? "Publish Story" : contentType === "reel" ? "Publish Reel" : "Publish Now"}</>
+              : scheduleMode === "queue"
+              ? <><CalendarIcon className="w-4 h-4" /> {contentType === "story" ? "Queue Story" : contentType === "reel" ? "Queue Reel" : "Queue Post"}</>
+              : <><Clock className="w-4 h-4" /> {contentType === "story" ? "Schedule Story" : contentType === "reel" ? "Schedule Reel" : "Schedule Post"}</>
+            }
             </button>
           </div>
         </section>
 
         {/* ===== RIGHT: Live Preview ===== */}
-        <aside className="xl:col-span-5 space-y-4">
+        <aside className="xl:col-span-4 space-y-4">
           <div className="bg-card rounded-xl shadow-card overflow-hidden sticky top-4">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Eye className="w-4 h-4 text-primary" /> Live Preview
               </h3>
-              <div className="flex bg-accent rounded-md p-0.5 text-[11px] font-medium">
-                <button
-                  onClick={() => setPreviewMode("tabs")}
-                  className={cn("px-2 py-1 rounded", previewMode === "tabs" ? "bg-card shadow-sm" : "text-muted-foreground")}
-                >Tabs</button>
-                <button
-                  onClick={() => setPreviewMode("grid")}
-                  className={cn("px-2 py-1 rounded", previewMode === "grid" ? "bg-card shadow-sm" : "text-muted-foreground")}
-                >Side-by-side</button>
-              </div>
+              {contentType === "post" && (
+                <div className="flex bg-accent rounded-md p-0.5 text-[11px] font-medium">
+                  <button
+                    onClick={() => setPreviewMode("tabs")}
+                    className={cn("px-2 py-1 rounded", previewMode === "tabs" ? "bg-card shadow-sm" : "text-muted-foreground")}
+                  >Tabs</button>
+                  <button
+                    onClick={() => setPreviewMode("grid")}
+                    className={cn("px-2 py-1 rounded", previewMode === "grid" ? "bg-card shadow-sm" : "text-muted-foreground")}
+                  >Side-by-side</button>
+                </div>
+              )}
             </div>
 
             {selectedPlatforms.length === 0 ? (
@@ -571,6 +737,62 @@ export default function CreatePage() {
                 <Globe2 className="w-10 h-10 mx-auto mb-2 opacity-30" />
                 Select an account to see a live preview.
               </div>
+            ) : contentType === "story" ? (
+              <>
+                <div className="flex border-b border-border overflow-x-auto bg-muted/20">
+                  {selectedPlatforms.filter(p => p === "instagram" || p === "facebook").map((p) => {
+                    const meta = PLATFORMS[p]; const Icon = meta.icon;
+                    return (
+                      <button key={p} onClick={() => setActivePreview(p)}
+                        className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap",
+                          activePreview === p ? "border-primary text-foreground bg-card" : "border-transparent text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Icon className="w-3.5 h-3.5" /> {meta.name}
+                      </button>
+                    );
+                  })}
+                  {!selectedPlatforms.some(p => p === "instagram" || p === "facebook") && (
+                    <p className="px-4 py-2 text-xs text-muted-foreground">Select Instagram or Facebook for Story preview</p>
+                  )}
+                </div>
+                <div className="p-5">
+                  <StoryPreview
+                    platform={activePreview}
+                    media={storyMedia}
+                    caption={storyCaption}
+                    handle={selectedAccounts.find((a) => a.platform === activePreview)?.handle ?? ""}
+                  />
+                </div>
+              </>
+            ) : contentType === "reel" ? (
+              <>
+                <div className="flex border-b border-border overflow-x-auto bg-muted/20">
+                  {selectedPlatforms.filter(p => p === "instagram" || p === "facebook").map((p) => {
+                    const meta = PLATFORMS[p]; const Icon = meta.icon;
+                    return (
+                      <button key={p} onClick={() => setActivePreview(p)}
+                        className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap",
+                          activePreview === p ? "border-primary text-foreground bg-card" : "border-transparent text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Icon className="w-3.5 h-3.5" /> {meta.name}
+                      </button>
+                    );
+                  })}
+                  {!selectedPlatforms.some(p => p === "instagram" || p === "facebook") && (
+                    <p className="px-4 py-2 text-xs text-muted-foreground">Select Instagram or Facebook for Reel preview</p>
+                  )}
+                </div>
+                <div className="p-5">
+                  <ReelPreview
+                    platform={activePreview}
+                    media={reelVideo}
+                    caption={reelCaption}
+                    handle={selectedAccounts.find((a) => a.platform === activePreview)?.handle ?? ""}
+                  />
+                </div>
+              </>
             ) : previewMode === "tabs" ? (
               <>
                 <div className="flex border-b border-border overflow-x-auto bg-muted/20">
@@ -590,34 +812,7 @@ export default function CreatePage() {
                     );
                   })}
                 </div>
-                {/* Aspect ratio picker — shown for platforms that support multiple ratios */}
-                {PLATFORMS[activePreview].aspects && (
-                  <div className="px-4 py-2 border-b border-border flex items-center gap-2 flex-wrap bg-muted/10">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Ratio</span>
-                    {PLATFORMS[activePreview].aspects!.map((opt) => {
-                      const active = getAspectFor(activePreview) === opt.ratio;
-                      return (
-                        <button
-                          key={opt.ratio}
-                          onClick={() => setPlatformAspect((prev) => ({ ...prev, [activePreview]: opt.ratio }))}
-                          title={opt.size}
-                          className={cn(
-                            "px-2.5 py-0.5 rounded text-[11px] font-medium transition-all border",
-                            active
-                              ? "gradient-coral text-primary-foreground border-transparent shadow-sm"
-                              : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-primary/40"
-                          )}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                    <span className="text-[10px] text-muted-foreground ml-auto">
-                      {PLATFORMS[activePreview].aspects!.find((o) => o.ratio === getAspectFor(activePreview))?.size}
-                    </span>
-                  </div>
-                )}
-                <div className="p-4">
+                <div className="p-5">
                   <PlatformPreview
                     platform={activePreview}
                     caption={getCaptionFor(activePreview)}
@@ -635,25 +830,6 @@ export default function CreatePage() {
                       <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
                       {(() => { const Icon = PLATFORMS[p].icon; return <Icon className="w-3.5 h-3.5" />; })()}
                       {PLATFORMS[p].name}
-                      {PLATFORMS[p].aspects && (
-                        <span className="ml-auto flex items-center gap-1 font-normal">
-                          {PLATFORMS[p].aspects!.map((opt) => {
-                            const active = getAspectFor(p) === opt.ratio;
-                            return (
-                              <button
-                                key={opt.ratio}
-                                onClick={(e) => { e.preventDefault(); setPlatformAspect((prev) => ({ ...prev, [p]: opt.ratio })); }}
-                                className={cn(
-                                  "px-1.5 py-0.5 rounded text-[10px] font-medium border transition-all",
-                                  active
-                                    ? "gradient-coral text-primary-foreground border-transparent"
-                                    : "bg-background text-muted-foreground border-border hover:border-primary/40"
-                                )}
-                              >{opt.label}</button>
-                            );
-                          })}
-                        </span>
-                      )}
                     </summary>
                     <div className="p-3">
                       <PlatformPreview
@@ -676,13 +852,27 @@ export default function CreatePage() {
         </aside>
       </div>
 
-      {/* Hidden file input */}
+      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
+      />
+      <input
+        ref={storyFileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleStoryFile(f); e.target.value = ""; }}
+      />
+      <input
+        ref={reelFileInputRef}
+        type="file"
+        accept="video/mp4,video/quicktime,video/webm"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleReelFile(f); e.target.value = ""; }}
       />
 
       {/* ============ Account Picker Dialog ============ */}
@@ -1191,7 +1381,7 @@ function PlatformPreview({ platform, caption, mediaList, handle, aspectOverride 
 
   if (platform === "twitter") {
     return (
-      <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex gap-3 p-3">
           <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0", meta.color)}>{initial}</div>
           <div className="flex-1 min-w-0">
@@ -1213,7 +1403,7 @@ function PlatformPreview({ platform, caption, mediaList, handle, aspectOverride 
 
   if (platform === "instagram") {
     return (
-      <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         {Header}
         {MediaSlot}
         <div className="flex items-center gap-3 p-3 text-foreground">
@@ -1226,7 +1416,7 @@ function PlatformPreview({ platform, caption, mediaList, handle, aspectOverride 
 
   if (platform === "linkedin") {
     return (
-      <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         {Header}
         {Caption}
         {MediaSlot}
@@ -1242,7 +1432,7 @@ function PlatformPreview({ platform, caption, mediaList, handle, aspectOverride 
 
   // Facebook
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md mx-auto">
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
       {Header}
       {Caption}
       {MediaSlot}
@@ -1253,6 +1443,122 @@ function PlatformPreview({ platform, caption, mediaList, handle, aspectOverride 
         <span className="flex items-center gap-1">👍 Like</span>
         <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
         <span className="flex items-center gap-1"><Send className="w-3.5 h-3.5" /> Share</span>
+      </div>
+    </div>
+  );
+}
+
+function StoryPreview({ platform, media, caption, handle }: {
+  platform: PlatformKey; media: MediaItem | null; caption: string; handle: string;
+}) {
+  const meta = PLATFORMS[platform];
+  const initial = handle.replace(/^@/, "").charAt(0).toUpperCase() || "N";
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden bg-black w-full" style={{ aspectRatio: "9/16" }}>
+      {media ? (
+        media.type === "video"
+          ? <video src={media.url} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
+          : <img src={media.url} alt="Story" className="absolute inset-0 w-full h-full object-cover" />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+          <GalleryVertical className="w-14 h-14 text-white/15" />
+        </div>
+      )}
+
+      {/* Top: progress bars + user */}
+      <div className="absolute top-0 left-0 right-0 p-3 z-10">
+        <div className="flex gap-0.5 mb-2.5">
+          <div className="flex-1 h-0.5 rounded-full bg-white/80" />
+          <div className="flex-1 h-0.5 rounded-full bg-white/30" />
+          <div className="flex-1 h-0.5 rounded-full bg-white/30" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className={cn("w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px] font-bold shrink-0", meta.color)}>
+            {initial}
+          </div>
+          <span className="text-white text-xs font-semibold drop-shadow">{handle || "Your account"}</span>
+          <span className="text-white/60 text-[10px]">· now</span>
+        </div>
+      </div>
+
+      {/* Text overlay */}
+      {caption && (
+        <div className="absolute bottom-14 left-0 right-0 px-4 z-10">
+          <p className="text-white text-sm text-center bg-black/50 rounded-xl px-3 py-2 backdrop-blur-sm leading-relaxed">
+            {caption}
+          </p>
+        </div>
+      )}
+      {!caption && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <p className="text-white/30 text-xs italic">Your story will appear here…</p>
+        </div>
+      )}
+
+      {/* Bottom reply bar */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 flex items-center gap-2 z-10">
+        <div className="flex-1 rounded-full border border-white/30 px-3 py-1.5">
+          <span className="text-white/40 text-xs">Reply…</span>
+        </div>
+        <Heart className="w-5 h-5 text-white" />
+        <Send className="w-5 h-5 text-white" />
+      </div>
+    </div>
+  );
+}
+
+function ReelPreview({ platform, media, caption, handle }: {
+  platform: PlatformKey; media: MediaItem | null; caption: string; handle: string;
+}) {
+  const meta = PLATFORMS[platform];
+  const initial = handle.replace(/^@/, "").charAt(0).toUpperCase() || "N";
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden bg-black w-full" style={{ aspectRatio: "9/16" }}>
+      {media ? (
+        <video src={media.url} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+          <Play className="w-14 h-14 text-white/15" />
+        </div>
+      )}
+
+      {/* Right side interaction icons */}
+      <div className="absolute right-3 bottom-24 z-10 flex flex-col items-center gap-5">
+        <div className="flex flex-col items-center gap-0.5">
+          <Heart className="w-6 h-6 text-white" />
+          <span className="text-white text-[10px]">0</span>
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          <MessageCircle className="w-6 h-6 text-white" />
+          <span className="text-white text-[10px]">0</span>
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          <Send className="w-6 h-6 text-white" />
+          <span className="text-white text-[10px]">0</span>
+        </div>
+        <MoreHorizontal className="w-6 h-6 text-white" />
+      </div>
+
+      {/* Bottom: user info + caption + audio */}
+      <div className="absolute bottom-0 left-0 right-14 p-3 z-10">
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className={cn("w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shrink-0", meta.color)}>
+            {initial}
+          </div>
+          <span className="text-white text-sm font-semibold drop-shadow">{handle || "Your account"}</span>
+          <span className="border border-white/50 rounded text-white/80 text-[10px] px-1.5 py-0.5">Follow</span>
+        </div>
+        {caption ? (
+          <p className="text-white text-xs leading-relaxed line-clamp-2 drop-shadow">{caption}</p>
+        ) : (
+          <p className="text-white/30 text-xs italic">Your caption will appear here…</p>
+        )}
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <Music className="w-3 h-3 text-white/60" />
+          <span className="text-white/50 text-[10px] truncate">Original audio · {handle || "your account"}</span>
+        </div>
       </div>
     </div>
   );

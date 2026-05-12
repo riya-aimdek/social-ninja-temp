@@ -68,7 +68,7 @@ const projectNav: NavItem[] = [
     children: [
       { label: "Intelligence Layer",   icon: Sparkles,   path: "/client/analyze?view=intelligence" },
       { label: "Post Performance",     icon: FileText,   path: "/client/analyze?view=posts"        },
-      { label: "View Growth Insights", icon: TrendingUp, path: "/client/analyze?view=growth"       },
+      { label: "Growth Insights", icon: TrendingUp, path: "/client/analyze?view=growth"       },
       { label: "Competitor Analysis",  icon: Trophy,     path: "/client/analyze?view=competitors"  },
       { label: "Create Report",        icon: FileDown,   path: "/client/analyze?view=report"       },
     ],
@@ -272,11 +272,10 @@ export default function ClientLayout() {
                 {hasChildren ? (
                   <>
                     <button
-                      onClick={() => setExpandedMenus(prev => {
-                        const n = new Set(prev);
-                        n.has(item.label) ? n.delete(item.label) : n.add(item.label);
-                        return n;
-                      })}
+                      onClick={() => {
+                        navigate(item.path);
+                        setExpandedMenus(prev => { const n = new Set(prev); n.add(item.label); return n; });
+                      }}
                       className={cn(
                         "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                         isActive
@@ -286,7 +285,19 @@ export default function ClientLayout() {
                     >
                       <item.icon className="w-4 h-4 flex-shrink-0" />
                       <span className="flex-1 text-left">{item.label}</span>
-                      <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", isExpanded && "rotate-180")} />
+                      <span
+                        onClick={e => {
+                          e.stopPropagation();
+                          setExpandedMenus(prev => {
+                            const n = new Set(prev);
+                            n.has(item.label) ? n.delete(item.label) : n.add(item.label);
+                            return n;
+                          });
+                        }}
+                        className="p-0.5 rounded hover:bg-white/10"
+                      >
+                        <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", isExpanded && "rotate-180")} />
+                      </span>
                     </button>
                     {isExpanded && (
                       <div className="mt-0.5 ml-3 pl-3 border-l border-sidebar-border/50 space-y-0.5">

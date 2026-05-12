@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Sparkles, BarChart3, TrendingUp, Trophy, FileText, ChevronRight,
-  FileDown, Users, Activity, Eye, Zap, ArrowLeft, RefreshCw,
+  FileDown, Users, Activity, Eye, Zap, RefreshCw,
   AlertTriangle, Star, Hash, Clock, ImageIcon, Heart, MessageSquare,
   Shield, Share2, Facebook, Instagram, Linkedin, Twitter,
   Flame, CheckCircle, Plus, Mail, Check,
@@ -91,59 +91,188 @@ const kpis = [
 const intelligenceTimeRanges = ["7 Days", "30 Days", "All Time"] as const;
 type IntelligenceTimeRange = typeof intelligenceTimeRanges[number];
 
-const topPostsByLikes = [
-  {
-    id: 1,
-    avatar: "AT",
-    avatarColor: "bg-blue-500",
-    text: "Excited to share that our AI team has been working on some incredible breakthroughs...",
-    platform: "Instagram",
-    platformColor: "text-pink-500",
-    date: "May 1, 2026",
-    likes: 2,
-    comments: 15,
-    shares: 0,
-  },
-  {
-    id: 2,
-    avatar: "AT",
-    avatarColor: "bg-blue-600",
-    text: "schedule for 21-04-2026 at 16:00",
-    platform: "Facebook",
-    platformColor: "text-blue-600",
-    date: "Apr 21, 2026",
-    likes: 2,
-    comments: 0,
-    shares: 0,
-  },
-];
+// post IDs that fall within each time range (relative to May 12, 2026)
+const rangePostIds: Record<IntelligenceTimeRange, number[]> = {
+  "7 Days":  [3],                           // May 5 – 12
+  "30 Days": [1, 2, 3, 4],                  // Apr 12 – May 12
+  "All Time":[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+};
 
-const topPostsByComments = [
-  {
-    id: 1,
-    avatar: "AT",
-    avatarColor: "bg-blue-500",
-    text: "Excited to share that our AI team has been working on some incredible breakthroughs...",
-    platform: "Instagram",
-    platformColor: "text-pink-500",
-    date: "May 1, 2026",
-    likes: 2,
-    comments: 15,
-    shares: 0,
+const intelChartData: Record<IntelligenceTimeRange, { date: string; engagement: number }[]> = {
+  "7 Days": [
+    { date: "May 5",  engagement: 3  },
+    { date: "May 6",  engagement: 20 },
+    { date: "May 7",  engagement: 11 },
+    { date: "May 8",  engagement: 6  },
+    { date: "May 9",  engagement: 14 },
+    { date: "May 10", engagement: 8  },
+    { date: "May 11", engagement: 0  },
+  ],
+  "30 Days": [
+    { date: "Apr 12", engagement: 5  },
+    { date: "Apr 15", engagement: 4  },
+    { date: "Apr 21", engagement: 2  },
+    { date: "Apr 24", engagement: 9  },
+    { date: "Apr 27", engagement: 12 },
+    { date: "Apr 30", engagement: 18 },
+    { date: "May 3",  engagement: 7  },
+    { date: "May 7",  engagement: 9  },
+    { date: "May 11", engagement: 0  },
+  ],
+  "All Time": [
+    { date: "Mar 5",  engagement: 10 },
+    { date: "Mar 12", engagement: 7  },
+    { date: "Mar 20", engagement: 17 },
+    { date: "Mar 28", engagement: 24 },
+    { date: "Apr 5",  engagement: 6  },
+    { date: "Apr 10", engagement: 6  },
+    { date: "Apr 15", engagement: 4  },
+    { date: "Apr 21", engagement: 2  },
+    { date: "May 1",  engagement: 17 },
+    { date: "May 11", engagement: 0  },
+  ],
+};
+
+interface IntelRangeData {
+  momentumScore: number;
+  velocityLabel: string;
+  velocityBadge: string;
+  acceleration: string;
+  followerVelocity: string;
+  engagementVelocity: string;
+  contentVelocity: string;
+  projectedGrowth: string;
+  qualityScore: number;
+  qualityLabel: string;
+  qualityBadgeClass: string;
+  interactionDepth: number;
+  audienceRelevance: number;
+  contentResonance: number;
+  temporalConsistency: number;
+  yourRank: string;
+  vsBenchmark: string;
+  alerts: number;
+  highPriority: number;
+  mediumPriority: number;
+  competitors: number;
+  totalEngagement: number;
+  avgEngRate: string;
+  topPlatform: string;
+  bestTimeLabel: string;
+  hashtags: { tag: string; count: string }[];
+  contentTypes: { type: string; rate: string; note: string }[];
+}
+
+const rangeData: Record<IntelligenceTimeRange, IntelRangeData> = {
+  "7 Days": {
+    momentumScore: 22,
+    velocityLabel: "Rising",
+    velocityBadge: "bg-yellow-100 text-yellow-700",
+    acceleration: "+5.3%",
+    followerVelocity: "+0/day",
+    engagementVelocity: "1.2/post",
+    contentVelocity: "5 posts/wk",
+    projectedGrowth: "+0 followers in next 7 days",
+    qualityScore: 22,
+    qualityLabel: "POOR",
+    qualityBadgeClass: "bg-red-100 text-red-600",
+    interactionDepth: 20,
+    audienceRelevance: 18,
+    contentResonance: 30,
+    temporalConsistency: 20,
+    yourRank: "#1 of 1",
+    vsBenchmark: "+0 pts",
+    alerts: 0,
+    highPriority: 0,
+    mediumPriority: 0,
+    competitors: 0,
+    totalEngagement: 3,
+    avgEngRate: "1.2%",
+    topPlatform: "Instagram",
+    bestTimeLabel: "Thursday 9:00 AM",
+    hashtags: [
+      { tag: "#Python",   count: "3x" },
+      { tag: "#AI",       count: "2x" },
+      { tag: "#TechJobs", count: "2x" },
+    ],
+    contentTypes: [
+      { type: "TEXT",  rate: "0%",    note: "no engagement" },
+      { type: "IMAGE", rate: "5.89%", note: "top performer" },
+    ],
   },
-  {
-    id: 2,
-    avatar: "AT",
-    avatarColor: "bg-purple-500",
-    text: "We are hiring talented engineers! Come join our fast-growing team and shape the future...",
-    platform: "LinkedIn",
-    platformColor: "text-blue-700",
-    date: "Apr 15, 2026",
-    likes: 1,
-    comments: 3,
-    shares: 0,
+  "30 Days": {
+    momentumScore: 8,
+    velocityLabel: "Declining",
+    velocityBadge: "bg-red-100 text-red-600",
+    acceleration: "+0.0%",
+    followerVelocity: "+0/day",
+    engagementVelocity: "0/post",
+    contentVelocity: "23 posts/wk",
+    projectedGrowth: "+0 followers in next 30 days",
+    qualityScore: 0,
+    qualityLabel: "POOR",
+    qualityBadgeClass: "bg-red-100 text-red-600",
+    interactionDepth: 0,
+    audienceRelevance: 0,
+    contentResonance: 0,
+    temporalConsistency: 10,
+    yourRank: "#1 of 1",
+    vsBenchmark: "+0 pts",
+    alerts: 0,
+    highPriority: 0,
+    mediumPriority: 0,
+    competitors: 0,
+    totalEngagement: 79,
+    avgEngRate: "2.1%",
+    topPlatform: "Facebook",
+    bestTimeLabel: "Friday 9:00 AM",
+    hashtags: [
+      { tag: "#Python",   count: "7x" },
+      { tag: "#AI",       count: "7x" },
+      { tag: "#TechJobs", count: "7x" },
+    ],
+    contentTypes: [
+      { type: "IMAGE",    rate: "5.89%", note: "drives majority" },
+      { type: "CAROUSEL", rate: "0%",    note: "redesign needed" },
+    ],
   },
-];
+  "All Time": {
+    momentumScore: 35,
+    velocityLabel: "Stable",
+    velocityBadge: "bg-blue-100 text-blue-700",
+    acceleration: "+1.2%",
+    followerVelocity: "+0/day",
+    engagementVelocity: "8.7/post",
+    contentVelocity: "18 posts/wk",
+    projectedGrowth: "+2 followers in next 30 days",
+    qualityScore: 35,
+    qualityLabel: "AVERAGE",
+    qualityBadgeClass: "bg-yellow-100 text-yellow-600",
+    interactionDepth: 30,
+    audienceRelevance: 25,
+    contentResonance: 45,
+    temporalConsistency: 40,
+    yourRank: "#1 of 1",
+    vsBenchmark: "+15 pts",
+    alerts: 1,
+    highPriority: 0,
+    mediumPriority: 1,
+    competitors: 0,
+    totalEngagement: 79,
+    avgEngRate: "3.4%",
+    topPlatform: "Twitter/X",
+    bestTimeLabel: "Tuesday 9:00 AM",
+    hashtags: [
+      { tag: "#AI",       count: "12x" },
+      { tag: "#TechJobs", count: "8x"  },
+      { tag: "#Python",   count: "7x"  },
+    ],
+    contentTypes: [
+      { type: "VIRAL",    rate: "18.6%", note: "highest impact" },
+      { type: "IMAGE",    rate: "5.89%", note: "consistent performer" },
+    ],
+  },
+};
 
 // Posts data
 interface Post {
@@ -331,30 +460,35 @@ function HorizontalBar({ data, color }: { data: { name: string; value: number }[
 }
 
 function ScoreRing({ score, label, sub }: { score: number; label: string; sub: string }) {
+  const r = 38;
+  const circ = 2 * Math.PI * r;
+  const dash = (score / 100) * circ;
+  const stroke = score > 60 ? "#22c55e" : score > 30 ? "#f97316" : score > 10 ? "#f59e0b" : "#6b7280";
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1 shrink-0">
       <div className="relative w-24 h-24">
         <svg className="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
-          <circle cx="48" cy="48" r="40" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+          <circle cx="48" cy="48" r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
           <circle
-            cx="48" cy="48" r="40" fill="none"
-            stroke={score > 50 ? "#22c55e" : score > 20 ? "#f97316" : "#6b7280"}
-            strokeWidth="8"
-            strokeDasharray={`${(score / 100) * 251.2} 251.2`}
+            cx="48" cy="48" r={r} fill="none"
+            stroke={stroke} strokeWidth="8"
+            strokeDasharray={`${dash} ${circ}`}
             strokeLinecap="round"
+            style={{ transition: "stroke-dasharray 0.5s ease, stroke 0.3s ease" }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-foreground">{score}</span>
+          <span className="text-2xl font-bold text-foreground tabular-nums">{score}</span>
         </div>
       </div>
-      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{label}</span>
-      <span className="text-[11px] text-muted-foreground">{sub}</span>
+      {label && <span className="text-xs font-semibold text-foreground uppercase tracking-wide">{label}</span>}
+      {sub   && <span className="text-[11px] text-muted-foreground">{sub}</span>}
     </div>
   );
 }
 
-function QualityBar({ label, score, color = "#a855f7" }: { label: string; score: number; color?: string }) {
+function QualityBar({ label, score }: { label: string; score: number }) {
+  const color = score > 60 ? "#22c55e" : score > 30 ? "#f97316" : score > 10 ? "#f59e0b" : "#6b7280";
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
@@ -362,31 +496,40 @@ function QualityBar({ label, score, color = "#a855f7" }: { label: string; score:
         <span className="text-xs font-semibold text-foreground">{score}/100</span>
       </div>
       <div className="h-1.5 bg-muted rounded-full">
-        <div className="h-1.5 rounded-full transition-all" style={{ width: `${score}%`, backgroundColor: color }} />
+        <div
+          className="h-1.5 rounded-full transition-all duration-500"
+          style={{ width: `${score}%`, backgroundColor: color }}
+        />
       </div>
     </div>
   );
 }
 
-function IntelPostCard({ post }: { post: typeof topPostsByLikes[0] }) {
+const platformAvatarColors: Record<string, string> = {
+  Facebook: "bg-blue-600", Instagram: "bg-pink-500", LinkedIn: "bg-blue-700", Twitter: "bg-sky-500",
+};
+
+function IntelPostCard({ post }: { post: Post }) {
+  const total = post.likes + post.comments + post.shares;
   return (
-    <div className="border border-border rounded-lg p-3 space-y-2">
-      <div className="flex items-center gap-2">
-        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold", post.avatarColor)}>
-          {post.avatar}
+    <div className="border border-border rounded-xl p-3 space-y-2.5 hover:border-primary/30 hover:bg-primary/5 transition-colors">
+      <div className="flex items-start gap-2.5">
+        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", platformAvatarColors[post.platform] ?? "bg-gray-500")}>
+          AT
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-foreground font-medium line-clamp-2">{post.text}</p>
+          <p className="text-xs text-foreground line-clamp-2 leading-snug">{post.caption}</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <PlatformIcon platform={post.platform} className="w-3 h-3" />
+            <span className="text-[11px] text-muted-foreground">{post.date}</span>
+          </div>
         </div>
       </div>
-      <div className="flex items-center justify-between text-[11px]">
-        <span className={cn("font-medium", post.platformColor)}>{post.platform}</span>
-        <span className="text-muted-foreground">{post.date}</span>
-      </div>
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {post.likes}</span>
-        <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> {post.comments}</span>
-        <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" /> {post.shares}</span>
+      <div className="flex items-center gap-3 pt-2 border-t border-border/60 text-[11px]">
+        <span className="flex items-center gap-1 text-red-500"><Heart className="w-3 h-3" /> {post.likes}</span>
+        <span className="flex items-center gap-1 text-blue-500"><MessageSquare className="w-3 h-3" /> {post.comments}</span>
+        <span className="flex items-center gap-1 text-muted-foreground"><Share2 className="w-3 h-3" /> {post.shares}</span>
+        <span className="ml-auto text-xs font-semibold text-foreground">{total} total</span>
       </div>
     </div>
   );
@@ -698,19 +841,37 @@ function OverviewView({ navigate, pathname }: { navigate: (path: string) => void
 
 function IntelligenceView({ navigate, pathname }: { navigate: (path: string) => void; pathname: string }) {
   const [activeRange, setActiveRange] = useState<IntelligenceTimeRange>("30 Days");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const d = rangeData[activeRange];
+  const chartData = intelChartData[activeRange];
+
+  const rangePosts = allPosts.filter(p => rangePostIds[activeRange].includes(p.id));
+  const topByLikes    = [...rangePosts].sort((a, b) => b.likes    - a.likes   ).slice(0, 3);
+  const topByComments = [...rangePosts].sort((a, b) => b.comments - a.comments).slice(0, 3);
+
+  function handleRefresh() {
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 1200);
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-start gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(pathname)} className="mt-0.5">
-            <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
-          </Button>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-purple-500/15 flex items-center justify-center shrink-0">
+            <Sparkles className={cn("w-4.5 h-4.5 text-purple-500", isRefreshing && "animate-spin")} />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-foreground leading-tight">Advanced Intelligence Layer</h1>
+            <p className="text-xs text-muted-foreground">AI-powered insights · {activeRange}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+            <RefreshCw className={cn("w-3.5 h-3.5 mr-1", isRefreshing && "animate-spin")} />
+            {isRefreshing ? "Refreshing…" : "Refresh"}
           </Button>
           <div className="flex items-center border border-border rounded-lg overflow-hidden">
             {intelligenceTimeRanges.map((r) => (
@@ -731,73 +892,111 @@ function IntelligenceView({ navigate, pathname }: { navigate: (path: string) => 
         </div>
       </div>
 
-      {/* Title */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
-          <Sparkles className="w-5 h-5 text-purple-500" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Advanced Intelligence Layer</h1>
-          <p className="text-sm text-muted-foreground">AI-powered insights from your real data</p>
-        </div>
-      </div>
-
       {/* Alert Banner */}
-      <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-purple-500" />
+      <div className={cn(
+        "border rounded-xl p-4 flex items-center justify-between flex-wrap gap-3 transition-colors",
+        d.alerts > 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-purple-500/10 border-purple-500/20",
+      )}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <AlertTriangle className={cn("w-4 h-4", d.alerts > 0 ? "text-amber-500" : "text-purple-500")} />
           <span className="text-sm font-medium text-foreground">
-            0 Intelligence Alerts
+            {d.alerts} Intelligence Alert{d.alerts !== 1 ? "s" : ""}
           </span>
           <span className="text-sm text-muted-foreground">
-            — 0 high priority, 0 medium priority requiring your attention
+            — {d.highPriority} high priority, {d.mediumPriority} medium priority
           </span>
         </div>
         <span className="text-xs bg-purple-500/20 text-purple-600 px-3 py-1 rounded-full font-medium">
-          0 competitors monitored
+          {d.competitors} competitors monitored
         </span>
       </div>
 
-      {/* Two column cards: Growth Velocity + Engagement Quality */}
+      {/* KPI Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: "Total Engagement", value: d.totalEngagement.toString(), icon: Activity,   color: "text-purple-500", bg: "bg-purple-500/10" },
+          { label: "Avg Eng. Rate",    value: d.avgEngRate,                  icon: TrendingUp,  color: "text-green-500",  bg: "bg-green-500/10"  },
+          { label: "Top Platform",     value: d.topPlatform,                 icon: Star,        color: "text-yellow-500", bg: "bg-yellow-500/10" },
+          { label: "Best Post Time",   value: d.bestTimeLabel,               icon: Clock,       color: "text-blue-500",   bg: "bg-blue-500/10"   },
+        ].map((kpi) => (
+          <div key={kpi.label} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
+            <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", kpi.bg)}>
+              <kpi.icon className={cn("w-4 h-4", kpi.color)} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-1">{kpi.label}</p>
+              <p className="text-sm font-bold text-foreground truncate">{kpi.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Growth Velocity + Engagement Quality */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Growth Velocity Indicator */}
+        {/* Growth Velocity */}
         <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">Growth Velocity Indicator</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Momentum analysis and growth acceleration metrics</p>
-          </div>
-
-          <div className="flex flex-col items-center gap-2 py-2">
-            <ScoreRing score={0} label="Momentum Score" sub="↓ Declining" />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">GROWTH ACCELERATION</span>
-              <span className="font-semibold text-foreground">+0.0%</span>
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Growth Velocity Indicator</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Momentum and acceleration metrics</p>
             </div>
-            <div className="text-xs text-muted-foreground mb-1">VS PREVIOUS PERIOD</div>
-            <div className="h-2 bg-muted rounded-full">
-              <div className="h-2 rounded-full bg-green-500" style={{ width: "50%" }} />
-            </div>
+            <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium shrink-0", d.velocityBadge)}>
+              {d.velocityLabel}
+            </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border">
-            {[
-              { label: "Follower Velocity", value: "+0/day" },
-              { label: "Engagement Velocity", value: "0/post" },
-              { label: "Content Velocity", value: "23 posts/week" },
-            ].map((m) => (
-              <div key={m.label} className="text-center">
-                <div className="text-sm font-bold text-foreground">{m.value}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{m.label}</div>
+          <div className="flex items-center gap-5">
+            <ScoreRing score={d.momentumScore} label="Momentum" sub={d.velocityLabel} />
+            <div className="flex-1 space-y-3">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Growth Acceleration</span>
+                  <span className="font-semibold text-foreground">{d.acceleration}</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full">
+                  <div
+                    className="h-1.5 rounded-full bg-green-500 transition-all duration-500"
+                    style={{ width: `${Math.min(Math.abs(parseFloat(d.acceleration)) * 10, 100)}%` }}
+                  />
+                </div>
               </div>
-            ))}
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Follower",    value: d.followerVelocity    },
+                  { label: "Engagement",  value: d.engagementVelocity  },
+                  { label: "Content",     value: d.contentVelocity     },
+                ].map((m) => (
+                  <div key={m.label} className="bg-muted/40 rounded-lg p-2 text-center">
+                    <div className="text-xs font-bold text-foreground leading-tight">{m.value}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{m.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Mini engagement trend chart */}
+          <div className="pt-2 border-t border-border">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Engagement Trend</div>
+            <ResponsiveContainer width="100%" height={64}>
+              <AreaChart data={chartData} margin={{ top: 2, right: 2, bottom: 0, left: -20 }}>
+                <defs>
+                  <linearGradient id="intelGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} stroke="transparent" tickLine={false} />
+                <YAxis tick={{ fontSize: 9 }} stroke="transparent" tickLine={false} />
+                <Tooltip contentStyle={{ fontSize: 11, padding: "4px 8px" }} />
+                <Area type="monotone" dataKey="engagement" stroke="#a855f7" strokeWidth={1.5} fill="url(#intelGrad)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
 
           <div className="bg-muted/40 rounded-lg p-3 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Projected Growth: </span>
-            At current velocity: +0 followers in next 30 days
+            <span className="font-medium text-foreground">Projected: </span>
+            {d.projectedGrowth}
           </div>
         </div>
 
@@ -806,98 +1005,130 @@ function IntelligenceView({ navigate, pathname }: { navigate: (path: string) => 
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-sm font-semibold text-foreground">Engagement Quality Score</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Weighted scoring with competitor benchmarking</p>
             </div>
-            <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">POOR</span>
+            <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium shrink-0", d.qualityBadgeClass)}>
+              {d.qualityLabel}
+            </span>
           </div>
 
-          <div className="flex items-center gap-4">
-            <ScoreRing score={0} label="Overall Quality" sub="0/100" />
-            <div className="flex-1 space-y-3">
-              <QualityBar label="Interaction Depth" score={0} />
-              <QualityBar label="Audience Relevance" score={0} />
-              <QualityBar label="Content Resonance" score={0} />
-              <QualityBar label="Temporal Consistency" score={10} />
+          {/* Ring + 4 bars side-by-side */}
+          <div className="flex items-center gap-5">
+            <ScoreRing score={d.qualityScore} label="Quality" sub={`${d.qualityScore}/100`} />
+            <div className="flex-1 space-y-2.5">
+              {[
+                { label: "Interaction Depth",    score: d.interactionDepth    },
+                { label: "Audience Relevance",   score: d.audienceRelevance   },
+                { label: "Content Resonance",    score: d.contentResonance    },
+                { label: "Temporal Consistency", score: d.temporalConsistency },
+              ].map((bar) => {
+                const barColor = bar.score > 60 ? "#22c55e" : bar.score > 30 ? "#f97316" : bar.score > 10 ? "#f59e0b" : "#6b7280";
+                return (
+                  <div key={bar.label} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{bar.label}</span>
+                      <span className="font-semibold tabular-nums" style={{ color: barColor }}>{bar.score}/100</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full">
+                      <div
+                        className="h-1.5 rounded-full transition-all duration-500"
+                        style={{ width: `${bar.score || 2}%`, backgroundColor: barColor }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          <div className="bg-muted/40 rounded-lg p-3 space-y-1 text-xs">
-            <div className="font-medium text-foreground text-[11px] uppercase tracking-wider">Competitor Benchmark</div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Your Rank</span>
-              <span className="font-semibold text-foreground">#1 of 1</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">vs Average</span>
-              <span className="font-semibold text-foreground">+0 pts</span>
+          {/* Benchmark — same border-t section style as Growth Velocity */}
+          <div className="pt-2 border-t border-border">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Competitor Benchmark</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-muted/40 rounded-lg p-2 text-center">
+                <div className="text-xs font-bold text-foreground">{d.yourRank}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Your Rank</div>
+              </div>
+              <div className="bg-muted/40 rounded-lg p-2 text-center">
+                <div className={cn("text-xs font-bold", d.vsBenchmark.startsWith("+") ? "text-green-600" : "text-red-500")}>{d.vsBenchmark}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">vs Average</div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* No Competitor Alerts */}
-      <div className="bg-card rounded-xl shadow-card p-8 flex flex-col items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-          <Shield className="w-6 h-6 text-muted-foreground" />
+          <div className="bg-muted/40 rounded-lg p-3 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Quality rating: </span>
+            {d.qualityScore > 60 ? "Good engagement depth across your content." : d.qualityScore > 30 ? "Average quality — focus on replies and saves." : "Low quality — encourage comments and shares."}
+          </div>
         </div>
-        <div className="text-center">
-          <h3 className="text-sm font-semibold text-foreground">No Competitor Alerts</h3>
-          <p className="text-xs text-muted-foreground mt-1">Add competitors to receive intelligent alerts about their activity</p>
-        </div>
-        <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
-          <Users className="w-3.5 h-3.5 mr-1" /> Add Competitors
-        </Button>
       </div>
 
       {/* AI-Trained Content Insights */}
       <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-green-500/10 flex items-center justify-center">
-            <Hash className="w-4 h-4 text-green-600" />
+            <Sparkles className="w-4 h-4 text-green-600" />
           </div>
           <h2 className="text-sm font-semibold text-foreground">AI-Trained Content Insights</h2>
+          <span className="ml-auto text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{activeRange}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Trending Hashtags */}
           <div className="space-y-2">
-            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Trending Hashtags</div>
-            {[
-              { tag: "#Python", count: "7x" },
-              { tag: "#AI", count: "7x" },
-              { tag: "#TechJobs", count: "7x" },
-            ].map((h) => (
+            <div className="flex items-center gap-1.5 mb-2">
+              <Hash className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Trending Hashtags</span>
+            </div>
+            {d.hashtags.map((h, i) => (
               <div key={h.tag} className="flex items-center justify-between bg-muted/40 rounded-lg px-3 py-2">
-                <span className="text-xs font-medium text-primary">{h.tag}</span>
-                <span className="text-[11px] text-muted-foreground">{h.count}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-muted-foreground">#{i + 1}</span>
+                  <span className="text-xs font-medium text-primary">{h.tag}</span>
+                </div>
+                <span className="text-[11px] font-semibold text-foreground bg-primary/10 px-1.5 py-0.5 rounded">{h.count}</span>
               </div>
             ))}
           </div>
 
-          {/* Best Posting Times */}
+          {/* Best Posting Time */}
           <div className="space-y-2">
-            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Best Posting Times</div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Clock className="w-3.5 h-3.5 text-yellow-500" />
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Best Posting Time</span>
+            </div>
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-start gap-2">
               <Star className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
               <div>
-                <div className="text-sm font-bold text-foreground">Friday 9:00 AM</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Based on competitor engagement patterns</div>
+                <div className="text-sm font-bold text-foreground">{d.bestTimeLabel}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Optimal window for max engagement</div>
               </div>
+            </div>
+            <div className="bg-muted/40 rounded-lg p-3 text-xs text-muted-foreground">
+              Posting at this time can boost engagement by up to{" "}
+              <span className="font-semibold text-green-600">23%</span>
             </div>
           </div>
 
           {/* Content Type Performance */}
           <div className="space-y-2">
-            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Content Type Performance</div>
-            {[
-              { type: "IMAGE", rate: "5.89%", note: "drives majority" },
-              { type: "CAROUSEL", rate: "0%", note: "redesign needed" },
-            ].map((c) => (
-              <div key={c.type} className="bg-muted/40 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-1.5 mb-2">
+              <BarChart2 className="w-3.5 h-3.5 text-blue-500" />
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Content Types</span>
+            </div>
+            {d.contentTypes.map((c) => (
+              <div key={c.type} className="bg-muted/40 rounded-lg px-3 py-2 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-foreground">{c.type}</span>
+                  <span className="text-xs font-semibold text-foreground">{c.type}</span>
                   <span className="text-xs font-bold text-primary">{c.rate}</span>
                 </div>
                 <div className="text-[11px] text-muted-foreground">{c.note}</div>
+                <div className="h-1 bg-muted rounded-full">
+                  <div
+                    className="h-1 rounded-full bg-blue-500 transition-all duration-500"
+                    style={{ width: parseFloat(c.rate) > 0 ? `${Math.min(parseFloat(c.rate) * 10, 100)}%` : "2%" }}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -907,41 +1138,87 @@ function IntelligenceView({ navigate, pathname }: { navigate: (path: string) => 
       {/* Top Posts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <Heart className="w-4 h-4 text-red-500" />
-            <h2 className="text-sm font-semibold text-foreground">Top Posts by Likes</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Heart className="w-4 h-4 text-red-500" />
+              <h2 className="text-sm font-semibold text-foreground">Top Posts by Likes</h2>
+            </div>
+            <span className="text-[10px] text-muted-foreground">{activeRange}</span>
           </div>
-          <div className="space-y-3">
-            {topPostsByLikes.map((post) => (
-              <IntelPostCard key={post.id} post={post} />
-            ))}
-          </div>
+          {topByLikes.length > 0 ? (
+            <div className="space-y-2.5">
+              {topByLikes.map((post) => <IntelPostCard key={post.id} post={post} />)}
+            </div>
+          ) : (
+            <div className="py-8 flex flex-col items-center gap-2 text-center">
+              <FileText className="w-8 h-8 text-muted-foreground/40" />
+              <p className="text-xs text-muted-foreground">No posts in this time range</p>
+            </div>
+          )}
         </div>
 
         <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-blue-500" />
-            <h2 className="text-sm font-semibold text-foreground">Top Posts by Comments</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-blue-500" />
+              <h2 className="text-sm font-semibold text-foreground">Top Posts by Comments</h2>
+            </div>
+            <span className="text-[10px] text-muted-foreground">{activeRange}</span>
           </div>
-          <div className="space-y-3">
-            {topPostsByComments.map((post) => (
-              <IntelPostCard key={post.id} post={post} />
-            ))}
-          </div>
+          {topByComments.length > 0 ? (
+            <div className="space-y-2.5">
+              {topByComments.map((post) => <IntelPostCard key={post.id} post={post} />)}
+            </div>
+          ) : (
+            <div className="py-8 flex flex-col items-center gap-2 text-center">
+              <FileText className="w-8 h-8 text-muted-foreground/40" />
+              <p className="text-xs text-muted-foreground">No posts in this time range</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Posting Time Recommendation */}
-      <div className="bg-card rounded-xl shadow-card p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Clock className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">Optimal Posting Window</h2>
+      {/* Competitor Panel + Optimal Window */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card rounded-xl shadow-card p-5 flex flex-col items-center justify-center gap-3 min-h-[172px]">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+            <Shield className="w-6 h-6 text-muted-foreground" />
+          </div>
+          <div className="text-center">
+            <h3 className="text-sm font-semibold text-foreground">No Competitor Alerts</h3>
+            <p className="text-xs text-muted-foreground mt-1">Add competitors to receive intelligent activity alerts</p>
+          </div>
+          <Button
+            size="sm"
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+            onClick={() => navigate(`${pathname}?view=competitors`)}
+          >
+            <Users className="w-3.5 h-3.5 mr-1" /> Add Competitors
+          </Button>
         </div>
-        <div className="bg-muted/40 rounded-lg p-4 text-sm text-muted-foreground">
-          Based on your content patterns and competitor analysis, the best time to post is{" "}
-          <span className="font-semibold text-foreground">Friday between 9:00 AM – 11:00 AM</span>.
-          Posting during this window could increase your engagement rate by up to{" "}
-          <span className="font-semibold text-green-600">23%</span>.
+
+        <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Optimal Posting Window</h2>
+          </div>
+          <div className="space-y-2">
+            {bestTimeWindows.map((w) => (
+              <div key={w.window} className={cn("rounded-lg p-3 flex items-center gap-3", w.bg)}>
+                <w.icon className={cn("w-4 h-4 shrink-0", w.color)} />
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-foreground">{w.window}</div>
+                  <div className={cn("text-[10px] font-medium", w.color)}>{w.level} Engagement</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-muted/40 rounded-lg p-3 text-xs text-muted-foreground">
+            Best window for {activeRange}:{" "}
+            <span className="font-semibold text-foreground">{d.bestTimeLabel}</span>.
+            Posting here can increase engagement by up to{" "}
+            <span className="font-semibold text-green-600">23%</span>.
+          </div>
         </div>
       </div>
     </div>
@@ -957,20 +1234,14 @@ function PostsView({ navigate, pathname }: { navigate: (path: string) => void; p
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate(pathname)}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
-        </Button>
-        <Button variant="outline" size="sm">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold text-foreground leading-tight">Post Performance</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Analyze individual post performance and identify your best content</p>
+        </div>
+        <Button variant="outline" size="sm" className="shrink-0">
           <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh Data
         </Button>
-      </div>
-
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Post Performance</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Analyze individual post performance and identify your best content
-        </p>
       </div>
 
       {/* Filter Bar */}
@@ -1076,21 +1347,15 @@ function GrowthView({ navigate, pathname }: { navigate: (path: string) => void; 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate(pathname)}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
-        </Button>
-        <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-100 dark:bg-green-950/40 px-3 py-1 rounded-full">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold text-foreground leading-tight">Audience Growth &amp; Posting Insights</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Real-time growth patterns and optimal posting times across your connected platforms</p>
+        </div>
+        <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-100 dark:bg-green-950/40 px-3 py-1 rounded-full shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
           Live Data
         </span>
-      </div>
-
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Audience Growth & Posting Insights</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Real-time growth patterns and optimal posting times across your connected platforms
-        </p>
       </div>
 
       {/* Filters */}
@@ -1310,17 +1575,11 @@ function CompetitorsView({ navigate, pathname }: { navigate: (path: string) => v
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate(pathname)}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
-        </Button>
-      </div>
-
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Competitor Watchlist</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Monitor and analyze your competitors' social media performance
-        </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold text-foreground leading-tight">Competitor Watchlist</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Monitor and analyze your competitors' social media performance</p>
+        </div>
       </div>
 
       {/* Purple Banner */}
@@ -1519,29 +1778,23 @@ function ReportView({ navigate, pathname }: { navigate: (path: string) => void; 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate(pathname)}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Analytics Overview
-        </Button>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <BarChart2 className="w-4.5 h-4.5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-foreground leading-tight">Advanced Export &amp; Reporting</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Create custom analytics reports and share insights with stakeholders</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" size="sm">
             <Mail className="w-3.5 h-3.5 mr-1" /> Email Report
           </Button>
           <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90">
             <FileDown className="w-3.5 h-3.5 mr-1" /> Generate Report
           </Button>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <BarChart2 className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Advanced Export & Reporting</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Create custom analytics reports and share insights with stakeholders
-          </p>
         </div>
       </div>
 
