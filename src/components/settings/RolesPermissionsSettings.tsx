@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus, Check, ShieldCheck, Pencil, Trash2,
   Link2, PenLine, Send, BadgeCheck, BarChart2,
-  MessageCircle, Ear, Zap, Star,
+  MessageCircle, Ear, Zap, Star, RotateCcw, AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLES, type Permission } from "@/data/roles";
@@ -274,6 +274,22 @@ export function RolesPermissionsSettings({ scope, agencyManaged = false }: { sco
   const [rows, setRows] = useState<RoleRow[]>(() => buildRows(scope, agencyManaged));
   const [editingRow, setEditingRow] = useState<RoleRow | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const agencyDefaults = useMemo(() => buildRows(scope, agencyManaged), [scope, agencyManaged]);
+
+  const hasChanges = useMemo(() => {
+    return agencyDefaults.some(def => {
+      const cur = rows.find(r => r.id === def.id);
+      if (!cur) return true;
+      return COLS.some(p => cur.perms[p] !== def.perms[p]);
+    }) || rows.some(r => r.isCustom);
+  }, [rows, agencyDefaults]);
+
+  function handleReset() {
+    setRows(buildRows(scope, agencyManaged));
+    setConfirmReset(false);
+  }
 
   const newRoleTemplate: RoleRow = { id: uid(), name: "", isCustom: true, perms: emptyPerms() };
 
@@ -304,15 +320,45 @@ export function RolesPermissionsSettings({ scope, agencyManaged = false }: { sco
           <p className="text-xs text-muted-foreground mt-0.5">
             {scope === "agency"
               ? "Define what each agency team member can do across all client accounts."
+              : agencyManaged
+              ? "Role permissions inherited from agency defaults. Customize per-client or reset to agency defaults."
               : "Manage what each role can do within this business account."}
           </p>
         </div>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg gradient-coral text-primary-foreground shadow-sm hover:opacity-90 transition-opacity shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" /> Create New Role
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {agencyManaged && hasChanges && !confirmReset && (
+            <button
+              onClick={() => setConfirmReset(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Reset to Agency Defaults
+            </button>
+          )}
+          {agencyManaged && confirmReset && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span className="text-xs text-amber-700 font-medium">Reset all changes?</span>
+              <button
+                onClick={handleReset}
+                className="text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 px-2 py-0.5 rounded transition-colors"
+              >
+                Yes, reset
+              </button>
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="text-xs font-medium text-amber-700 hover:text-amber-900"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => setIsCreating(true)}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg gradient-coral text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-3.5 h-3.5" /> Create New Role
+          </button>
+        </div>
       </div>
 
       {/* Read-only table */}
@@ -345,9 +391,18 @@ export function RolesPermissionsSettings({ scope, agencyManaged = false }: { sco
                 >
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground leading-tight">{row.name}</p>
-                    {row.isCustom && (
-                      <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">Custom</span>
-                    )}
+                    <div className="flex items-center gap-1 mt-0.5">
+                      {row.isCustom && (
+                        <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">Custom</span>
+                      )}
+                      {agencyManaged && !row.isCustom && (() => {
+                        const def = agencyDefaults.find(d => d.id === row.id);
+                        const modified = def && COLS.some(p => row.perms[p] !== def.perms[p]);
+                        return modified ? (
+                          <span className="text-[10px] font-medium text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full inline-block">Modified</span>
+                        ) : null;
+                      })()}
+                    </div>
                   </td>
 
                   {/* Read-only permission indicators */}
