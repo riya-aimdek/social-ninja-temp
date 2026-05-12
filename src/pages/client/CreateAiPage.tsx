@@ -783,32 +783,30 @@ export default function CreateAiPage() {
               </div>
 
               {/* Platform guidelines */}
-              <div>
-                <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
-                  Platform guidelines — posting to {Array.from(new Set(MOCK_ACCOUNTS.filter(a => selectedAccountIds.includes(a.id)).map(a => a.platform))).length} platform{Array.from(new Set(MOCK_ACCOUNTS.filter(a => selectedAccountIds.includes(a.id)).map(a => a.platform))).length !== 1 ? "s" : ""}
-                </p>
-                <div className="space-y-2">
-                  {(Array.from(new Set(MOCK_ACCOUNTS.filter(a => selectedAccountIds.includes(a.id)).map(a => a.platform))) as PlatformKey[]).map(p => {
-                    const meta = PLATFORMS[p]; const Icon = meta.icon;
-                    return (
-                      <div key={p} className={cn("rounded-lg border p-3 flex items-start gap-3",
-                        p === "facebook" ? "border-[#1877F2]/20 bg-[#1877F2]/5" : p === "instagram" ? "border-pink-200 bg-pink-50/50" : p === "linkedin" ? "border-blue-200 bg-blue-50/50" : "border-slate-200 bg-slate-50/50")}>
-                        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white", meta.color)}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold">{meta.name}</div>
-                          <div className="text-xs text-muted-foreground">Max {meta.charLimit.toLocaleString()} chars</div>
-                        </div>
-                        <div className="ml-auto text-right text-[11px] text-muted-foreground">
-                          <span className={cn("font-medium", chosenCaption.length > meta.charLimit ? "text-destructive" : "text-foreground")}>
-                            {chosenCaption.length}
-                          </span>/{meta.charLimit.toLocaleString()}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(Array.from(new Set(MOCK_ACCOUNTS.filter(a => selectedAccountIds.includes(a.id)).map(a => a.platform))) as PlatformKey[]).map(p => {
+                  const meta = PLATFORMS[p]; const Icon = meta.icon;
+                  const len = chosenCaption.length;
+                  const over = len > meta.charLimit;
+                  const near = !over && len / meta.charLimit >= 0.85;
+                  return (
+                    <div
+                      key={p}
+                      title={`${meta.name}: ${len.toLocaleString()} / ${meta.charLimit.toLocaleString()} characters`}
+                      className={cn(
+                        "flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border text-xs font-medium select-none",
+                        over ? "border-destructive/40 bg-destructive/5 text-destructive"
+                          : near ? "border-amber-300 bg-amber-50 text-amber-700"
+                          : "border-border bg-background text-muted-foreground"
+                      )}
+                    >
+                      <span className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0", meta.color)}>
+                        <Icon className="w-3 h-3 text-white" />
+                      </span>
+                      <span className="tabular-nums">{len.toLocaleString()}/{meta.charLimit.toLocaleString()}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Caption cards */}
@@ -949,26 +947,56 @@ export default function CreateAiPage() {
                 <>
                   <div className="text-center space-y-1">
                     <h2 className="text-xl font-bold">Add a Visual</h2>
-                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">Choose how you'd like to add an image to your post.</p>
+                    <p className="text-sm text-muted-foreground">Choose how you'd like to add media to your post</p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                      { Icon: Wand2,       title: "Generate with AI", desc: "Create unique images with AI based on your topic.", action: triggerAiVisuals },
-                      { Icon: Upload,      title: "Upload Your Own",  desc: "Upload from your device or paste an image URL.", action: () => fileInputRef.current?.click() },
-                      { Icon: SkipForward, title: "Skip for Now",     desc: "Continue without an image. Add one later.", action: () => { setUploadedVisual(null); setChosenVisualIdx(-1); goNext(); } },
-                    ].map(({ Icon, title, desc, action }) => (
-                      <button key={title} onClick={action}
-                        className="flex flex-col items-center text-center p-6 rounded-xl border-2 border-border hover:border-primary/40 hover:shadow-md bg-card transition-all space-y-3 group">
-                        <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                          <Icon className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+
+                  <div className="space-y-3">
+                    {/* Generate with AI */}
+                    <button onClick={triggerAiVisuals}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-primary/20 bg-primary/5 hover:border-primary/50 hover:bg-primary/10 transition-all group text-left">
+                      <div className="w-11 h-11 rounded-xl gradient-coral flex items-center justify-center shrink-0 shadow-coral">
+                        <Wand2 className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold">Generate with AI</p>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">Recommended</span>
                         </div>
-                        <div><p className="text-sm font-bold">{title}</p><p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{desc}</p></div>
-                      </button>
-                    ))}
+                        <p className="text-xs text-muted-foreground mt-0.5">Create unique images tailored to your caption and topic</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                    </button>
+
+                    {/* Upload Your Own */}
+                    <button onClick={() => fileInputRef.current?.click()}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-border hover:border-primary/30 hover:bg-accent/50 transition-all group text-left">
+                      <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0">
+                        <Upload className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">Upload Your Own</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">JPG, PNG, WEBP, MP4 — up to 10 items from your device</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                    </button>
+
+                    {/* Skip */}
+                    <button onClick={() => { setUploadedVisual(null); setChosenVisualIdx(-1); goNext(); }}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-border hover:border-muted-foreground/40 hover:bg-accent/30 transition-all group text-left">
+                      <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                        <SkipForward className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-muted-foreground">Skip for Now</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Publish text-only and add a visual later</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
                   </div>
-                  <div className="text-center">
-                    <button onClick={goBack} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 mx-auto transition-colors">
-                      <ArrowLeft className="w-3.5 h-3.5" /> Back to Captions
+
+                  <div className="flex items-center justify-between">
+                    <button onClick={goBack} className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors">
+                      <ChevronLeft className="w-4 h-4" /> Back
                     </button>
                   </div>
                 </>
@@ -1013,9 +1041,9 @@ export default function CreateAiPage() {
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <button onClick={() => setVisualSubStep("pick")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                      <ArrowLeft className="w-3.5 h-3.5" /> Back
+                  <div className="flex items-center justify-between">
+                    <button onClick={() => setVisualSubStep("pick")} className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors">
+                      <ChevronLeft className="w-4 h-4" /> Back
                     </button>
                     <div className="flex gap-2">
                       <button onClick={() => { setChosenVisualIdx(-1); goNext(); }}
