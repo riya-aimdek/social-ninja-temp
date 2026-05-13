@@ -162,139 +162,201 @@ export default function PublicApprovalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <header className="bg-card border-b border-border px-6 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-card border-b border-border px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <SocialNinjaLogo />
-          <div className="hidden sm:block h-6 w-px bg-border" />
-          <span className="hidden sm:block text-xs text-muted-foreground">Post approval</span>
+          <div className="h-5 w-px bg-border" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>{post.clientName}</span>
+            <span className="text-border">›</span>
+            <span className="text-foreground font-medium">{post.projectName}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className={cn("text-[11px] px-2.5 py-1 rounded-full font-semibold border", status.classes)}>{status.label}</span>
           <Link
             to="/"
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-muted transition-colors"
-            title="Go to home"
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
           >
             <Home className="w-3.5 h-3.5" /> Home
           </Link>
-          <span className={cn("text-[11px] px-2 py-1 rounded-full font-medium", status.classes)}>{status.label}</span>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-[1fr_360px] gap-8">
-        {/* Preview side */}
-        <div>
-          <div className="mb-4">
-            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Review for</div>
-            <h1 className="text-xl font-bold text-foreground mt-0.5">{post.clientName} · {post.projectName}</h1>
-            <p className="text-xs text-muted-foreground mt-1">
-              Submitted by {post.createdBy} · {formatDateTime(post.createdAt)}
-            </p>
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+
+        {/* ── Left: preview ── */}
+        <div className="space-y-4">
+          {/* Meta row */}
+          <div className="bg-card border border-border rounded-xl px-5 py-4 flex items-center gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Submitted for review</p>
+              <p className="text-sm font-semibold text-foreground truncate">{post.createdBy}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(post.createdAt)}</p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 rounded-lg px-3 py-1.5">
+                {post.publishMode === "immediate"
+                  ? <><Zap className="w-3.5 h-3.5 text-warning" /><span>Immediate on approval</span></>
+                  : <><Calendar className="w-3.5 h-3.5" /><span>{formatDateTime(post.scheduledFor)}</span></>
+                }
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 rounded-lg px-3 py-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{post.platforms.map((p) => PLATFORM_META[p].label).join(", ")}</span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1 border-b border-border mb-4">
-            {post.platforms.map((p, i) => {
-              const m = PLATFORM_META[p];
-              return (
-                <button
-                  key={p}
-                  onClick={() => setActivePlatform(i)}
-                  className={cn(
-                    "px-3 py-2 text-xs font-medium border-b-2 transition-colors",
-                    i === activePlatform ? `${m.color} border-current` : "text-muted-foreground border-transparent hover:text-foreground",
-                  )}
-                >
-                  {m.label}
-                </button>
-              );
-            })}
-          </div>
+          {/* Platform tabs + preview */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            {/* Tab bar */}
+            <div className="flex items-center gap-0.5 px-4 pt-3 border-b border-border">
+              {post.platforms.map((p, i) => {
+                const m = PLATFORM_META[p];
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setActivePlatform(i)}
+                    className={cn(
+                      "px-3.5 py-2 text-xs font-medium border-b-2 -mb-px transition-colors rounded-t-sm",
+                      i === activePlatform
+                        ? `${m.color} border-current`
+                        : "text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50",
+                    )}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
 
-          <PostPreview platform={platform} caption={post.caption} media={post.media} brand={{ name: post.clientName }} />
+            {/* Constrained preview */}
+            <div className="p-5 flex justify-center bg-muted/20">
+              <div className="w-full max-w-[360px] rounded-xl border border-border overflow-hidden shadow-sm bg-white">
+                <PostPreview platform={platform} caption={post.caption} media={post.media} brand={{ name: post.clientName }} />
+              </div>
+            </div>
+          </div>
 
           {post.publishMode === "immediate" && (
-            <div
-              role="status"
-              className="mt-4 rounded-lg border-2 border-warning/40 bg-warning/10 p-4 flex items-start gap-3"
-            >
-              <div className="w-9 h-9 rounded-lg bg-warning/20 flex items-center justify-center shrink-0">
+            <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 border-warning/30 bg-warning/8">
+              <div className="w-8 h-8 rounded-lg bg-warning/20 flex items-center justify-center shrink-0">
                 <Zap className="w-4 h-4 text-warning" />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">Scheduled for Immediate Posting</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Once you approve, this post will be published right away — there is no delay or scheduled time.
-                </p>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Immediate posting on approval</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Once approved, this post will go live instantly with no delay.</p>
               </div>
             </div>
           )}
-
-          <div className="mt-4 bg-card border border-border rounded-lg p-4 space-y-2 text-sm">
-            {post.publishMode === "immediate" ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Zap className="w-3.5 h-3.5 text-warning" />
-                Publishes <span className="text-foreground font-medium">immediately on approval</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="w-3.5 h-3.5" />
-                Scheduled for <span className="text-foreground font-medium">{formatDateTime(post.scheduledFor)}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="w-3.5 h-3.5" />
-              Will publish to <span className="text-foreground font-medium">{post.platforms.map((p) => PLATFORM_META[p].label).join(", ")}</span>
-            </div>
-          </div>
         </div>
 
-        {/* Decision panel */}
+        {/* ── Right: decision + info ── */}
         <aside className="space-y-4">
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-foreground">Your decision</h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              Approve to schedule this post, or reject with feedback so the agency can revise.
-            </p>
 
-            {!showReject ? (
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <Button variant="outline" onClick={() => setShowReject(true)}>
-                  <XCircle className="w-4 h-4" /> Reject
-                </Button>
-                <Button onClick={handleApprove}>
-                  <CheckCircle2 className="w-4 h-4" /> Approve
-                </Button>
-              </div>
-            ) : (
-              <div className="mt-4 space-y-2">
-                <label className="text-xs font-medium text-foreground">Tell the agency what to change</label>
-                <Textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="e.g. Tone is too casual, please align with brand voice."
-                  className="min-h-[100px] text-sm"
-                />
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => { setShowReject(false); setReason(""); }}>
-                    Cancel
-                  </Button>
-                  <Button variant="destructive" className="flex-1" onClick={handleReject}>
-                    Submit rejection
-                  </Button>
+          {/* Decision card */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground">Your decision</h2>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Approve to schedule this post, or reject with feedback so the agency can revise.
+              </p>
+            </div>
+
+            <div className="p-4">
+              {!showReject ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setShowReject(true)}
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <XCircle className="w-4 h-4 text-error" /> Reject
+                  </button>
+                  <button
+                    onClick={handleApprove}
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl gradient-coral text-primary-foreground text-sm font-semibold shadow-coral hover:opacity-90 active:scale-[0.98] transition-all"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Approve
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-foreground block mb-1.5">Tell the agency what to change</label>
+                    <Textarea
+                      autoFocus
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="e.g. Tone is too casual, please align with brand voice."
+                      className="min-h-[90px] text-sm resize-none"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setShowReject(false); setReason(""); }}
+                      className="flex-1 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleReject}
+                      className="flex-1 py-2.5 rounded-xl bg-error text-white text-sm font-semibold hover:bg-error/90 transition-colors"
+                    >
+                      Submit rejection
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Post details card */}
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-foreground">Post details</p>
+            {[
+              {
+                icon: Calendar,
+                label: "Schedule",
+                value: post.publishMode === "immediate" ? "Immediate on approval" : formatDateTime(post.scheduledFor),
+              },
+              {
+                icon: Clock,
+                label: "Platforms",
+                value: post.platforms.map((p) => PLATFORM_META[p].label).join(", "),
+              },
+              {
+                icon: ShieldCheck,
+                label: "Submitted by",
+                value: post.createdBy,
+              },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
+                  <p className="text-xs text-foreground font-medium mt-0.5">{value}</p>
                 </div>
               </div>
-            )}
+            ))}
           </div>
 
-          <div className="bg-muted/40 border border-border rounded-xl p-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5 text-foreground font-medium mb-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> Secure approval link
-            </div>
-            This link is unique to this post and is logged in the audit trail when used. No login required.
+          {/* Security note */}
+          <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-xl bg-muted/50 border border-border">
+            <ShieldCheck className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This link is unique to this post and is logged in the audit trail when used.
+            </p>
           </div>
 
-          <Link to="/login" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          <Link
+            to="/login"
+            className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+          >
             Open SocialNinja <ExternalLink className="w-3 h-3" />
           </Link>
         </aside>
