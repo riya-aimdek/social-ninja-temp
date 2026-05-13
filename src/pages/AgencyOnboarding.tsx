@@ -176,7 +176,7 @@ const AgencyOnboarding = () => {
                   <label className="text-xs font-semibold tracking-wider text-foreground mb-1.5 block">CLIENT NAME</label>
                   <input
                     className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
-                    placeholder="e.g. Acme Corp"
+                    placeholder="e.g. Bright Studio"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
                   />

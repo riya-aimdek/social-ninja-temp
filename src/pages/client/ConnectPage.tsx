@@ -3,7 +3,7 @@ import {
   Facebook, Instagram, Linkedin, Twitter, Youtube, ShoppingBag, Image,
   Check, ExternalLink, Clock, RefreshCw, LogOut, Trash2, Plus,
   Search, Wifi, WifiOff, AlertCircle, X, Users, FileText,
-  ChevronLeft, Zap, Gift, Star, Shield,
+  ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -133,10 +133,6 @@ function ConnectNewChannelView({
     }, 900);
   }
 
-  const maxChannels = 3;
-  const connectedCount = connectedNames.size;
-  const planProgress = Math.min((connectedCount / maxChannels) * 100, 100);
-
   return (
     <div className="animate-fade-in">
       {/* Page header */}
@@ -147,9 +143,7 @@ function ConnectNewChannelView({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 items-start">
-        {/* Left — channel picker */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
           {/* Panel header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">Connect New Channel</h2>
@@ -244,71 +238,6 @@ function ConnectNewChannelView({
               No channels match your search.
             </div>
           )}
-        </div>
-
-        {/* Right sidebar */}
-        <div className="space-y-4">
-          {/* Trial banner */}
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 bg-orange-50 dark:bg-orange-950/20 border-b border-orange-200 dark:border-orange-800">
-              <Zap className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-              <span className="text-xs text-muted-foreground flex-1">Your trial will expire in 5 days</span>
-              <span className="text-xs font-semibold text-primary cursor-pointer hover:underline shrink-0">Upgrade Now</span>
-            </div>
-
-            <div className="p-5 flex flex-col items-center gap-4">
-              {/* Plan icon */}
-              <div className="w-16 h-16 rounded-full gradient-coral flex items-center justify-center shadow-coral">
-                <Gift className="w-8 h-8 text-white" />
-              </div>
-
-              <div className="text-center">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Current Plan</p>
-                <p className="text-lg font-bold text-primary mt-0.5">FREE PLAN</p>
-              </div>
-
-              {/* Channel usage */}
-              <div className="w-full space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Channels connected</span>
-                  <span className="font-semibold text-foreground">{connectedCount} of {maxChannels}</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full">
-                  <div
-                    className="h-2 rounded-full gradient-coral transition-all duration-500"
-                    style={{ width: `${planProgress}%` }}
-                  />
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {maxChannels - connectedCount > 0
-                    ? `${maxChannels - connectedCount} more channel${maxChannels - connectedCount > 1 ? "s" : ""} available on free plan`
-                    : "Channel limit reached — upgrade to connect more"}
-                </p>
-              </div>
-
-              <button className="w-full py-2.5 rounded-lg gradient-coral text-primary-foreground text-sm font-semibold shadow-coral hover:opacity-90 active:scale-[0.98] transition-all">
-                Upgrade Plan
-              </button>
-            </div>
-          </div>
-
-          {/* Feature highlights */}
-          <div className="bg-card rounded-xl border border-border p-4 space-y-3">
-            <p className="text-xs font-semibold text-foreground">Why connect more channels?</p>
-            {[
-              { icon: Star,   text: "Unified inbox for all platforms" },
-              { icon: Shield, text: "Centralized analytics dashboard"  },
-              { icon: Zap,    text: "Schedule posts across networks"    },
-            ].map(f => (
-              <div key={f.text} className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                  <f.icon className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <span className="text-xs text-muted-foreground">{f.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
