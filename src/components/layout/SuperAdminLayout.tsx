@@ -27,12 +27,12 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
   const notificationCount = 3;
 
   return (
-    <div className="flex min-h-screen w-full">
-      <aside className="w-[200px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div className="flex bg-background font-sans">
+      <aside className="sticky top-0 h-screen overflow-hidden w-[200px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
         <div className="p-4 border-b border-sidebar-border/50">
           <SocialNinjaLogo size="sm" darkBg />
         </div>
-        <nav className="flex-1 px-3 py-3 space-y-1">
+        <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto min-h-0">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -58,7 +58,7 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
         </div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="py-5 shrink-0 border-b border-border bg-card flex items-center px-6 gap-5">
+        <header className="sticky top-0 z-10 py-5 shrink-0 border-b border-border bg-card flex items-center px-6 gap-5">
           {/* Context identifier */}
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -91,7 +91,7 @@ const SuperAdminLayout = ({ children, title }: SuperAdminLayoutProps) => {
             )}
           </div>
         </header>
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );

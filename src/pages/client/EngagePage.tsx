@@ -7,6 +7,7 @@ import {
   Bot, Users, Zap, X, Check, AtSign, Mail, Star, ArrowDownUp, ChevronDown,
   ChevronLeft, ChevronRight,
   ExternalLink, Heart, Bookmark, Share2, SmilePlus, EyeOff, Eye,
+  Play, Layers, Music,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ interface Post {
   title: string;
   thumbnail: string;
   imageUrl?: string;
+  postType?: "image" | "carousel" | "reel";
   publishedAt: string;
   commentCount: number;
   newCount: number;
@@ -269,14 +271,14 @@ const POSTS: Post[] = [
   {
     id: "P-201", platform: "Instagram", account: ACC.ig_main,
     title: "🎉 Celebrating 5 years of building together!",
-    thumbnail: "🎂", imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop", publishedAt: "2h ago",
+    thumbnail: "🎂", imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop", postType: "carousel", publishedAt: "2h ago",
     commentCount: 247, newCount: 32,
     comments: [
       {
-        id: "C-1", author: "Sarah Johnson", avatar: "SJ",
+        id: "C-1", author: "Arjav Gandhi", avatar: "AG",
         text: "Happy 5 years! 🎉 Wishing you many more!", at: "12m",
         sentiment: "positive", likes: 4, trigger: "anniversary",
-        aiDraft: "Thank you so much, Sarah! 💛 Five years has flown by — couldn't have done it without supporters like you. Here's to many more!",
+        aiDraft: "Thank you so much, Arjav! 💛 Five years has flown by — couldn't have done it without supporters like you. Here's to many more!",
         stage: "pending", priority: "low",
         sla: { dueIn: "3h 48m", breached: false },
         replies: (() => {
@@ -501,7 +503,7 @@ const POSTS: Post[] = [
   {
     id: "P-198", platform: "Facebook", account: ACC.fb_main,
     title: "New product launch — Spring Collection ‘26",
-    thumbnail: "🌸", imageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=400&fit=crop", publishedAt: "1d ago",
+    thumbnail: "🌸", imageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=400&fit=crop", postType: "reel", publishedAt: "1d ago",
     commentCount: 96, newCount: 15,
     comments: [
       {
@@ -1954,6 +1956,16 @@ function BoardView({
                       />
                     </div>
 
+                    {/* Post thumbnail */}
+                    <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-border bg-muted relative">
+                      {c.post.imageUrl
+                        ? <img src={c.post.imageUrl} alt="post" className="w-full h-full object-cover" />
+                        : <div className={cn("w-full h-full flex items-center justify-center text-2xl", platformBgClass(c.post.platform))}>
+                            {c.post.thumbnail || "📄"}
+                          </div>
+                      }
+                    </div>
+
                     {/* Author avatar */}
                     <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
                       {c.avatar}
@@ -3206,16 +3218,85 @@ function ThreadDetailColumn({
             </div>
             {/* Caption */}
             <p className="px-3 pb-2 text-sm text-foreground leading-snug line-clamp-2">{post.title}</p>
-            {/* Image — edge-to-edge within card, 4:3 ratio */}
-            <div className="w-full bg-muted overflow-hidden" style={{ aspectRatio: "4/3" }}>
-              {post.imageUrl ? (
-                <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className={cn("w-full h-full flex items-center justify-center text-5xl", platformBgClass(post.platform))}>
-                  {post.thumbnail}
+            {/* Image — reel / carousel / standard */}
+            {post.postType === "reel" ? (
+              /* ── Reel preview: centered 9:16 with reel chrome ── */
+              <div className="flex justify-center bg-black px-6 py-3">
+                <div className="relative bg-black overflow-hidden rounded-xl" style={{ width: "100%", maxWidth: 200, aspectRatio: "9/16" }}>
+                  {post.imageUrl
+                    ? <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center text-5xl bg-zinc-900">{post.thumbnail}</div>
+                  }
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 pointer-events-none" />
+                  {/* Centre play button */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                      <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                    </div>
+                  </div>
+                  {/* Right-side actions */}
+                  <div className="absolute right-2 bottom-16 flex flex-col items-center gap-3">
+                    {([{ icon: Heart, label: "1.2k" }, { icon: MessageSquare, label: "247" }, { icon: Share2, label: "Share" }] as const).map(({ icon: Icon, label }) => (
+                      <div key={label} className="flex flex-col items-center gap-0.5">
+                        <Icon className="w-4 h-4 text-white" />
+                        <span className="text-white text-[9px] leading-none">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Bottom bar */}
+                  <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5">
+                    <p className="text-white text-[10px] font-semibold leading-none mb-0.5">{post.account.handle}</p>
+                    <p className="text-white/80 text-[9px] leading-snug line-clamp-2">{post.title}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Music className="w-2.5 h-2.5 text-white/70" />
+                      <span className="text-white/70 text-[8px]">Original audio</span>
+                    </div>
+                  </div>
+                  {/* Reel pill top-right */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm">
+                    <Play className="w-2.5 h-2.5 text-white fill-white" />
+                    <span className="text-white text-[9px] font-semibold">Reel</span>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : post.postType === "carousel" ? (
+              /* ── Carousel preview: 1:1 with slide arrows + dots ── */
+              <div className="w-full bg-muted overflow-hidden relative" style={{ aspectRatio: "1/1" }}>
+                {post.imageUrl
+                  ? <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+                  : <div className={cn("w-full h-full flex items-center justify-center text-5xl", platformBgClass(post.platform))}>{post.thumbnail}</div>
+                }
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
+                {/* Prev arrow */}
+                <button className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm shadow flex items-center justify-center hover:bg-white transition-colors">
+                  <ChevronLeft className="w-4 h-4 text-foreground" />
+                </button>
+                {/* Next arrow */}
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm shadow flex items-center justify-center hover:bg-white transition-colors">
+                  <ChevronRight className="w-4 h-4 text-foreground" />
+                </button>
+                {/* Dot indicators */}
+                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+                  {[0,1,2].map((i) => (
+                    <div key={i} className={cn("rounded-full transition-all", i === 0 ? "w-2 h-2 bg-white" : "w-1.5 h-1.5 bg-white/50")} />
+                  ))}
+                </div>
+                {/* Slide counter */}
+                <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm flex items-center gap-0.5">
+                  <Layers className="w-2.5 h-2.5 text-white" />
+                  <span className="text-white text-[9px] font-semibold">1 / 3</span>
+                </div>
+              </div>
+            ) : (
+              /* ── Standard image: 4:3 ── */
+              <div className="w-full bg-muted overflow-hidden relative" style={{ aspectRatio: "4/3" }}>
+                {post.imageUrl
+                  ? <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+                  : <div className={cn("w-full h-full flex items-center justify-center text-5xl", platformBgClass(post.platform))}>{post.thumbnail}</div>
+                }
+              </div>
+            )}
             {/* Comment count */}
             <p className="px-3 py-2 text-[11px] text-muted-foreground">
               <span className="font-semibold text-foreground">{fmt(post.commentCount)}</span> comments

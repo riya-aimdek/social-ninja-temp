@@ -200,10 +200,10 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
 
   /* ── Render ── */
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex bg-background font-sans">
 
       {/* ── Sidebar ── */}
-      <aside className="w-[210px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
+      <aside className="sticky top-0 h-screen overflow-hidden w-[210px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
 
         {/* Logo */}
         <div className="p-4 border-b border-sidebar-border/50">
@@ -211,7 +211,7 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
         </div>
 
         {/* Context switcher */}
-        <div className="px-3 pt-3 relative" ref={switcherRef}>
+        <div className="px-3 py-3 relative" ref={switcherRef}>
           <button
             onClick={() => setSwitcherOpen(v => !v)}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors"
@@ -301,7 +301,7 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto min-h-0">
           {navItems.map((item) => {
             const activeViaChild = item.children?.some(c => (path + locationSearch) === c.path) ?? false;
             const active = activeViaChild || path === item.path || path.startsWith(item.path + "/");
@@ -399,7 +399,7 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Header */}
-        <header className="h-16 shrink-0 border-b border-border bg-card flex items-center px-6 gap-4">
+        <header className="sticky top-0 z-10 h-16 shrink-0 border-b border-border bg-card flex items-center px-6 gap-4">
 
           {/* Context logo + label */}
           <div className="flex items-center gap-3 shrink-0">
@@ -456,7 +456,7 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-auto bg-muted/30">
+        <main className="flex-1 p-6 bg-muted/30">
           {children ?? <Outlet />}
         </main>
       </div>
