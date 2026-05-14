@@ -28,6 +28,7 @@ export interface PostDraft {
   media: { type: "image" | "video"; url: string }[];
   scheduledFor: string; // ISO
   publishMode?: "scheduled" | "immediate"; // immediate = publish as soon as approved
+  postType?: "post" | "reel" | "carousel"; // content format
   status: PostStatus;
   createdBy: string;
   createdAt: string;
@@ -58,6 +59,7 @@ export const MOCK_POSTS: PostDraft[] = [
     caption: "Spring drop is here 🌸 Discover the new pastel collection — limited time only. #SpringStyle #NewArrivals",
     media: [{ type: "image", url: img("spring1") }, { type: "image", url: img("spring2") }],
     scheduledFor: iso(2, 14, 0),
+    postType: "carousel",
     status: "pending_approval",
     publishMode: "immediate",
     createdBy: "Priya Sharma",
@@ -105,6 +107,7 @@ export const MOCK_POSTS: PostDraft[] = [
     caption: "30-second pasta hack you'll wish you knew sooner 🍝 Save for later!",
     media: [{ type: "video", url: img("pasta1") }],
     scheduledFor: iso(1, 18, 30),
+    postType: "reel",
     status: "rejected",
     createdBy: "Mike Torres",
     createdAt: iso(-1, 14, 0),

@@ -236,7 +236,7 @@ export default function PublicApprovalPage() {
             {/* Constrained preview */}
             <div className="p-5 flex justify-center bg-muted/20">
               <div className="w-full max-w-[360px] rounded-xl border border-border overflow-hidden shadow-sm bg-white">
-                <PostPreview platform={platform} caption={post.caption} media={post.media} brand={{ name: post.clientName }} />
+                <PostPreview platform={platform} caption={post.caption} media={post.media} brand={{ name: post.clientName }} postType={post.postType} />
               </div>
             </div>
           </div>

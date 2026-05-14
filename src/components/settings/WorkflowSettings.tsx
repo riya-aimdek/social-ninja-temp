@@ -58,13 +58,16 @@ const uid   = () => `s${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 const wfUid = () => `wf${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
 /* ── Toggle switch ───────────────────────────────────────────────── */
-function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
+function Toggle({ on, onChange, disabled }: { on: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
-      onClick={(e) => { e.stopPropagation(); onChange(); }}
+      disabled={disabled}
+      onClick={(e) => { e.stopPropagation(); if (!disabled) onChange(); }}
+      title={disabled ? "Cannot disable the only active workflow" : undefined}
       className={cn(
-        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+        "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200",
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
         on ? "bg-success" : "bg-muted-foreground/30",
       )}
     >
@@ -512,7 +515,7 @@ export function WorkflowSettings({ scope, standalone = false }: { scope: Workflo
           className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
           onClick={() => setExpandedId(isExpanded ? null : wf.id)}
         >
-          <Toggle on={wf.isActive} onChange={() => activateWorkflow(wf.id)} />
+          <Toggle on={wf.isActive} onChange={() => activateWorkflow(wf.id)} disabled={workflows.length === 1} />
 
           {/* Name */}
           <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
@@ -637,16 +640,10 @@ export function WorkflowSettings({ scope, standalone = false }: { scope: Workflo
           </p>
         </div>
 
-        <div className={cn("rounded-xl border transition-colors", wf.isActive ? "border-success/40 bg-success/5" : "border-border bg-card")}>
+        <div className="rounded-xl border border-border bg-card">
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3">
-            <Toggle on={wf.isActive} onChange={() => activateWorkflow(wf.id)} />
             <span className="text-sm font-semibold text-foreground flex-1">{wf.name}</span>
-            {wf.isActive && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30 shrink-0">
-                Active
-              </span>
-            )}
             {!isEditing && (
               <button
                 onClick={() => enterEdit(wf.id)}

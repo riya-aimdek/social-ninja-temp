@@ -244,6 +244,7 @@ export default function PostDetailDrawer({ post, onClose, onAction }: Props) {
                                 caption={post.caption}
                                 media={post.media}
                                 brand={{ name: post.clientName }}
+                                postType={post.postType}
                               />
                             </div>
                           )}
@@ -289,6 +290,7 @@ export default function PostDetailDrawer({ post, onClose, onAction }: Props) {
                                 caption={post.caption}
                                 media={post.media}
                                 brand={{ name: post.clientName }}
+                                postType={post.postType}
                               />
                             </div>
                           )}
