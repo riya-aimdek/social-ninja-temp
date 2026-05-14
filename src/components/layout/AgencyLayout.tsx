@@ -450,18 +450,31 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
           })}
         </nav>
 
-        {/* User profile */}
+        {/* Context info */}
         <div className="px-3 py-3 border-t border-sidebar-border/50">
-          <button
-            onClick={() => navigate("/agency/profile")}
-            className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent/60 transition-colors text-left"
-          >
-            <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-semibold shrink-0">A</div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white truncate">agency</p>
-              <p className="text-[11px] text-sidebar-foreground/60">Agency Admin</p>
-            </div>
-          </button>
+          {isClientCtx ? (
+            <button
+              onClick={() => navigate(`/agency/clients/${client!.id}/profile`)}
+              className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent/60 transition-colors text-left"
+            >
+              <img src={client!.logo} alt={client!.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-white truncate">{client!.name}</p>
+                <p className="text-[11px] text-sidebar-foreground/60">Client</p>
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/agency/profile")}
+              className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent/60 transition-colors text-left"
+            >
+              <img src={AGENCY.logo} alt={AGENCY.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-white truncate">{AGENCY.name}</p>
+                <p className="text-[11px] text-sidebar-foreground/60">Agency Admin</p>
+              </div>
+            </button>
+          )}
         </div>
       </aside>
 

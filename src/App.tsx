@@ -43,6 +43,7 @@ import LocationsPage from "./pages/client/LocationsPage";
 import ClientSettingsPage from "./pages/client/SettingsPage";
 
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
+import AgencyClientProfilePage from "./pages/AgencyClientProfilePage";
 import PublicApprovalPage from "./pages/PublicApprovalPage";
 import OrgSwitcher from "./pages/OrgSwitcher";
 import OrgSelector from "./pages/OrgSelector";
@@ -88,6 +89,9 @@ const App = () => (
 
           {/* Agency-managed client routes — same pages as business, within agency sidebar */}
           <Route element={<AgencyLayout defaultClientId="1" />}>
+            {/* Client profile */}
+            <Route path="/agency/clients/:id/profile" element={<AgencyClientProfilePage />} />
+
             {/* Business level (client selected, no project) */}
             <Route path="/agency/client/business/dashboard" element={<ClientDashboardPage />} />
             <Route path="/agency/client/business/projects"  element={<ClientProjectsPage />} />
