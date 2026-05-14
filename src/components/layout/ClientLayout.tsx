@@ -434,7 +434,7 @@ export default function ClientLayout() {
             </button>
             <button
               onClick={() => navigate("/login")}
-              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
               title="Sign out"
             >
               <LogOut className="w-4 h-4 text-muted-foreground" />

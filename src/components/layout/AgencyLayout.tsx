@@ -108,6 +108,63 @@ function initProject(clientId: string | null): Project | null {
 /* ── Component ───────────────────────────────────────────────────── */
 interface AgencyLayoutProps { children?: ReactNode; title?: string; defaultClientId?: string; }
 
+/* ── User menu ───────────────────────────────────────────────────── */
+const AGENCY_USER = { name: "Riya Shah", role: "Agency", initials: "RS" };
+
+function UserMenu({ onLogout }: { onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
+      >
+        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white text-[11px] font-bold shrink-0">
+          {AGENCY_USER.initials}
+        </div>
+        <div className="text-left leading-none">
+          <div className="flex items-center gap-1">
+            <p className="text-[13px] font-semibold text-foreground">{AGENCY_USER.name}</p>
+            <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform shrink-0", open && "rotate-180")} />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{AGENCY_USER.role}</p>
+        </div>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 w-48 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
+              {AGENCY_USER.initials}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground leading-tight">{AGENCY_USER.name}</p>
+              <p className="text-[11px] text-muted-foreground">{AGENCY_USER.role}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => { setOpen(false); onLogout(); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) => {
   const location = useLocation();
   const navigate  = useNavigate();
@@ -459,14 +516,13 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
           </div>
 
           {/* Right: notifications + user */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
               <Bell className="h-5 w-5 text-muted-foreground" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
             </button>
-            <button onClick={() => navigate("/login")} className="p-1.5 hover:bg-muted rounded-lg transition-colors" title="Sign out">
-              <LogOut className="h-4 w-4 text-muted-foreground" />
-            </button>
+            <div className="w-px h-6 bg-border" />
+            <UserMenu onLogout={() => navigate("/login")} />
           </div>
         </header>
 
