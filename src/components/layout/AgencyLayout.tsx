@@ -204,7 +204,7 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
     <div className="flex bg-background font-sans">
 
       {/* ── Sidebar ── */}
-      <aside className="sticky top-0 h-screen overflow-hidden w-[220px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
+      <aside className="sticky top-0 h-screen w-[220px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
 
         {/* Logo */}
         <div className="p-4 border-b border-sidebar-border/50">
@@ -230,21 +230,28 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
 
           {/* Dropdown */}
           {switcherOpen && (
-            <div className="absolute left-3 right-0 top-full mt-1 w-[220px] bg-sidebar-accent border border-sidebar-border rounded-xl shadow-xl z-50 py-1.5 max-h-[420px] overflow-y-auto">
+            <div className="absolute left-3 right-3 top-full mt-1 bg-sidebar-accent border border-sidebar-border rounded-xl shadow-xl z-50 py-2 max-h-[420px] overflow-y-auto">
 
-              {/* Agency */}
+              {/* Agency workspace section */}
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">Workspace</p>
               <button
                 onClick={selectAgency}
-                className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors"
+                className={cn(
+                  "w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors rounded-lg mx-0",
+                  !isClientCtx && "bg-white/5",
+                )}
               >
                 <img src={AGENCY.logo} alt="Agency" className="w-6 h-6 rounded-lg object-cover shrink-0" />
-                <span className="text-white text-[13px] flex-1 text-left font-medium">{AGENCY.name}</span>
+                <span className={cn("text-[13px] flex-1 text-left font-medium truncate", !isClientCtx ? "text-primary" : "text-white")}>
+                  {AGENCY.name}
+                </span>
                 {!isClientCtx && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
               </button>
 
-              <div className="h-px bg-sidebar-border/50 mx-2 my-1" />
+              <div className="h-px bg-sidebar-border/50 mx-2 my-2" />
 
-              {/* Clients + Projects */}
+              {/* Clients section */}
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">Clients</p>
               {CLIENTS.map(c => {
                 const projects   = PROJECTS[c.id] || [];
                 const isExpanded = expandedClients.has(c.id);
@@ -252,11 +259,13 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
 
                 return (
                   <div key={c.id}>
-                    {/* Client row */}
                     <div className="flex items-center">
                       <button
                         onClick={() => selectClient(c)}
-                        className="flex-1 flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors min-w-0"
+                        className={cn(
+                          "flex-1 flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors min-w-0",
+                          isSelected && !isProjectCtx && "bg-white/5",
+                        )}
                       >
                         <img src={c.logo} alt={c.name} className="w-6 h-6 rounded-lg object-cover shrink-0" />
                         <span className={cn("text-[13px] flex-1 text-left truncate font-medium", isSelected ? "text-primary" : "text-white")}>
@@ -284,7 +293,10 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
                         <button
                           key={p.id}
                           onClick={() => selectProject(c, p)}
-                          className="w-full flex items-center gap-2 pl-10 pr-3 py-1.5 hover:bg-white/5 transition-colors"
+                          className={cn(
+                            "w-full flex items-center gap-2 pl-10 pr-3 py-1.5 hover:bg-white/5 transition-colors",
+                            isProjSelected && "bg-white/5",
+                          )}
                         >
                           <FolderOpen className={cn("w-3.5 h-3.5 shrink-0", isProjSelected ? "text-primary" : "text-sidebar-foreground/50")} />
                           <span className={cn("text-[12px] flex-1 text-left truncate", isProjSelected ? "text-primary font-semibold" : "text-white/70")}>

@@ -176,7 +176,7 @@ export default function ClientLayout() {
     <div className="flex bg-background font-sans">
 
       {/* ── Sidebar ── */}
-      <aside className="w-[220px] bg-sidebar flex flex-col flex-shrink-0 border-r border-sidebar-border sticky top-0 h-screen overflow-hidden">
+      <aside className="w-[220px] bg-sidebar flex flex-col flex-shrink-0 border-r border-sidebar-border sticky top-0 h-screen">
 
         {/* Logo */}
         <div className="p-4 border-b border-sidebar-border/50">
@@ -202,19 +202,27 @@ export default function ClientLayout() {
 
           {/* Dropdown */}
           {switcherOpen && (
-            <div className="absolute left-3 right-0 top-full mt-1 w-[220px] bg-sidebar-accent border border-sidebar-border rounded-xl shadow-xl z-50 py-1.5 max-h-[380px] overflow-y-auto">
-              {BUSINESSES.map(b => {
+            <div className="absolute left-3 right-3 top-full mt-1 bg-sidebar-accent border border-sidebar-border rounded-xl shadow-xl z-50 py-2 max-h-[380px] overflow-y-auto">
+              {BUSINESSES.map((b, bIdx) => {
                 const projects    = PROJECTS[b.id] || [];
                 const isExpanded  = expandedBiz.has(b.id);
                 const isSelected  = business.id === b.id;
 
                 return (
                   <div key={b.id}>
+                    {/* Section label per business */}
+                    {bIdx === 0 && (
+                      <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">Business</p>
+                    )}
+
                     {/* Business row */}
                     <div className="flex items-center">
                       <button
                         onClick={() => selectBusiness(b)}
-                        className="flex-1 flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors min-w-0"
+                        className={cn(
+                          "flex-1 flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors min-w-0",
+                          isSelected && !isProjectCtx && "bg-white/5",
+                        )}
                       >
                         <img src={b.logo} alt={b.name} className="w-6 h-6 rounded-lg object-cover shrink-0" />
                         <span className={cn("text-[13px] flex-1 text-left truncate font-medium", isSelected ? "text-primary" : "text-white")}>
@@ -235,23 +243,36 @@ export default function ClientLayout() {
                       )}
                     </div>
 
-                    {/* Projects */}
-                    {isExpanded && projects.map(p => {
-                      const isProj = project?.id === p.id;
-                      return (
-                        <button
-                          key={p.id}
-                          onClick={() => selectProject(b, p)}
-                          className="w-full flex items-center gap-2 pl-10 pr-3 py-1.5 hover:bg-white/5 transition-colors"
-                        >
-                          <FolderOpen className={cn("w-3.5 h-3.5 shrink-0", isProj ? "text-primary" : "text-sidebar-foreground/50")} />
-                          <span className={cn("text-[12px] flex-1 text-left truncate", isProj ? "text-primary font-semibold" : "text-white/70")}>
-                            {p.name}
-                          </span>
-                          {isProj && <Check className="h-3 w-3 text-primary shrink-0" />}
-                        </button>
-                      );
-                    })}
+                    {/* Projects under this business */}
+                    {isExpanded && projects.length > 0 && (
+                      <>
+                        <p className="px-3 pt-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">Projects</p>
+                        {projects.map(p => {
+                          const isProj = project?.id === p.id;
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => selectProject(b, p)}
+                              className={cn(
+                                "w-full flex items-center gap-2 pl-6 pr-3 py-1.5 hover:bg-white/5 transition-colors",
+                                isProj && "bg-white/5",
+                              )}
+                            >
+                              <FolderOpen className={cn("w-3.5 h-3.5 shrink-0", isProj ? "text-primary" : "text-sidebar-foreground/50")} />
+                              <span className={cn("text-[12px] flex-1 text-left truncate", isProj ? "text-primary font-semibold" : "text-white/70")}>
+                                {p.name}
+                              </span>
+                              {isProj && <Check className="h-3 w-3 text-primary shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </>
+                    )}
+
+                    {/* Divider between businesses */}
+                    {bIdx < BUSINESSES.length - 1 && (
+                      <div className="h-px bg-sidebar-border/50 mx-2 my-2" />
+                    )}
                   </div>
                 );
               })}
