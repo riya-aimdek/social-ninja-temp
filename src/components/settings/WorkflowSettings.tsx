@@ -192,75 +192,79 @@ function FlowDiagramEdit({
             <div className="w-0.5 bg-border flex-1 min-h-[32px]" />
           </div>
           <div className="flex-1 pb-4">
-            <div className="bg-card border border-border rounded-xl p-3.5 flex items-center gap-3 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-3.5 shadow-sm space-y-2.5">
 
-              {/* Type toggle */}
-              <div className="flex rounded-lg border border-border overflow-hidden shrink-0">
-                {(scope === "client" ? ["role", "user"] as const : ["role"] as const).map((t) => (
+              {/* Row 1: type toggle + any-one/all + remove */}
+              <div className="flex items-center gap-2.5">
+                {/* Type toggle */}
+                <div className="flex rounded-lg border border-border overflow-hidden shrink-0">
+                  {(scope === "client" ? ["role", "user"] as const : ["role"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => onPatchStep(step.id, { type: t })}
+                      className={cn(
+                        "flex items-center gap-1 px-3 py-1.5 text-xs font-semibold transition-colors",
+                        step.type === t
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                      )}
+                    >
+                      {t === "role" ? <Users className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                      {t === "role" ? "Role" : "User"}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Any One / All — role steps only */}
+                {step.type === "role" && (
+                  <div className="flex items-center rounded-lg border border-border overflow-hidden shrink-0">
+                    {(["any", "all"] as const).map((a, idx) => (
+                      <>
+                        {idx === 1 && <div key="sep" className="w-px h-5 bg-border shrink-0" />}
+                        <button
+                          key={a}
+                          type="button"
+                          onClick={() => onPatchStep(step.id, { approval: a })}
+                          className={cn(
+                            "px-3 py-1.5 text-xs font-semibold transition-colors",
+                            (step.approval ?? "any") === a
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted",
+                          )}
+                        >
+                          {a === "any" ? "Any One" : "All"}
+                        </button>
+                      </>
+                    ))}
+                  </div>
+                )}
+
+                {/* Remove step */}
+                <div className="flex-1" />
+                {wf.steps.length > 1 && (
                   <button
-                    key={t}
-                    type="button"
-                    onClick={() => onPatchStep(step.id, { type: t })}
-                    className={cn(
-                      "flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold transition-colors",
-                      step.type === t
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                    )}
+                    onClick={() => onRemoveStep(step.id)}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-error hover:bg-error/10 transition-colors shrink-0"
                   >
-                    {t === "role" ? <Users className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                    {t === "role" ? "Role" : "User"}
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                ))}
+                )}
               </div>
 
-              {/* Assignee dropdown */}
-              <div className="relative flex-1">
+              {/* Row 2: Assignee dropdown — full width */}
+              <div className="relative">
                 <select
                   value={step.assigneeId}
                   onChange={(e) => onPatchStep(step.id, { assigneeId: e.target.value })}
-                  className="w-full h-8 pl-2.5 pr-8 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary appearance-none cursor-pointer transition-colors"
+                  className="w-full h-9 pl-3 pr-9 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary appearance-none cursor-pointer transition-colors"
                 >
                   {(step.type === "role" ? roles : users).map((item) => (
                     <option key={item.id} value={item.id}>{item.name}</option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
-
-              {/* Any One / All — role steps only */}
-              {step.type === "role" && (
-                <div className="flex items-center rounded-lg border border-border overflow-hidden shrink-0">
-                  {(["any", "all"] as const).map((a, idx) => (
-                    <>
-                      {idx === 1 && <div key="sep" className="w-px h-5 bg-border shrink-0" />}
-                      <button
-                        key={a}
-                        type="button"
-                        onClick={() => onPatchStep(step.id, { approval: a })}
-                        className={cn(
-                          "px-2.5 py-1.5 text-xs font-semibold transition-colors",
-                          (step.approval ?? "any") === a
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted",
-                        )}
-                      >
-                        {a === "any" ? "Any One" : "All"}
-                      </button>
-                    </>
-                  ))}
-                </div>
-              )}
-
-              {/* Remove step */}
-              {wf.steps.length > 1 && (
-                <button
-                  onClick={() => onRemoveStep(step.id)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-error hover:bg-error/10 transition-colors shrink-0"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -403,10 +407,10 @@ export function WorkflowSettings({ scope, standalone = false }: { scope: Workflo
     if (workflows.length >= MAX_WORKFLOWS) return;
     const id = wfUid();
     setWorkflows((prev) => [...prev, { id, name: "New Workflow", isActive: false, steps: [{ id: uid(), type: "role", assigneeId: roles[0].id, approval: "any" }] }]);
-    setExpandedId(id);
     setEditingNameId(id);
     setDraftName("New Workflow");
     setEditingIds((prev) => new Set(prev).add(id));
+    setModalWfId(id);
   }
 
   function removeWorkflow(id: string) {
@@ -496,123 +500,94 @@ export function WorkflowSettings({ scope, standalone = false }: { scope: Workflo
   }
 
   const atLimit = workflows.length >= MAX_WORKFLOWS;
+  const [modalWfId, setModalWfId] = useState<string | null>(null);
+  const modalWf = workflows.find((w) => w.id === modalWfId) ?? null;
 
-  /* ── Shared workflow card renderer ─────────────────────────────── */
-  function WorkflowCard({ wf }: { wf: Workflow }) {
-    const isExpanded    = expandedId === wf.id;
-    const isEditingName = editingNameId === wf.id;
-    const isEditing     = editingIds.has(wf.id);
+  /* ── Workflow edit modal ─────────────────────────────────────────── */
+  function WorkflowModal() {
+    if (!modalWf) return null;
+    const isEditing = editingIds.has(modalWf.id);
+    const isEditingName = editingNameId === modalWf.id;
 
     return (
-      <div
-        className={cn(
-          "rounded-xl border transition-colors",
-          wf.isActive ? "border-success/40 bg-success/5" : "border-border bg-card",
-        )}
-      >
-        {/* Header row */}
-        <div
-          className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
-          onClick={() => setExpandedId(isExpanded ? null : wf.id)}
-        >
-          <Toggle on={wf.isActive} onChange={() => activateWorkflow(wf.id)} disabled={workflows.length === 1} />
-
-          {/* Name */}
-          <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setModalWfId(null); setEditingIds((p) => { const n = new Set(p); n.delete(modalWf.id); return n; }); }} />
+        <div className="relative bg-card border border-border rounded-2xl shadow-lg w-full max-w-2xl max-h-[88vh] flex flex-col animate-fade-in">
+          {/* Modal header */}
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-border shrink-0">
             {isEditingName ? (
               <input
                 autoFocus
                 value={draftName}
                 onChange={(e) => setDraftName(e.target.value)}
-                onBlur={() => commitName(wf.id)}
-                onKeyDown={(e) => { if (e.key === "Enter") commitName(wf.id); if (e.key === "Escape") setEditingNameId(null); }}
-                className="text-sm font-semibold bg-background border border-primary rounded-lg px-2 py-0.5 outline-none w-full max-w-[200px]"
+                onBlur={() => commitName(modalWf.id)}
+                onKeyDown={(e) => { if (e.key === "Enter") commitName(modalWf.id); if (e.key === "Escape") setEditingNameId(null); }}
+                className="text-sm font-semibold bg-background border border-primary rounded-lg px-2 py-0.5 outline-none flex-1 max-w-[220px]"
               />
             ) : (
-              <div className="flex items-center gap-1.5 group/name">
-                <span className="text-sm font-semibold text-foreground truncate">{wf.name}</span>
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <span className="text-sm font-semibold text-foreground truncate">{modalWf.name}</span>
                 {isEditing && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); setEditingNameId(wf.id); setDraftName(wf.name); }}
-                    className="opacity-0 group-hover/name:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                    onClick={() => { setEditingNameId(modalWf.id); setDraftName(modalWf.name); }}
+                    className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
                   >
                     <Pencil className="w-3 h-3" />
                   </button>
                 )}
               </div>
             )}
+            {modalWf.isActive && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30 shrink-0">Active</span>
+            )}
+            <button
+              onClick={() => { setModalWfId(null); setEditingIds((p) => { const n = new Set(p); n.delete(modalWf.id); return n; }); }}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          {wf.isActive && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30 shrink-0">
-              Active
-            </span>
-          )}
-
-          {/* Edit button (view mode only) */}
-          {!isEditing && isExpanded && (
-            <button
-              onClick={(e) => { e.stopPropagation(); enterEdit(wf.id); }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-            >
-              <Pencil className="w-3 h-3" /> Edit
-            </button>
-          )}
-
-          {workflows.length > 1 && (
-            <button
-              onClick={(e) => { e.stopPropagation(); removeWorkflow(wf.id); }}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-error hover:bg-error/10 transition-colors shrink-0"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {isExpanded
-            ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
-            : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-          }
-        </div>
-
-        {/* Expanded body */}
-        {isExpanded && (
-          <div className="px-4 pb-4 pt-1 border-t border-border">
-            <div className="mt-4">
-              {isEditing ? (
-                <FlowDiagramEdit
-                  wf={wf}
-                  scope={scope}
-                  roles={roles}
-                  users={users}
-                  onPatchStep={(stepId, changes) => patchStep(wf.id, stepId, changes)}
-                  onAddStep={() => addStep(wf.id)}
-                  onRemoveStep={(stepId) => removeStep(wf.id, stepId)}
-                />
-              ) : (
-                <FlowDiagramView wf={wf} roles={roles} users={users} />
-              )}
-            </div>
-
-            {isEditing && (
-              <div className="flex justify-end pt-3 border-t border-border mt-2">
-                <button
-                  onClick={() => saveWorkflow(wf.id)}
-                  className={cn(
-                    "flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-all duration-200",
-                    savedIds.has(wf.id)
-                      ? "bg-success/15 text-success border border-success/30"
-                      : "gradient-coral text-primary-foreground shadow-sm hover:opacity-90",
-                  )}
-                >
-                  {savedIds.has(wf.id)
-                    ? <><Check className="w-3.5 h-3.5" /> Saved</>
-                    : <><Save className="w-3.5 h-3.5" /> Save Workflow</>
-                  }
-                </button>
-              </div>
+          {/* Modal body — scrollable */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {isEditing ? (
+              <FlowDiagramEdit
+                wf={modalWf}
+                scope={scope}
+                roles={roles}
+                users={users}
+                onPatchStep={(stepId, changes) => patchStep(modalWf.id, stepId, changes)}
+                onAddStep={() => addStep(modalWf.id)}
+                onRemoveStep={(stepId) => removeStep(modalWf.id, stepId)}
+              />
+            ) : (
+              <FlowDiagramView wf={modalWf} roles={roles} users={users} />
             )}
           </div>
-        )}
+
+          {/* Modal footer */}
+          {isEditing && (
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border shrink-0">
+              <button
+                onClick={() => { setEditingIds((p) => { const n = new Set(p); n.delete(modalWf.id); return n; }); }}
+                className="px-4 py-2 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => saveWorkflow(modalWf.id)}
+                className={cn(
+                  "flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-all duration-200",
+                  savedIds.has(modalWf.id)
+                    ? "bg-success/15 text-success border border-success/30"
+                    : "gradient-coral text-primary-foreground shadow-sm hover:opacity-90",
+                )}
+              >
+                {savedIds.has(modalWf.id) ? <><Check className="w-3.5 h-3.5" /> Saved</> : <><Save className="w-3.5 h-3.5" /> Save Workflow</>}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -704,70 +679,143 @@ export function WorkflowSettings({ scope, standalone = false }: { scope: Workflo
      CLIENT / BUSINESS VIEW — multiple workflows, max 3
   ═══════════════════════════════════════════════════════════════ */
   return (
-    <div className="p-6 space-y-5">
+    <>
+      <WorkflowModal />
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-base font-semibold text-foreground">Approval Workflows</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Create multiple workflows — only one can be active at a time. Up to {MAX_WORKFLOWS} allowed.
+      <div className="p-6 space-y-5">
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-base font-semibold text-foreground">Approval Workflows</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Create multiple workflows — only one can be active at a time. Up to {MAX_WORKFLOWS} allowed.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {isOverridden && (
+              <button
+                onClick={resetToDefault}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" /> Reset to Default
+              </button>
+            )}
+            <button
+              onClick={addWorkflow}
+              disabled={atLimit}
+              className={cn(
+                "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity",
+                atLimit
+                  ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                  : "gradient-coral text-primary-foreground shadow-sm hover:opacity-90",
+              )}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {atLimit ? `Max ${MAX_WORKFLOWS} reached` : "Add Workflow"}
+            </button>
+          </div>
+        </div>
+
+        {/* Override badge (client non-standalone) */}
+        {!standalone && (
+          <div className="flex items-center gap-2">
+            <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Workflows</span>
+            {isOverridden
+              ? <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">Customized</span>
+              : <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Agency Default</span>
+            }
+          </div>
+        )}
+
+        {/* Workflow table */}
+        <div className="rounded-xl border border-border overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 px-4 py-2.5 bg-muted/40 border-b border-border">
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Workflow Name</span>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-14 text-center">Steps</span>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-16 text-center">Status</span>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-14 text-center">Active</span>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-16 text-center">Actions</span>
+          </div>
+
+          {/* Table rows */}
+          {workflows.map((wf, idx) => (
+            <div
+              key={wf.id}
+              className={cn(
+                "grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/20",
+                idx !== workflows.length - 1 && "border-b border-border",
+              )}
+            >
+              {/* Name */}
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{wf.name}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{wf.steps.length} approval {wf.steps.length === 1 ? "step" : "steps"}</p>
+              </div>
+
+              {/* Steps count badge */}
+              <div className="w-14 flex justify-center">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                  {wf.steps.length}
+                </span>
+              </div>
+
+              {/* Status */}
+              <div className="w-16 flex justify-center">
+                {wf.isActive ? (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30">Active</span>
+                ) : (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Inactive</span>
+                )}
+              </div>
+
+              {/* Toggle */}
+              <div className="w-14 flex justify-center">
+                <Toggle
+                  on={wf.isActive}
+                  onChange={() => activateWorkflow(wf.id)}
+                  disabled={workflows.length === 1}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="w-16 flex items-center justify-center gap-1">
+                <button
+                  onClick={() => { setModalWfId(wf.id); enterEdit(wf.id); }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  title="Edit workflow"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                {workflows.length > 1 && (
+                  <button
+                    onClick={() => removeWorkflow(wf.id)}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-error hover:bg-error/10 transition-colors"
+                    title="Delete workflow"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Info note */}
+        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/50 border border-border">
+          <CheckCircle2 className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground">
+            {standalone
+              ? "Only one workflow can be active at a time. The active workflow applies to all content submitted for approval."
+              : isOverridden
+                ? "This is a client-level customization. Agency defaults are unchanged. Use Reset to revert."
+                : "Using agency-defined workflows. Any change here creates a client-specific override."
+            }
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isOverridden && (
-            <button
-              onClick={resetToDefault}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <RotateCcw className="w-3 h-3" /> Reset to Default
-            </button>
-          )}
-          <button
-            onClick={addWorkflow}
-            disabled={atLimit}
-            className={cn(
-              "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity",
-              atLimit
-                ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                : "gradient-coral text-primary-foreground shadow-sm hover:opacity-90",
-            )}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            {atLimit ? `Max ${MAX_WORKFLOWS} reached` : "Add Workflow"}
-          </button>
-        </div>
       </div>
-
-      {/* Override badge (client non-standalone) */}
-      {!standalone && (
-        <div className="flex items-center gap-2">
-          <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Workflows</span>
-          {isOverridden
-            ? <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">Customized</span>
-            : <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Agency Default</span>
-          }
-        </div>
-      )}
-
-      {/* Workflow list */}
-      <div className="space-y-3">
-        {workflows.map((wf) => <WorkflowCard key={wf.id} wf={wf} />)}
-      </div>
-
-      {/* Info note */}
-      <div className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/50 border border-border">
-        <CheckCircle2 className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-        <p className="text-xs text-muted-foreground">
-          {standalone
-            ? "Only one workflow can be active at a time. The active workflow applies to all content submitted for approval."
-            : isOverridden
-              ? "This is a client-level customization. Agency defaults are unchanged. Use Reset to revert."
-              : "Using agency-defined workflows. Any change here creates a client-specific override."
-          }
-        </p>
-      </div>
-    </div>
+    </>
   );
 }
