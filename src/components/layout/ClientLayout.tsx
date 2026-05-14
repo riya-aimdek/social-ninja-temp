@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
+import OnboardingWidget from "@/components/onboarding/OnboardingWidget";
 import acmeCorpLogoSrc        from "@/assets/logos/acme-corp-logo.svg";
 import sansLogoSrc            from "@/assets/logos/sans-logo.svg";
 import socialCampaignLogoSrc  from "@/assets/logos/social-campaign-logo.svg";
@@ -425,6 +426,9 @@ export default function ClientLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Floating onboarding checklist — fixed bottom-right, never affects layout */}
+      <OnboardingWidget />
     </div>
   );
 }

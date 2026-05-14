@@ -1,4 +1,5 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
+import AgencyOnboardingWidget from "@/components/onboarding/AgencyOnboardingWidget";
 import { useLocation, Link, useNavigate, Outlet } from "react-router-dom";
 import {
   LayoutDashboard, Globe, Users, ChevronDown, ChevronUp, ChevronRight,
@@ -461,6 +462,9 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
           {children ?? <Outlet />}
         </main>
       </div>
+
+      {/* Floating onboarding checklist — fixed bottom-right */}
+      <AgencyOnboardingWidget />
     </div>
   );
 };

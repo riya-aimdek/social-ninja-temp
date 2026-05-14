@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import ClientOnboarding from "./pages/ClientOnboarding";
 
 import AgencyRegistration from "./pages/AgencyRegistration";
 import AgencyOnboarding from "./pages/AgencyOnboarding";
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/register/agency" element={<AgencyRegistration />} />
           <Route path="/register/client" element={<StandaloneOrgRegistration />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/client/onboarding" element={<ClientOnboarding />} />
 
           {/* Public approval link (no auth) */}
           <Route path="/approve/:token" element={<PublicApprovalPage />} />
