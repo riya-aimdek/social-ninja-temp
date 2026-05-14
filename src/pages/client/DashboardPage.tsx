@@ -92,7 +92,7 @@ export default function DashboardPage() {
                 {acc.connected && <p className="text-[11px] text-muted-foreground">{acc.handle}</p>}
               </div>
               {!acc.connected && (
-                <span className="text-xs text-primary font-medium ml-2 cursor-pointer hover:underline">Connect</span>
+                <button className="text-xs text-primary font-medium ml-2 hover:underline focus-visible:underline">Connect</button>
               )}
             </div>
           ))}

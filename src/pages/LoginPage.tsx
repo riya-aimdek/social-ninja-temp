@@ -13,9 +13,7 @@ const LoginPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Demo: route based on email pattern
-    if (email.includes("admin") || email.includes("super")) {
-      navigate("/super-admin/dashboard");
-    } else if (email.includes("agency")) {
+    if (email.includes("agency")) {
       navigate("/agency/dashboard");
     } else {
       navigate("/client/dashboard");
@@ -71,12 +69,6 @@ const LoginPage = () => {
         <div className="mt-6 pt-6 border-t border-border">
           <p className="text-sm text-muted-foreground text-center mb-3">Demo quick access:</p>
           <div className="flex gap-2">
-            <button
-              onClick={() => navigate("/super-admin/dashboard")}
-              className="flex-1 text-xs py-2 rounded-lg border border-border hover:border-super-admin text-super-admin bg-super-admin/5 hover:bg-super-admin/10 transition-colors"
-            >
-              Super Admin
-            </button>
             <button
               onClick={() => navigate("/agency/dashboard")}
               className="flex-1 text-xs py-2 rounded-lg border border-border hover:border-agency text-agency bg-agency/5 hover:bg-agency/10 transition-colors"

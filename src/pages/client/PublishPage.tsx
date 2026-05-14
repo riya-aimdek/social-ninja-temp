@@ -290,11 +290,11 @@ export default function PublishPage() {
       {view === "calendar" && (
         <div className="bg-card rounded-xl shadow-card p-5">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} className="px-2 py-1 text-muted-foreground hover:text-foreground text-base font-medium transition-colors">
+            <button aria-label="Previous month" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-base font-medium">
               &#8249;
             </button>
             <h2 className="text-sm font-semibold text-foreground">{monthLabel}</h2>
-            <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} className="px-2 py-1 text-muted-foreground hover:text-foreground text-base font-medium transition-colors">
+            <button aria-label="Next month" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-base font-medium">
               &#8250;
             </button>
           </div>
@@ -457,7 +457,14 @@ export default function PublishPage() {
                       </div>
                     </button>
                   ))}
-                  {colPosts.length === 0 && <div className="text-[11px] text-muted-foreground text-center py-8">No posts</div>}
+                  {colPosts.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
+                      <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center mb-2">
+                        <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">No posts</p>
+                    </div>
+                  )}
                 </div>
               </div>
             );

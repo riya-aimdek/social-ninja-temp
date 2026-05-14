@@ -203,7 +203,7 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
     <div className="flex bg-background font-sans">
 
       {/* ── Sidebar ── */}
-      <aside className="sticky top-0 h-screen overflow-hidden w-[210px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
+      <aside className="sticky top-0 h-screen overflow-hidden w-[220px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
 
         {/* Logo */}
         <div className="p-4 border-b border-sidebar-border/50">
@@ -412,9 +412,10 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
 
           <div className="w-px self-stretch bg-border shrink-0" />
 
-          {/* Breadcrumb */}
+          {/* Title + Breadcrumb */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+            <p className="text-xl font-bold text-foreground leading-tight truncate">{breadcrumbPage}</p>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 flex-wrap">
               {isClientCtx ? (
                 <>
                   <button onClick={selectAgency} className="hover:text-foreground transition-colors">Agency</button>
@@ -432,13 +433,13 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
                       <ChevronRight className="w-3 h-3 shrink-0" />
                     </>
                   )}
-                  <span className="font-semibold text-foreground">{breadcrumbPage}</span>
+                  <span className="text-foreground">{breadcrumbPage}</span>
                 </>
               ) : (
                 <>
                   <span>Agency</span>
                   <ChevronRight className="w-3 h-3 shrink-0" />
-                  <span className="font-semibold text-foreground">{breadcrumbPage}</span>
+                  <span className="text-foreground">{breadcrumbPage}</span>
                 </>
               )}
             </div>

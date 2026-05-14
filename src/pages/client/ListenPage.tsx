@@ -82,7 +82,7 @@ export default function ListenPage() {
             42 negative mentions in the last hour (+312% vs. baseline). Mostly on X about "service outage".
           </p>
         </div>
-        <Button size="sm" variant="outline">Investigate</Button>
+        <Button size="sm" variant="outline" onClick={() => toast.info("Opening investigation view...")}>Investigate</Button>
       </div>
 
       {/* Keywords */}
@@ -153,7 +153,7 @@ export default function ListenPage() {
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Bell className="w-4 h-4 text-primary" /> Alert rules
           </h2>
-          <Button size="sm"><Plus className="w-3.5 h-3.5" /> New rule</Button>
+          <Button size="sm" onClick={() => toast.success("New alert rule created.")}><Plus className="w-3.5 h-3.5" /> New rule</Button>
         </div>
         <table className="w-full text-sm">
           <thead>
@@ -236,7 +236,7 @@ export default function ListenPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-medium text-primary">{inf.relevance}% match</span>
-                <button className="text-[11px] text-primary font-medium hover:underline">+ Watchlist</button>
+                <button className="text-[11px] text-primary font-medium hover:underline" onClick={() => toast.success(`${inf.name} added to watchlist.`)}>+ Watchlist</button>
               </div>
             </div>
           ))}

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
 import RoleBadge from "@/components/RoleBadge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Users, Clock, BarChart3, ChevronRight, Plus, FolderKanban, Wifi, MoreHorizontal, X, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { ExternalLink, Users, Clock, BarChart3, ChevronRight, Plus, FolderKanban, Wifi, MoreHorizontal, X } from "lucide-react";
 
 const tabs = ['Overview', 'Projects', 'Team Members', 'Settings'];
 
@@ -59,8 +60,31 @@ const activities = [
 ];
 
 const OrganizationDetail = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
   const [showCreateProject, setShowCreateProject] = useState(false);
+  const [allProjects, setAllProjects] = useState(projects);
+  const [allMembers, setAllMembers] = useState(teamMembers);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDesc, setNewProjectDesc] = useState('');
+
+  const createProject = () => {
+    if (!newProjectName.trim()) return;
+    const newProj = {
+      id: `p${Date.now()}`, name: newProjectName.trim(), status: 'active' as const,
+      accounts: 0, socials: [], members: 0, lastActive: 'Just created',
+    };
+    setAllProjects(prev => [...prev, newProj]);
+    toast.success(`Project "${newProj.name}" created.`);
+    setShowCreateProject(false);
+    setNewProjectName('');
+    setNewProjectDesc('');
+  };
+
+  const removeMember = (name: string) => {
+    setAllMembers(prev => prev.filter(m => m.name !== name));
+    toast.success(`${name} removed.`);
+  };
 
   return (
     <AgencyLayout title="">
@@ -87,9 +111,7 @@ const OrganizationDetail = () => {
           <Button variant="outline" onClick={() => setShowCreateProject(true)}>
             <Plus className="h-4 w-4" /> New Project
           </Button>
-          <a href="https://social-ninja.lovable.app?org=1" target="_blank" rel="noopener noreferrer">
-            <Button><ExternalLink className="h-4 w-4" /> Open in SocialNinja</Button>
-          </a>
+          <Button onClick={() => navigate('/client/dashboard')}><ExternalLink className="h-4 w-4" /> Open in SocialNinja</Button>
         </div>
       </div>
 
@@ -128,7 +150,7 @@ const OrganizationDetail = () => {
               <button onClick={() => setActiveTab('Projects')} className="text-xs text-primary hover:underline">View all</button>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              {projects.map(p => (
+              {allProjects.map(p => (
                 <div key={p.id} className="border border-border rounded-xl p-4 hover:border-primary/30 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-semibold text-foreground">{p.name}</p>
@@ -159,10 +181,10 @@ const OrganizationDetail = () => {
       {activeTab === 'Projects' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{projects.length} projects</p>
+            <p className="text-sm text-muted-foreground">{allProjects.length} projects</p>
             <Button onClick={() => setShowCreateProject(true)}><Plus className="h-4 w-4" /> New Project</Button>
           </div>
-          {projects.map(p => (
+          {allProjects.map(p => (
             <div key={p.id} className="card-surface">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -210,7 +232,7 @@ const OrganizationDetail = () => {
               <th className="text-right text-xs text-muted-foreground font-medium pb-3">Actions</th>
             </tr></thead>
             <tbody>
-              {teamMembers.map(m => (
+              {allMembers.map(m => (
                 <tr key={m.name} className="border-b border-border last:border-0 hover:bg-muted/50">
                   <td className="py-3"><div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-semibold text-primary">{m.avatar}</div>
@@ -224,8 +246,8 @@ const OrganizationDetail = () => {
                   </td>
                   <td className="py-3"><StatusBadge status={m.status} /></td>
                   <td className="py-3 text-right">
-                    <button className="text-xs text-primary hover:underline mr-3">Edit</button>
-                    <button className="text-xs text-muted-foreground hover:text-destructive">Remove</button>
+                    <button onClick={() => toast.info(`Edit role for ${m.name} — coming soon.`)} className="text-xs text-primary hover:underline mr-3">Edit</button>
+                    <button onClick={() => removeMember(m.name)} className="text-xs text-muted-foreground hover:text-destructive">Remove</button>
                   </td>
                 </tr>
               ))}
@@ -242,7 +264,7 @@ const OrganizationDetail = () => {
             <div><label className="text-sm text-muted-foreground mb-1.5 block">Industry</label><input className="input-dark" defaultValue="Retail" /></div>
             <div><label className="text-sm text-muted-foreground mb-1.5 block">Website</label><input className="input-dark" defaultValue="https://acmecorp.com" /></div>
             <div><label className="text-sm text-muted-foreground mb-1.5 block">Notes</label><textarea className="input-dark h-20 py-2 resize-none" /></div>
-            <Button>Save Changes</Button>
+            <Button onClick={() => toast.success("Changes saved.")}>Save Changes</Button>
           </div>
           <div className="card-surface border-destructive/30">
             <h3 className="text-sm font-semibold text-foreground mb-3">Danger Zone</h3>
@@ -256,20 +278,20 @@ const OrganizationDetail = () => {
 
       {/* Create Project Modal */}
       {showCreateProject && (
-        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => setShowCreateProject(false)}>
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50" onClick={() => { setShowCreateProject(false); setNewProjectName(''); setNewProjectDesc(''); }}>
           <div className="w-[560px] bg-card border border-border rounded-2xl p-8" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-foreground">Create Project</h2>
-              <button onClick={() => setShowCreateProject(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+              <button aria-label="Close" onClick={() => { setShowCreateProject(false); setNewProjectName(''); setNewProjectDesc(''); }} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Project Name</label>
-                <input className="input-dark" placeholder="e.g., Acme Sneakers" />
+                <label className="text-sm text-muted-foreground mb-1.5 block">Project Name <span className="text-destructive">*</span></label>
+                <input className="input-dark" placeholder="e.g., Acme Sneakers" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} />
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Description</label>
-                <textarea className="input-dark h-20 py-2 resize-none" placeholder="What is this project for?" />
+                <textarea className="input-dark h-20 py-2 resize-none" placeholder="What is this project for?" value={newProjectDesc} onChange={e => setNewProjectDesc(e.target.value)} />
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Assign Team Members</label>
@@ -277,8 +299,8 @@ const OrganizationDetail = () => {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
-              <Button variant="secondary" onClick={() => setShowCreateProject(false)}>Cancel</Button>
-              <Button>Create Project</Button>
+              <Button variant="secondary" onClick={() => { setShowCreateProject(false); setNewProjectName(''); setNewProjectDesc(''); }}>Cancel</Button>
+              <Button onClick={createProject} disabled={!newProjectName.trim()}>Create Project</Button>
             </div>
           </div>
         </div>

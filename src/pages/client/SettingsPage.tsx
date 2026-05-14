@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
 import {
   User, CreditCard, Users, Bell, Hash, Shield, Save,
@@ -18,10 +19,15 @@ const navItems = [
   { id: "notifications", label: "Notification Settings", icon: Bell },
   { id: "security",      label: "Security Settings",     icon: Shield },
   { id: "general",       label: "General Settings",      icon: Settings },
+  { id: "billing",       label: "Billing & Plans",       icon: CreditCard },
+  { id: "team",          label: "Team",                  icon: Users },
   { id: "approvals",     label: "Approvals",             icon: CheckCircle2 },
   { id: "queue",         label: "Queue Times",           icon: Clock },
   { id: "workflows",     label: "Workflows",             icon: GitBranch },
-  { id: "roles",         label: "Roles & Permissions",  icon: Shield },
+  { id: "roles",         label: "Roles & Permissions",   icon: Shield },
+  { id: "hashtags",      label: "Hashtag Suites",        icon: Hash },
+  { id: "saved-replies", label: "Saved Replies",         icon: MessageSquare },
+  { id: "tags",          label: "Message Tags",          icon: Tag },
 ];
 
 /* ─── Mock data ───────────────────────────────────────────────── */
@@ -103,7 +109,10 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 );
 
 const SaveBtn = ({ label = "Save Changes", icon = true }: { label?: string; icon?: boolean }) => (
-  <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+  <button
+    onClick={() => toast.success("Changes saved successfully.")}
+    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+  >
     {icon && <Save className="w-3.5 h-3.5" />} {label}
   </button>
 );
@@ -223,14 +232,14 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full gradient-coral flex items-center justify-center text-primary-foreground text-xl font-bold">JS</div>
-                  <button className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-md">
+                  <button aria-label="Change photo" onClick={() => toast.info("Photo upload coming soon.")} className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-md">
                     <Camera className="w-3 h-3 text-white" />
                   </button>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Profile Photo</p>
                   <p className="text-xs text-muted-foreground mb-2">JPG, PNG or GIF. Max 2MB.</p>
-                  <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                  <button onClick={() => toast.info("Photo upload coming soon.")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors">
                     <Upload className="w-3 h-3" /> Upload Photo
                   </button>
                 </div>
@@ -419,7 +428,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                     <p className="text-xs text-muted-foreground">bit.ly — URL shortener</p>
                   </div>
                 </div>
-                <button className="px-5 py-2 rounded-full bg-primary text-white text-xs font-semibold uppercase tracking-wider hover:bg-primary/90 transition-colors">
+                <button onClick={() => toast.info("Bitly connected.")} className="px-5 py-2 rounded-full bg-primary text-white text-xs font-semibold uppercase tracking-wider hover:bg-primary/90 transition-colors">
                   Connect
                 </button>
               </div>
@@ -470,14 +479,14 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                       <p className="text-sm font-medium text-foreground">{month}</p>
                       <p className="text-xs text-muted-foreground">Pro Plan — $49.00</p>
                     </div>
-                    <button className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
+                    <button onClick={() => toast.success(`Invoice for ${month} downloaded.`)} className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
                       <Download className="w-3.5 h-3.5" /> Download
                     </button>
                   </div>
                 ))}
               </div>
               <div className="mt-4 pt-4 border-t border-border flex justify-end">
-                <button className="px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+                <button onClick={() => toast.info("Plan upgrade — contact your agency.")} className="px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
                   Upgrade Plan
                 </button>
               </div>
@@ -493,7 +502,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                 <h2 className="text-base font-semibold text-foreground">Team Members</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Manage team access and permissions.</p>
               </div>
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
+              <button onClick={() => toast.success("Invitation sent.")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
                 <Plus className="w-3.5 h-3.5" /> Invite
               </button>
             </div>
@@ -506,7 +515,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                     <p className="text-[11px] text-muted-foreground">{m.email}</p>
                   </div>
                   <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-foreground font-medium border border-border">{m.role}</span>
-                  <button className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-destructive">
+                  <button aria-label="Remove member" onClick={() => toast.success(`${m.name} removed.`)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-destructive">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -652,7 +661,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
             </SectionCard>
 
             <div className="flex items-center justify-end gap-3">
-              <button className="px-4 py-2.5 rounded-full border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors">
+              <button onClick={() => { setAutoPublish(false); setAutoPublishHours(24); setAutoPublishFallback("publish"); setReminderEnabled(true); setReminderFirst(4); setReminderRepeat(12); setRequireMultiApprover(false); setAllowSelfApprove(true); toast.info("Approval rules reset to defaults."); }} className="px-4 py-2.5 rounded-full border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors">
                 Reset to defaults
               </button>
               <SaveBtn label="Save Approval Rules" />
@@ -738,7 +747,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                 <h2 className="text-base font-semibold text-foreground">Hashtag Suites</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Create reusable hashtag collections for quick insertion during content creation.</p>
               </div>
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
+              <button onClick={() => toast.info("New hashtag suite editor coming soon.")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
                 <Plus className="w-3.5 h-3.5" /> New Suite
               </button>
             </div>
@@ -748,9 +757,9 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold text-foreground">{suite.name}</p>
                     <div className="flex items-center gap-2">
-                      <button className="text-xs text-primary font-medium hover:underline">Edit</button>
+                      <button onClick={() => toast.info(`Edit "${suite.name}" suite.`)} className="text-xs text-primary font-medium hover:underline">Edit</button>
                       <span className="text-muted-foreground">·</span>
-                      <button className="text-xs text-destructive font-medium hover:underline">Delete</button>
+                      <button onClick={() => toast.success(`"${suite.name}" deleted.`)} className="text-xs text-destructive font-medium hover:underline">Delete</button>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -772,7 +781,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                 <h2 className="text-base font-semibold text-foreground">Saved Replies</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Pre-written templates for consistent, rapid replies in the Engage module.</p>
               </div>
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
+              <button onClick={() => toast.info("New saved reply editor coming soon.")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
                 <Plus className="w-3.5 h-3.5" /> New Reply
               </button>
             </div>
@@ -782,9 +791,9 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-semibold text-foreground">{reply.name}</p>
                     <div className="flex items-center gap-2">
-                      <button className="text-xs text-primary font-medium hover:underline">Edit</button>
+                      <button onClick={() => toast.info(`Edit "${reply.name}".`)} className="text-xs text-primary font-medium hover:underline">Edit</button>
                       <span className="text-muted-foreground">·</span>
-                      <button className="text-xs text-destructive font-medium hover:underline">Delete</button>
+                      <button onClick={() => toast.success(`"${reply.name}" deleted.`)} className="text-xs text-destructive font-medium hover:underline">Delete</button>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{reply.text}</p>
@@ -802,7 +811,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                 <h2 className="text-base font-semibold text-foreground">Message Tags</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Tags for message filtering in Engage. AI auto-tagging uses these labels.</p>
               </div>
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
+              <button onClick={() => toast.info("New tag editor coming soon.")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
                 <Plus className="w-3.5 h-3.5" /> New Tag
               </button>
             </div>
@@ -811,7 +820,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                 <div key={tag.name} className={cn("flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-medium", tag.color)}>
                   <Tag className="w-3.5 h-3.5" />
                   {tag.name}
-                  <button className="ml-0.5 opacity-50 hover:opacity-100 transition-opacity">
+                  <button aria-label={`Remove ${tag.name} tag`} onClick={() => toast.success(`"${tag.name}" tag removed.`)} className="ml-0.5 opacity-50 hover:opacity-100 transition-opacity">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -848,6 +857,7 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
               </button>
               <button
                 disabled={deleteConfirm !== "DELETE"}
+                onClick={() => { toast.success("Account deleted."); setShowDeleteModal(false); }}
                 className="px-6 py-2.5 rounded-full bg-destructive text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all"
               >
                 Permanently Delete

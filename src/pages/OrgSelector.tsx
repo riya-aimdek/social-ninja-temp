@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 
 const orgs = [
@@ -9,8 +10,9 @@ const orgs = [
 ];
 
 const OrgSelector = () => {
-  const handleSelect = (orgId: string) => {
-    window.open(`https://social-ninja.lovable.app?org=${orgId}`, '_self');
+  const navigate = useNavigate();
+  const handleSelect = () => {
+    navigate("/client/dashboard");
   };
 
   return (
@@ -35,7 +37,7 @@ const OrgSelector = () => {
           ))}
         </div>
         <div className="border-t border-border mt-8 pt-4 text-center">
-          <a href="/agency/dashboard" className="text-sm text-text-secondary hover:text-foreground">Manage your organizations</a>
+          <Link to="/agency/dashboard" className="text-sm text-muted-foreground hover:text-foreground">Manage your organizations</Link>
         </div>
       </div>
     </div>

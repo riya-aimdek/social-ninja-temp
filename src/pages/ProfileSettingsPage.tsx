@@ -2,24 +2,21 @@ import { useState, useRef } from "react";
 import { Mail, Phone, CheckCircle2, Upload, Building2, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 
-type Role = "super-admin" | "agency" | "client";
+type Role = "agency" | "client";
 
 const roleConfig: Record<Role, {
   name: string; roleLabel: string; initials: string;
   email: string; colorFrom: string; colorTo: string;
 }> = {
-  "super-admin": { name: "John Doe",       roleLabel: "Super Admin",    initials: "SA", email: "john.doe@socialninja.com", colorFrom: "from-violet-500", colorTo: "to-purple-600" },
-  agency:        { name: "Agency Admin",   roleLabel: "Agency Admin",   initials: "A",  email: "admin@agency.com",        colorFrom: "from-sky-500",    colorTo: "to-blue-600"   },
-  client:        { name: "Business Owner", roleLabel: "Business Admin", initials: "B",  email: "owner@business.com",      colorFrom: "from-rose-500",   colorTo: "to-pink-600"   },
+  agency: { name: "Agency Admin",   roleLabel: "Agency Admin",   initials: "A", email: "admin@agency.com",   colorFrom: "from-sky-500",  colorTo: "to-blue-600"  },
+  client: { name: "Business Owner", roleLabel: "Business Admin", initials: "B", email: "owner@business.com", colorFrom: "from-rose-500", colorTo: "to-pink-600"  },
 };
 
 const roleBadge: Record<Role, string> = {
-  "super-admin": "bg-violet-50 text-violet-600 border-violet-200",
-  agency:        "bg-sky-50 text-sky-600 border-sky-200",
-  client:        "bg-rose-50 text-rose-600 border-rose-200",
+  agency: "bg-sky-50 text-sky-600 border-sky-200",
+  client: "bg-rose-50 text-rose-600 border-rose-200",
 };
 
 const industries = [
@@ -185,7 +182,6 @@ export default function ProfileSettingsPage({ role }: { role: Role }) {
     </div>
   );
 
-  if (role === "super-admin") return <SuperAdminLayout title="My Profile">{content}</SuperAdminLayout>;
   if (role === "agency") return <AgencyLayout title="My Profile">{content}</AgencyLayout>;
   return content;
 }

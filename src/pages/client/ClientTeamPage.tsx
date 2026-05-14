@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Search, Plus, X, Check, Pencil, Trash2, Users, UserCheck, UserPlus, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
+import { toast } from "sonner";
 import {
   teamMembers as initialMembers,
   permissionList, defaultPermissions, permissionColors, roleCards,
-  activeMembers, invitedMembers,
 } from "@/data/businessMockData";
 
 export default function ClientTeamPage() {
@@ -16,7 +16,7 @@ export default function ClientTeamPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
-  const [members] = useState(initialMembers);
+  const [members, setMembers] = useState(initialMembers);
   const [activeTab, setActiveTab] = useState<"all" | "active" | "pending">("all");
 
   const filtered = members.filter(u => {
@@ -57,10 +57,45 @@ export default function ClientTeamPage() {
 
   const statCards = [
     { label: "Total Members", value: members.length.toString(), sub: "+2 this month", icon: Users, iconBg: "bg-primary/10", iconColor: "text-primary" },
-    { label: "Active", value: activeMembers.length.toString(), sub: "Currently active", icon: UserCheck, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
-    { label: "Invited", value: invitedMembers.length.toString(), sub: "Pending acceptance", icon: UserPlus, iconBg: "bg-amber-500/10", iconColor: "text-amber-600" },
+    { label: "Active", value: members.filter(m => m.status === "active").length.toString(), sub: "Currently active", icon: UserCheck, iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
+    { label: "Invited", value: members.filter(m => m.status === "pending").length.toString(), sub: "Pending acceptance", icon: UserPlus, iconBg: "bg-amber-500/10", iconColor: "text-amber-600" },
     { label: "Roles in Use", value: new Set(members.map(m => m.roleId)).size.toString(), sub: "Across team", icon: Shield, iconBg: "bg-violet-500/10", iconColor: "text-violet-600" },
   ];
+
+  const sendInvitation = () => {
+    if (!inviteName.trim() || !inviteEmail.trim() || !selectedRole) return;
+    const role = roleCards.find(r => r.id === selectedRole);
+    const newMember = {
+      id: `m${Date.now()}`,
+      name: inviteName.trim(),
+      email: inviteEmail.trim(),
+      avatar: inviteName.trim().split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2),
+      role: role?.name || selectedRole,
+      roleId: selectedRole,
+      status: "pending" as const,
+      permissions: selectedPermissions,
+      projects: 0,
+      lastActive: "Just invited",
+    };
+    setMembers(prev => [...prev, newMember]);
+    toast.success(`Invitation sent to ${newMember.email}.`);
+    setShowModal(false);
+  };
+
+  const saveManage = () => {
+    if (!manageUser) return;
+    const role = roleCards.find(r => r.id === selectedRole);
+    setMembers(prev => prev.map(m =>
+      m.id === manageUser.id ? { ...m, role: role?.name || m.role, roleId: selectedRole, permissions: selectedPermissions } : m
+    ));
+    toast.success("Member updated.");
+    setManageUser(null);
+  };
+
+  const deleteMember = (id: string) => {
+    setMembers(prev => prev.filter(m => m.id !== id));
+    toast.success("Member removed.");
+  };
 
   const RoleCardsGrid = () => (
     <div className="grid grid-cols-2 gap-3">
@@ -214,8 +249,8 @@ export default function ClientTeamPage() {
                     <td className="px-5 py-3 text-sm text-muted-foreground">{u.lastActive}</td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button onClick={() => openManage(u)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
-                        <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                        <button aria-label="Edit member" onClick={() => openManage(u)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
+                        <button aria-label="Remove member" onClick={() => deleteMember(u.id)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>
                   </tr>
@@ -291,7 +326,7 @@ export default function ClientTeamPage() {
                 Cancel
               </button>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={sendInvitation}
                 disabled={!inviteName.trim() || !inviteEmail.trim() || !selectedRole}
                 className="px-8 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
               >
@@ -332,7 +367,7 @@ export default function ClientTeamPage() {
                 Cancel
               </button>
               <button
-                onClick={() => setManageUser(null)}
+                onClick={saveManage}
                 className="px-8 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider hover:bg-primary/90 transition-colors"
               >
                 Save Changes

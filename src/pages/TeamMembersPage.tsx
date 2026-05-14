@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Search, X, Plus, Pencil, Trash2, RefreshCw, RotateCw, Users, UserCheck, UserPlus, Shield } from "lucide-react";
 
 const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
@@ -194,19 +195,19 @@ const TeamMembersPage = () => {
                       <div className="flex items-center gap-1.5">
                         {u.pending ? (
                           <>
-                            <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Resend invitation">
+                            <button aria-label="Resend invitation" onClick={() => toast.success(`Invitation resent to ${u.email}.`)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Resend invitation">
                               <RotateCw className="h-3.5 w-3.5" />
                             </button>
                             <span className="text-[11px] font-medium text-amber-600 bg-amber-500/10 border border-amber-200 px-2 py-0.5 rounded">Pending</span>
-                            <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Remove"><Trash2 className="h-3.5 w-3.5" /></button>
+                            <button aria-label="Remove member" onClick={() => toast.success(`${u.name} removed.`)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Remove"><Trash2 className="h-3.5 w-3.5" /></button>
                           </>
                         ) : (
                           <>
                             <Link to={`/agency/team/${u.id}/manage`} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium whitespace-nowrap">
                               <RefreshCw className="h-3.5 w-3.5" /> Manage
                             </Link>
-                            <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                            <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Remove"><Trash2 className="h-3.5 w-3.5" /></button>
+                            <button aria-label="Edit member" onClick={() => toast.info(`Edit ${u.name} — coming soon.`)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                            <button aria-label="Remove member" onClick={() => toast.success(`${u.name} removed.`)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Remove"><Trash2 className="h-3.5 w-3.5" /></button>
                           </>
                         )}
                       </div>

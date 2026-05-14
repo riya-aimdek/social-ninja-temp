@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
 import RoleBadge from "@/components/RoleBadge";
 
@@ -7,6 +7,7 @@ const OrgSwitcher = () => {
   const [searchParams] = useSearchParams();
   const orgName = searchParams.get('org') || 'RetailCo';
   const [progress, setProgress] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -17,6 +18,13 @@ const OrgSwitcher = () => {
     }, 30);
     return () => clearInterval(timer);
   }, [orgName]);
+
+  useEffect(() => {
+    if (progress >= 100) {
+      const t = setTimeout(() => navigate("/client/dashboard"), 300);
+      return () => clearTimeout(t);
+    }
+  }, [progress, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">

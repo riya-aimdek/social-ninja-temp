@@ -5,6 +5,7 @@ import StatusBadge from "@/components/StatusBadge";
 import RoleBadge from "@/components/RoleBadge";
 import { Button } from "@/components/ui/button";
 import { Search, X, Plus, Pencil, Trash2, Check, ChevronDown, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { rolesForScope, defaultPermissionsFor, PERMISSIONS, getRole } from "@/data/roles";
 
 const permissionList = [...PERMISSIONS] as string[];
@@ -223,7 +224,7 @@ const AgencyClientTeamPage = () => {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button onClick={() => handleEditOpen(u)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
-                      <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                      <button aria-label="Remove member" onClick={() => toast.success(`${u.name} removed.`)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -256,7 +257,7 @@ const AgencyClientTeamPage = () => {
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setEditUser(null)} className="px-8 flex-1">Cancel</Button>
-              <Button className="px-8 flex-1">Save Changes</Button>
+              <Button onClick={() => { toast.success("Role saved."); setEditUser(null); }} className="px-8 flex-1">Save Changes</Button>
             </div>
           </div>
         </div>
@@ -332,7 +333,7 @@ const AgencyClientTeamPage = () => {
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setShowAddUser(false)} className="px-8 flex-1">Cancel</Button>
-              <Button className="px-8 flex-1">Save</Button>
+              <Button onClick={() => { toast.success("User added to client team."); setShowAddUser(false); }} className="px-8 flex-1">Save</Button>
             </div>
           </div>
         </div>

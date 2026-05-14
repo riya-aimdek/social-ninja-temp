@@ -3,7 +3,7 @@ import {
   Facebook, Instagram, Linkedin, Twitter, Youtube, ShoppingBag, Image,
   Check, ExternalLink, Clock, RefreshCw, LogOut, Trash2, Plus,
   Search, Wifi, WifiOff, AlertCircle, X, Users, FileText,
-  ChevronLeft,
+  ChevronLeft, CheckCircle2, Link2, Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -95,7 +95,7 @@ function ActionBtn({
     primary: active ? "bg-primary/10 text-primary"                       : "text-muted-foreground hover:text-primary hover:bg-primary/10",
   }[variant];
   return (
-    <button title={label} onClick={onClick}
+    <button aria-label={label} title={label} onClick={onClick}
       className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0", cls)}>
       <Icon className="w-3.5 h-3.5" />
     </button>
@@ -179,7 +179,7 @@ function ConnectNewChannelView({
           {/* Help text */}
           <div className="mx-5 mb-4 px-4 py-3 bg-primary/5 border border-primary/15 rounded-lg text-xs text-muted-foreground">
             Looking for step-by-step instructions? Visit our{" "}
-            <span className="text-primary font-medium cursor-pointer hover:underline">Help Center</span>
+            <button onClick={() => toast.info("Help Center coming soon.")} className="text-primary font-medium hover:underline">Help Center</button>
             {" "}to read our Getting Started guides and learn about supported channel types.
           </div>
 
@@ -319,9 +319,7 @@ export default function ConnectPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground">Social Profiles</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {connected.length} connected · {available.length} available to connect
-          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your connected social accounts</p>
         </div>
         <Button
           onClick={() => setShowConnect(true)}
@@ -329,6 +327,37 @@ export default function ConnectPage() {
         >
           <Plus className="w-4 h-4 mr-1.5" /> Connect Account
         </Button>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-card border border-border rounded-xl px-4 py-3.5 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4.5 h-4.5 text-success" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-foreground leading-none">{connected.length}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Connected</p>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl px-4 py-3.5 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <Link2 className="w-4.5 h-4.5 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-foreground leading-none">{available.length}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Available</p>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl px-4 py-3.5 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <Globe className="w-4.5 h-4.5 text-primary" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-foreground leading-none">{accounts.length}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Total Platforms</p>
+          </div>
+        </div>
       </div>
 
       {/* Search + filter tabs */}
@@ -439,7 +468,7 @@ export default function ConnectPage() {
                   )}
 
                   <div className="flex items-center gap-0.5 shrink-0">
-                    <ActionBtn icon={ExternalLink} label="View Profile"    variant="default" />
+                    <ActionBtn icon={ExternalLink} label="View Profile"    variant="default" onClick={() => toast.info(`Opening ${acct.handle} profile...`)} />
                     <ActionBtn
                       icon={Clock}      label="Manage Queue Time"
                       variant="primary" active={isQueueOpen}
@@ -496,8 +525,8 @@ export default function ConnectPage() {
 
                 {/* Disconnect confirmation */}
                 {isDisconnecting && (
-                  <div className="border-t border-amber-200 dark:border-amber-800 px-4 py-3 bg-amber-50/60 dark:bg-amber-950/20 rounded-b-xl flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+                  <div className="border-t border-warning/20 px-4 py-3 bg-warning/5 rounded-b-xl flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-2 text-xs text-warning">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       Disconnecting will pause all scheduled posts for this account.
                     </div>
@@ -507,7 +536,7 @@ export default function ConnectPage() {
                         Cancel
                       </button>
                       <button onClick={() => disconnect(acct.id)}
-                        className="text-xs text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg transition-colors">
+                        className="text-xs text-white bg-warning hover:bg-warning/90 px-3 py-1.5 rounded-lg transition-colors">
                         Disconnect
                       </button>
                     </div>
@@ -516,8 +545,8 @@ export default function ConnectPage() {
 
                 {/* Remove confirmation */}
                 {isRemoving && (
-                  <div className="border-t border-red-200 dark:border-red-800 px-4 py-3 bg-red-50/60 dark:bg-red-950/20 rounded-b-xl flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+                  <div className="border-t border-destructive/20 px-4 py-3 bg-destructive/5 rounded-b-xl flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-2 text-xs text-destructive">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       Removing this channel will delete all queued posts. This cannot be undone.
                     </div>
@@ -527,7 +556,7 @@ export default function ConnectPage() {
                         Cancel
                       </button>
                       <button onClick={() => remove(acct.id)}
-                        className="text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors">
+                        className="text-xs text-white bg-destructive hover:bg-destructive/90 px-3 py-1.5 rounded-lg transition-colors">
                         Remove Channel
                       </button>
                     </div>

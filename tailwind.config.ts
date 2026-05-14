@@ -57,7 +57,6 @@ export default {
         "text-primary": "hsl(var(--text-primary))",
         "text-secondary": "hsl(var(--text-secondary))",
         "text-muted": "hsl(var(--text-muted))",
-        "super-admin": "hsl(var(--super-admin))",
         agency: "hsl(var(--agency))",
         organization: "hsl(var(--organization))",
         client: "hsl(var(--client))",

@@ -694,7 +694,7 @@ export default function CreatePage() {
 
           {/* Action bar */}
           <div className="flex items-center justify-between gap-2">
-            <button className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors">
+            <button onClick={() => toast.success("Post sent for approval.")} className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors">
               Send for Approval
             </button>
             <button
@@ -1214,7 +1214,7 @@ function ConnectedAccountsPanel({
 
       {!embedded && (
         <div className="flex items-center gap-2 pt-2">
-          <button className="flex-1 py-2 rounded-lg border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1.5">
+          <button onClick={() => navigate('/client/connect')} className="flex-1 py-2 rounded-lg border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1.5">
             <Plus className="w-3.5 h-3.5" /> Connect new
           </button>
           {selectedIds.length > 0 && (

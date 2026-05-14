@@ -1,4 +1,5 @@
 import { MapPin, Check, AlertCircle, Star, Phone, Navigation, Eye, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 const locations = [
   { name: "SocialNinja HQ", address: "123 Market St, San Francisco, CA", platforms: 4, verified: true, lastUpdated: "2h ago", rating: 4.8, reviews: 124 },
@@ -18,7 +19,7 @@ export default function LocationsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-end">
-        <button className="px-4 py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2">
+        <button onClick={() => toast.success("Add Location flow coming soon.")} className="px-4 py-2 rounded-lg gradient-coral text-primary-foreground text-sm font-medium shadow-coral hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2">
           <Plus className="w-4 h-4" /> Add Location
         </button>
       </div>
@@ -34,10 +35,10 @@ export default function LocationsPage() {
       </div>
 
       <div className="bg-card rounded-xl shadow-card p-3 flex items-center gap-3 flex-wrap">
-        <button className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">Select All</button>
-        <button className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">Edit Hours</button>
-        <button className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">Update Photos</button>
-        <button className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">Publish Post</button>
+        <button onClick={() => toast.info("All locations selected.")} className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">Select All</button>
+        <button onClick={() => toast.info("Edit Hours — select locations first.")} className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">Edit Hours</button>
+        <button onClick={() => toast.info("Update Photos — select locations first.")} className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">Update Photos</button>
+        <button onClick={() => toast.info("Publish Post — select locations first.")} className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">Publish Post</button>
       </div>
 
       <div className="bg-card rounded-xl shadow-card overflow-hidden">

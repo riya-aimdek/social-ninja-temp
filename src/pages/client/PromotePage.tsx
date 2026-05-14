@@ -80,6 +80,7 @@ export default function PromotePage() {
   const [partners, setPartners] = useState<AdPartner[]>(initialPartners);
   const [newOpen, setNewOpen] = useState(false);
   const [draft, setDraft] = useState({ name: "", type: "Influencer" as AdPartner["type"], audience: "", rate: "", contact: "" });
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const summary = partnerSummary(partners);
 
   const addPartner = () => {
@@ -124,7 +125,7 @@ export default function PromotePage() {
                   <span className="text-xs text-muted-foreground">{post.engagement} engagement</span>
                 </div>
                 <p className="text-sm text-foreground font-medium truncate mb-3">{post.caption}</p>
-                <Button size="sm" className="w-full">Boost This</Button>
+                <Button size="sm" className="w-full" onClick={() => toast.success(`"${post.caption.slice(0, 30)}..." boost started.`)}>Boost This</Button>
               </div>
             ))}
           </div>
@@ -133,8 +134,8 @@ export default function PromotePage() {
             <h2 className="text-sm font-semibold text-foreground mb-4">Select Campaign Goal</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {goals.map((g) => (
-                <button key={g.label} className="p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-center">
-                  <g.icon className="w-6 h-6 text-primary mx-auto mb-2" />
+                <button key={g.label} onClick={() => setSelectedGoal(g.label)} className={`p-4 rounded-xl border transition-all text-center ${selectedGoal === g.label ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border hover:border-primary hover:bg-primary/5"}`}>
+                  <g.icon className={`w-6 h-6 mx-auto mb-2 ${selectedGoal === g.label ? "text-primary" : "text-primary"}`} />
                   <p className="text-xs font-medium text-foreground">{g.label}</p>
                 </button>
               ))}

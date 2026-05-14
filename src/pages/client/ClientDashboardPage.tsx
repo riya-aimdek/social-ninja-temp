@@ -1,4 +1,5 @@
 import { Users, FolderOpen, Clock, Link2, TrendingUp, TrendingDown, ArrowRight, MoreHorizontal, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import StatusBadge from "@/components/StatusBadge";
 import {
   teamMembers, activeProjects, connectedAccounts, activities, totalPosts,
@@ -12,6 +13,7 @@ const statCards = [
 ];
 
 export default function ClientDashboardPage() {
+  const navigate = useNavigate();
   return (
     <div className="flex gap-6 animate-fade-in">
       <div className="flex-1 space-y-6 min-w-0">
@@ -46,13 +48,13 @@ export default function ClientDashboardPage() {
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Active Projects</h2>
-              <button className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+              <button onClick={() => navigate("/client/projects")} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
                 <Plus className="w-3 h-3" /> New Project
               </button>
             </div>
             <div className="divide-y divide-border">
               {activeProjects.map((p) => (
-                <div key={p.name} className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 transition-colors cursor-pointer">
+                <div key={p.name} onClick={() => navigate("/client/projects")} className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 transition-colors cursor-pointer">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                       <FolderOpen className="w-4 h-4 text-primary" />
@@ -75,7 +77,7 @@ export default function ClientDashboardPage() {
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Team Members</h2>
-              <button className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+              <button onClick={() => navigate("/client/settings/team")} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
                 <Plus className="w-3 h-3" /> Invite
               </button>
             </div>

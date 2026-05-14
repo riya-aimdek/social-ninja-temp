@@ -147,7 +147,7 @@ const AgencyDashboard = () => {
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
-          <button className="p-1 hover:bg-muted rounded transition-colors">
+          <button aria-label="More options" className="p-1 hover:bg-muted rounded transition-colors">
             <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>

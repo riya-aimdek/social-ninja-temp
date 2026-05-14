@@ -8,13 +8,6 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
-import SuperAdminDashboard from "./pages/SuperAdminDashboard";
-import SuperAdminOrganizations from "./pages/SuperAdminOrganizations";
-import SuperAdminUsers from "./pages/SuperAdminUsers";
-import SuperAdminBilling from "./pages/SuperAdminBilling";
-import AgenciesPage from "./pages/AgenciesPage";
-import AuditLogPage from "./pages/AuditLogPage";
-import SuperAdminSettings from "./pages/SuperAdminSettings";
 
 import AgencyRegistration from "./pages/AgencyRegistration";
 import AgencyOnboarding from "./pages/AgencyOnboarding";
@@ -76,15 +69,6 @@ const App = () => (
           {/* Public approval link (no auth) */}
           <Route path="/approve/:token" element={<PublicApprovalPage />} />
 
-          {/* Super Admin */}
-          <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
-          <Route path="/super-admin/agencies" element={<AgenciesPage />} />
-          <Route path="/super-admin/clients" element={<SuperAdminOrganizations />} />
-          <Route path="/super-admin/users" element={<SuperAdminUsers />} />
-          <Route path="/super-admin/billing" element={<SuperAdminBilling />} />
-          <Route path="/super-admin/audit-log" element={<AuditLogPage />} />
-          <Route path="/super-admin/settings" element={<SuperAdminSettings />} />
-          <Route path="/super-admin/profile" element={<ProfileSettingsPage role="super-admin" />} />
 
           {/* Agency */}
           <Route path="/agency/onboarding" element={<AgencyOnboarding />} />

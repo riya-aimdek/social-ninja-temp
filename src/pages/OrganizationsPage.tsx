@@ -4,7 +4,8 @@ import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
 import ClientLogo from "@/components/ClientLogo";
 import { Button } from "@/components/ui/button";
-import { Search, X, Plus, Building2, CheckCircle, XCircle, Users, FolderOpen, Pencil, Power, Trash2, RefreshCw, TrendingUp, Globe, BarChart3 } from "lucide-react";
+import { toast } from "sonner";
+import { Search, X, Plus, Building2, CheckCircle, XCircle, Users, FolderOpen, Pencil, Power, Trash2, RefreshCw, Globe, BarChart3 } from "lucide-react";
 
 const initialClients = [
   { id: '1', name: 'Acme Corp', initials: 'A', color: 'bg-primary', owner: 'Sarah K.', members: 4, status: 'active' as const, created: 'Apr 13, 2026', projects: 3, posts: 142, socials: 5 },
@@ -21,7 +22,50 @@ const OrganizationsPage = () => {
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [clients] = useState(initialClients);
+  const [clients, setClients] = useState(initialClients);
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientDesc, setNewClientDesc] = useState('');
+  const [editingClient, setEditingClient] = useState<typeof initialClients[0] | null>(null);
+  const [editClientName, setEditClientName] = useState('');
+
+  const createClient = () => {
+    if (!newClientName.trim()) return;
+    const initials = newClientName.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const colors = ['bg-primary', 'bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-sky-500'];
+    const newClient = {
+      id: `c${Date.now()}`, name: newClientName.trim(), initials,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      owner: '—', members: 0, status: 'pending' as const,
+      created: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      projects: 0, posts: 0, socials: 0,
+    };
+    setClients(prev => [newClient, ...prev]);
+    toast.success(`Client "${newClient.name}" created.`);
+    setShowCreate(false);
+    setNewClientName('');
+    setNewClientDesc('');
+  };
+
+  const toggleClientStatus = (id: string) => {
+    setClients(prev => prev.map(c =>
+      c.id === id ? { ...c, status: c.status === 'suspended' ? 'active' : 'suspended' } : c
+    ));
+  };
+
+  const deleteClient = (id: string, name: string) => {
+    setClients(prev => prev.filter(c => c.id !== id));
+    toast.success(`Client "${name}" deleted.`);
+  };
+
+  const saveClientEdit = () => {
+    if (!editingClient || !editClientName.trim()) return;
+    setClients(prev => prev.map(c =>
+      c.id === editingClient.id ? { ...c, name: editClientName.trim(), initials: editClientName.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) } : c
+    ));
+    toast.success("Client updated.");
+    setEditingClient(null);
+    setEditClientName('');
+  };
 
   const totalClients = clients.length;
   const activeClients = clients.filter(c => c.status === 'active').length;
@@ -147,12 +191,12 @@ const OrganizationsPage = () => {
                     <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{c.created}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <Link to={`/agency/clients/${c.id}/team`} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium whitespace-nowrap">
+                        <Link to={`/agency/clients/${c.id}`} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium whitespace-nowrap">
                           <RefreshCw className="h-3.5 w-3.5" /> Manage
                         </Link>
-                        <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                        <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title={c.status === 'suspended' ? 'Activate' : 'Suspend'}><Power className="h-3.5 w-3.5" /></button>
-                        <button className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <button aria-label="Edit client" onClick={() => { setEditingClient(c); setEditClientName(c.name); }} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button aria-label={c.status === 'suspended' ? 'Activate' : 'Suspend'} onClick={() => toggleClientStatus(c.id)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title={c.status === 'suspended' ? 'Activate' : 'Suspend'}><Power className="h-3.5 w-3.5" /></button>
+                        <button aria-label="Delete client" onClick={() => deleteClient(c.id, c.name)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </td>
                   </tr>
@@ -171,25 +215,45 @@ const OrganizationsPage = () => {
 
       {/* Add Client Modal */}
       {showCreate && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => { setShowCreate(false); setNewClientName(''); setNewClientDesc(''); }}>
           <div className="w-[480px] bg-card border border-border rounded-2xl p-8 shadow-xl animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-foreground">Add Client</h2>
-              <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="h-5 w-5" /></button>
+              <button aria-label="Close" onClick={() => { setShowCreate(false); setNewClientName(''); setNewClientDesc(''); }} className="text-muted-foreground hover:text-foreground transition-colors"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-5">
               <div>
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">Client Name <span className="text-primary">*</span></label>
-                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Client organization name" />
+                <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Client organization name" value={newClientName} onChange={e => setNewClientName(e.target.value)} />
               </div>
               <div>
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">Description</label>
-                <textarea className="w-full px-4 py-3 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary h-24 resize-none" placeholder="Brief description of this client..." />
+                <textarea className="w-full px-4 py-3 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary h-24 resize-none" placeholder="Brief description of this client..." value={newClientDesc} onChange={e => setNewClientDesc(e.target.value)} />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
-              <Button variant="outline" onClick={() => setShowCreate(false)} className="px-8">CANCEL</Button>
-              <Button className="px-8">CREATE CLIENT</Button>
+              <Button variant="outline" onClick={() => { setShowCreate(false); setNewClientName(''); setNewClientDesc(''); }} className="px-8">Cancel</Button>
+              <Button onClick={createClient} disabled={!newClientName.trim()} className="px-8">Create Client</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Client Modal */}
+      {editingClient && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setEditingClient(null)}>
+          <div className="w-[480px] bg-card border border-border rounded-2xl p-8 shadow-xl animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-foreground">Edit Client</h2>
+              <button aria-label="Close" onClick={() => setEditingClient(null)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="h-5 w-5" /></button>
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">Client Name <span className="text-primary">*</span></label>
+              <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" value={editClientName} onChange={e => setEditClientName(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
+              <Button variant="outline" onClick={() => setEditingClient(null)} className="px-8">Cancel</Button>
+              <Button onClick={saveClientEdit} disabled={!editClientName.trim()} className="px-8">Save Changes</Button>
             </div>
           </div>
         </div>

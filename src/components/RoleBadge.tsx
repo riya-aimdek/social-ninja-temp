@@ -18,9 +18,6 @@ interface BadgeStyle {
 }
 
 const roleConfig: Record<string, BadgeStyle> = {
-  // Super Admin
-  "super-admin": { label: "Super Admin", color: "text-super-admin", bg: "bg-super-admin/15", ring: "ring-super-admin/20" },
-
   // Agency
   "agency-admin": { label: "Agency Admin", color: "text-agency", bg: "bg-agency/15", ring: "ring-agency/20" },
   "agency-account-manager": { label: "Account Manager", color: "text-info", bg: "bg-info/15" },
@@ -53,7 +50,7 @@ const roleConfig: Record<string, BadgeStyle> = {
   business: { label: "Business", color: "text-client", bg: "bg-client/15" },
   user: { label: "User", color: "text-user-role", bg: "bg-user-role/15" },
   engagement: { label: "Engagement", color: "text-agency", bg: "bg-agency/15" },
-  analyst: { label: "Analyst", color: "text-super-admin", bg: "bg-super-admin/15" },
+  analyst: { label: "Analyst", color: "text-info", bg: "bg-info/15" },
 };
 
 const RoleBadge = ({ role, className, compact = false }: RoleBadgeProps) => {

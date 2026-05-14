@@ -1,10 +1,14 @@
 import { useState, useRef } from "react";
 import { FolderOpen, CheckCircle2, XCircle, Search, Plus, Link2, Pencil, Power, Trash2, FileText, Users, Clock, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import StatusBadge from "@/components/StatusBadge";
-import { projects, activeProjects, inactiveProjects, totalPosts } from "@/data/businessMockData";
+import { projects as initialProjects, activeProjects, inactiveProjects, totalPosts } from "@/data/businessMockData";
+
+type Project = typeof initialProjects[0];
 
 export default function ClientProjectsPage() {
+  const [allProjects, setAllProjects] = useState<Project[]>(initialProjects);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [showModal, setShowModal] = useState(false);
@@ -25,14 +29,26 @@ export default function ClientProjectsPage() {
     setLogoPreview(null);
   };
 
+  const createProject = () => {
+    if (!newProjectName.trim()) return;
+    const newProj: Project = {
+      id: `p${Date.now()}`, name: newProjectName.trim(),
+      description: newProjectDesc.trim(), status: "Active",
+      posts: 0, accounts: 0, members: 1,
+    };
+    setAllProjects(prev => [newProj, ...prev]);
+    toast.success(`Project "${newProj.name}" created.`);
+    closeModal();
+  };
+
   // Edit modal state
-  const [editingProject, setEditingProject] = useState<typeof projects[0] | null>(null);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editLogo, setEditLogo] = useState<string | null>(null);
   const editLogoInputRef = useRef<HTMLInputElement>(null);
 
-  const openEditModal = (project: typeof projects[0]) => {
+  const openEditModal = (project: Project) => {
     setEditingProject(project);
     setEditName(project.name);
     setEditDesc(project.description || "");
@@ -46,12 +62,33 @@ export default function ClientProjectsPage() {
     setEditLogo(null);
   };
 
+  const saveEdit = () => {
+    if (!editingProject || !editName.trim()) return;
+    setAllProjects(prev => prev.map(p =>
+      p.id === editingProject.id ? { ...p, name: editName.trim(), description: editDesc.trim() } : p
+    ));
+    toast.success("Project updated.");
+    closeEditModal();
+  };
+
+  const toggleStatus = (id: string) => {
+    setAllProjects(prev => prev.map(p =>
+      p.id === id ? { ...p, status: p.status === "Active" ? "Inactive" : "Active" } : p
+    ));
+  };
+
+  const deleteProject = (id: string) => {
+    setAllProjects(prev => prev.filter(p => p.id !== id));
+    toast.success("Project deleted.");
+  };
+
   const handleEditLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setEditLogo(URL.createObjectURL(file));
   };
 
-  const filtered = projects.filter(p => {
+  const projects = allProjects;
+  const filtered = allProjects.filter(p => {
     if (activeTab === "active" && p.status !== "Active") return false;
     if (activeTab === "inactive" && p.status !== "Inactive") return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -59,9 +96,9 @@ export default function ClientProjectsPage() {
   });
 
   const tabs = [
-    { key: "all", label: "All", count: projects.length },
-    { key: "active", label: "Active", count: activeProjects.length },
-    { key: "inactive", label: "Inactive", count: inactiveProjects.length },
+    { key: "all", label: "All", count: allProjects.length },
+    { key: "active", label: "Active", count: allProjects.filter(p => p.status === "Active").length },
+    { key: "inactive", label: "Inactive", count: allProjects.filter(p => p.status === "Inactive").length },
   ];
 
   const statCards = [
@@ -146,8 +183,8 @@ export default function ClientProjectsPage() {
                       <div className="flex items-center justify-end gap-1.5">
                         <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Connect accounts"><Link2 className="w-4 h-4 text-muted-foreground" /></button>
                         <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Edit" onClick={() => openEditModal(project)}><Pencil className="w-4 h-4 text-muted-foreground" /></button>
-                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Toggle status"><Power className="w-4 h-4 text-muted-foreground" /></button>
-                        <button className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Delete"><Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" /></button>
+                        <button aria-label="Toggle status" className="p-1.5 hover:bg-accent rounded-lg transition-colors" title="Toggle status" onClick={() => toggleStatus(project.id)}><Power className="w-4 h-4 text-muted-foreground" /></button>
+                        <button aria-label="Delete project" className="p-1.5 hover:bg-accent rounded-lg transition-colors group/del" title="Delete" onClick={() => deleteProject(project.id)}><Trash2 className="w-4 h-4 text-muted-foreground group-hover/del:text-destructive transition-colors" /></button>
                       </div>
                     </td>
                   </tr>
@@ -227,7 +264,7 @@ export default function ClientProjectsPage() {
                 Cancel
               </button>
               <button
-                onClick={closeModal}
+                onClick={createProject}
                 disabled={!newProjectName.trim()}
                 className="px-6 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
               >
@@ -304,7 +341,7 @@ export default function ClientProjectsPage() {
                 Cancel
               </button>
               <button
-                onClick={closeEditModal}
+                onClick={saveEdit}
                 disabled={!editName.trim()}
                 className="px-6 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
               >

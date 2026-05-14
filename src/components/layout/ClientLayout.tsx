@@ -178,8 +178,8 @@ export default function ClientLayout() {
       <aside className="w-[220px] bg-sidebar flex flex-col flex-shrink-0 border-r border-sidebar-border sticky top-0 h-screen overflow-hidden">
 
         {/* Logo */}
-        <div className="p-5 border-b border-sidebar-border/50">
-          <SocialNinjaLogo size="md" darkBg />
+        <div className="p-4 border-b border-sidebar-border/50">
+          <SocialNinjaLogo size="sm" darkBg />
         </div>
 
         {/* Switcher */}
@@ -362,7 +362,7 @@ export default function ClientLayout() {
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Header */}
-        <header className="h-16 border-b border-border bg-card flex items-center px-6 gap-4 flex-shrink-0 sticky top-0 z-10">
+        <header className="sticky top-0 z-10 h-16 shrink-0 border-b border-border bg-card flex items-center px-6 gap-4">
 
           {/* Context logo */}
           <div className="flex items-center gap-3 shrink-0">
@@ -421,7 +421,7 @@ export default function ClientLayout() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 px-6 pt-6 pb-8 bg-muted/30">
+        <main className="flex-1 p-6 bg-muted/30">
           <Outlet />
         </main>
       </div>

@@ -5,6 +5,7 @@ import {
   Upload, Eye, EyeOff, Check, AlertCircle,
   Monitor, Smartphone, X, Clock, Plus,
 } from "lucide-react";
+import { toast } from "sonner";
 import { WorkflowSettings } from "@/components/settings/WorkflowSettings";
 import { RolesPermissionsSettings } from "@/components/settings/RolesPermissionsSettings";
 import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
@@ -85,7 +86,7 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 );
 
 const SaveBtn = ({ label = "Save Changes" }: { label?: string }) => (
-  <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+  <button onClick={() => toast.success("Changes saved successfully.")} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
     <Save className="w-3.5 h-3.5" /> {label}
   </button>
 );

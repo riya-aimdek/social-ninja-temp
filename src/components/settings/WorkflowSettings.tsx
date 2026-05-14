@@ -244,6 +244,7 @@ function FlowDiagramEdit({
                 <div className="flex-1" />
                 {wf.steps.length > 1 && (
                   <button
+                    aria-label="Remove step"
                     onClick={() => onRemoveStep(step.id)}
                     className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-error hover:bg-error/10 transition-colors shrink-0"
                   >
@@ -332,7 +333,7 @@ function PropagationModal({
               Choose how you want to propagate this updated workflow to your clients.
             </p>
           </div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0">
+          <button aria-label="Close" onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -541,6 +542,7 @@ export function WorkflowSettings({ scope, standalone = false }: { scope: Workflo
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30 shrink-0">Active</span>
             )}
             <button
+              aria-label="Close"
               onClick={() => { setModalWfId(null); setEditingIds((p) => { const n = new Set(p); n.delete(modalWf.id); return n; }); }}
               className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
             >
@@ -785,6 +787,7 @@ export function WorkflowSettings({ scope, standalone = false }: { scope: Workflo
                 <button
                   onClick={() => { setModalWfId(wf.id); enterEdit(wf.id); }}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  aria-label="Edit workflow"
                   title="Edit workflow"
                 >
                   <Pencil className="w-3.5 h-3.5" />
@@ -793,7 +796,8 @@ export function WorkflowSettings({ scope, standalone = false }: { scope: Workflo
                   <button
                     onClick={() => removeWorkflow(wf.id)}
                     className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-error hover:bg-error/10 transition-colors"
-                    title="Delete workflow"
+                    aria-label="Delete workflow"
+                  title="Delete workflow"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

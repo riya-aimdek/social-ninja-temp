@@ -39,7 +39,6 @@
 
     --radius: 0.75rem;
 
-    --super-admin: 245 52% 67%;
     --agency: 160 68% 37%;
     --organization: 17 66% 52%;
     --client: 17 66% 52%;
@@ -105,6 +104,13 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', sans-serif;
   }
+
+  /* Global keyboard focus ring — meets WCAG 2.4.7 */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 @layer components {
@@ -121,19 +127,45 @@
     @apply bg-info/10 text-info text-xs font-medium px-2.5 py-0.5 rounded-full;
   }
   .nav-item {
-    @apply h-10 px-4 flex items-center gap-3 text-sm rounded-2xl transition-colors cursor-pointer text-sidebar-foreground;
+    @apply flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-sidebar-foreground;
   }
   .nav-item:hover {
-    @apply text-sidebar-accent-foreground bg-sidebar-accent;
+    @apply text-white bg-sidebar-accent/60;
   }
   .nav-item-active {
-    @apply text-primary bg-sidebar-accent font-medium;
+    @apply bg-primary text-primary-foreground shadow-sm;
   }
+  /* Card utilities */
   .card-surface {
     @apply bg-card border border-border rounded-xl p-6 shadow-sm;
   }
+  .card-compact {
+    @apply bg-card border border-border rounded-xl p-5;
+  }
+  /* Section header inside a card */
+  .section-header {
+    @apply text-sm font-semibold text-foreground;
+  }
+  /* Page-level spacing wrapper */
+  .page-section {
+    @apply space-y-6;
+  }
+  /* Consistent form inputs — use on all <input>, <textarea>, <select> */
   .input-dark {
-    @apply bg-input border border-border rounded-lg h-10 px-3 text-foreground placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 transition-colors w-full text-sm;
+    @apply bg-background border border-border rounded-lg h-10 px-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors w-full text-sm;
+  }
+  .form-input {
+    @apply bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors w-full;
+  }
+  .form-select {
+    @apply bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors w-full;
+  }
+  /* Empty state used across all modules */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 px-4 text-center;
+  }
+  .empty-state-icon {
+    @apply w-10 h-10 rounded-2xl bg-muted flex items-center justify-center mb-3 text-muted-foreground;
   }
 }
 
