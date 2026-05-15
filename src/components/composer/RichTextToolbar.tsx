@@ -114,12 +114,6 @@ const RichTextToolbar = ({ textareaRef, value, onChange, onAiClick, className }:
       <button type="button" onClick={() => applyStyle("bold")} className={btn} title="Bold">
         <Bold className="w-4 h-4" />
       </button>
-      <button type="button" onClick={() => applyStyle("italic")} className={btn} title="Italic">
-        <Italic className="w-4 h-4" />
-      </button>
-      <button type="button" onClick={applyUnderline} className={btn} title="Underline">
-        <Underline className="w-4 h-4" />
-      </button>
 
       <span className="w-px h-4 bg-border mx-1" />
 
@@ -170,15 +164,6 @@ const RichTextToolbar = ({ textareaRef, value, onChange, onAiClick, className }:
         </PopoverTrigger>
         <PopoverContent className="w-72 p-3 space-y-2" align="start">
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-muted-foreground">Display text (optional)</label>
-            <input
-              value={linkText}
-              onChange={(e) => setLinkText(e.target.value)}
-              placeholder="Read more"
-              className="w-full px-2 py-1.5 text-xs rounded-md border border-input bg-background outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div className="space-y-1">
             <label className="text-[11px] font-medium text-muted-foreground">URL</label>
             <input
               value={linkUrl}
@@ -200,8 +185,9 @@ const RichTextToolbar = ({ textareaRef, value, onChange, onAiClick, className }:
       {onAiClick && (
         <>
           <span className="w-px h-4 bg-border mx-1" />
-          <button type="button" onClick={onAiClick} className={cn(btn, "text-primary hover:text-primary")} title="AI Assist">
+          <button type="button" onClick={onAiClick} className={cn(btn, "text-primary hover:text-primary inline-flex flex-row items-center gap-1 px-2")} title="AI Assist">
             <Sparkles className="w-4 h-4" />
+            <span className="text-xs font-medium">AI</span>
           </button>
         </>
       )}

@@ -25,9 +25,6 @@ const navItems = [
   { id: "queue",         label: "Queue Times",           icon: Clock },
   { id: "workflows",     label: "Workflows",             icon: GitBranch },
   { id: "roles",         label: "Roles & Permissions",   icon: Shield },
-  { id: "hashtags",      label: "Hashtag Suites",        icon: Hash },
-  { id: "saved-replies", label: "Saved Replies",         icon: MessageSquare },
-  { id: "tags",          label: "Message Tags",          icon: Tag },
 ];
 
 /* ─── Mock data ───────────────────────────────────────────────── */
@@ -546,29 +543,14 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                     <p className="text-xs text-muted-foreground mt-0.5">If approval isn't received within the defined window, the system will act automatically.</p>
                     {autoPublish && (
                       <div className="mt-4 pt-4 border-t border-border space-y-3" onClick={e => e.stopPropagation()}>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <FieldLabel>Wait time before action</FieldLabel>
-                            <div className="flex items-center gap-2">
-                              <input type="number" min={1} value={autoPublishHours} onChange={e => setAutoPublishHours(Number(e.target.value))}
-                                className="w-20 h-9 px-3 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary" />
-                              <span className="text-xs text-muted-foreground">hours</span>
-                            </div>
-                          </div>
-                          <div>
-                            <FieldLabel>Action on timeout</FieldLabel>
-                            <select value={autoPublishFallback} onChange={e => setAutoPublishFallback(e.target.value as typeof autoPublishFallback)}
-                              className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary">
-                              <option value="publish">Auto-approve & publish</option>
-                              <option value="reschedule">Reschedule by 24h</option>
-                              <option value="skip">Skip & mark expired</option>
-                            </select>
-                          </div>
+                        <div>
+                          <FieldLabel>Action on timeout</FieldLabel>
+                          <select value={autoPublishFallback} onChange={e => setAutoPublishFallback(e.target.value as typeof autoPublishFallback)}
+                            className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary">
+                            <option value="publish">Auto-approve & publish</option>
+                            <option value="skip">Skip & mark expired</option>
+                          </select>
                         </div>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" checked={weekendsCount} onChange={e => setWeekendsCount(e.target.checked)} className="w-4 h-4 accent-primary" />
-                          <span className="text-xs text-foreground">Count weekends in the wait window</span>
-                        </label>
                         <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/5 border border-warning/20">
                           <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                           <p className="text-xs text-foreground">Auto-published posts are tagged in the audit trail and a confirmation is sent to all approvers.</p>
@@ -593,22 +575,12 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                     <p className="text-xs text-muted-foreground mt-0.5">Nudge approvers automatically so posts don't sit idle in the queue.</p>
                     {reminderEnabled && (
                       <div className="mt-4 pt-4 border-t border-border space-y-3" onClick={e => e.stopPropagation()}>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <FieldLabel>First reminder after</FieldLabel>
-                            <div className="flex items-center gap-2">
-                              <input type="number" min={1} value={reminderFirst} onChange={e => setReminderFirst(Number(e.target.value))}
-                                className="w-20 h-9 px-3 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary" />
-                              <span className="text-xs text-muted-foreground">hours</span>
-                            </div>
-                          </div>
-                          <div>
-                            <FieldLabel>Repeat every</FieldLabel>
-                            <div className="flex items-center gap-2">
-                              <input type="number" min={1} value={reminderRepeat} onChange={e => setReminderRepeat(Number(e.target.value))}
-                                className="w-20 h-9 px-3 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary" />
-                              <span className="text-xs text-muted-foreground">hours</span>
-                            </div>
+                        <div>
+                          <FieldLabel>First reminder after</FieldLabel>
+                          <div className="flex items-center gap-2">
+                            <input type="number" min={1} value={reminderFirst} onChange={e => setReminderFirst(Number(e.target.value))}
+                              className="w-20 h-9 px-3 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary" />
+                            <span className="text-xs text-muted-foreground">hours</span>
                           </div>
                         </div>
                         <div>
@@ -635,29 +607,6 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
                 </div>
               </div>
 
-              {/* Approver rules */}
-              <div className="rounded-xl border border-border p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Shield className="w-4 h-4 text-primary" />
-                  <p className="text-sm font-semibold text-foreground">Approver Rules</p>
-                </div>
-                <div className="space-y-4">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" checked={requireMultiApprover} onChange={e => setRequireMultiApprover(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Require approval from 2+ reviewers</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Posts only move forward once multiple approvers have signed off.</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" checked={allowSelfApprove} onChange={e => setAllowSelfApprove(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Allow content creators to self-approve their own drafts</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Useful for trusted internal teams. Disable for stricter compliance workflows.</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
             </SectionCard>
 
             <div className="flex items-center justify-end gap-3">
@@ -740,94 +689,6 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
         )}
 
         {/* ── Hashtags ─────────────────────────────────────────── */}
-        {activeTab === "hashtags" && (
-          <SectionCard>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Hashtag Suites</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Create reusable hashtag collections for quick insertion during content creation.</p>
-              </div>
-              <button onClick={() => toast.info("New hashtag suite editor coming soon.")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> New Suite
-              </button>
-            </div>
-            <div className="space-y-3">
-              {hashtagSuites.map((suite) => (
-                <div key={suite.name} className="rounded-xl border border-border p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-semibold text-foreground">{suite.name}</p>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => toast.info(`Edit "${suite.name}" suite.`)} className="text-xs text-primary font-medium hover:underline">Edit</button>
-                      <span className="text-muted-foreground">·</span>
-                      <button onClick={() => toast.success(`"${suite.name}" deleted.`)} className="text-xs text-destructive font-medium hover:underline">Delete</button>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {suite.tags.map((tag) => (
-                      <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/8 text-primary text-xs font-medium border border-primary/15">{tag}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* ── Saved Replies ────────────────────────────────────── */}
-        {activeTab === "saved-replies" && (
-          <SectionCard>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Saved Replies</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Pre-written templates for consistent, rapid replies in the Engage module.</p>
-              </div>
-              <button onClick={() => toast.info("New saved reply editor coming soon.")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> New Reply
-              </button>
-            </div>
-            <div className="space-y-3">
-              {savedReplies.map((reply) => (
-                <div key={reply.name} className="rounded-xl border border-border p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-foreground">{reply.name}</p>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => toast.info(`Edit "${reply.name}".`)} className="text-xs text-primary font-medium hover:underline">Edit</button>
-                      <span className="text-muted-foreground">·</span>
-                      <button onClick={() => toast.success(`"${reply.name}" deleted.`)} className="text-xs text-destructive font-medium hover:underline">Delete</button>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{reply.text}</p>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* ── Tags ─────────────────────────────────────────────── */}
-        {activeTab === "tags" && (
-          <SectionCard>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Message Tags</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Tags for message filtering in Engage. AI auto-tagging uses these labels.</p>
-              </div>
-              <button onClick={() => toast.info("New tag editor coming soon.")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> New Tag
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2.5">
-              {messageTags.map((tag) => (
-                <div key={tag.name} className={cn("flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-medium", tag.color)}>
-                  <Tag className="w-3.5 h-3.5" />
-                  {tag.name}
-                  <button aria-label={`Remove ${tag.name} tag`} onClick={() => toast.success(`"${tag.name}" tag removed.`)} className="ml-0.5 opacity-50 hover:opacity-100 transition-opacity">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        )}
       </div>
 
       {/* ── Delete Account Modal ─────────────────────────────── */}
