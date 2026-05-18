@@ -5,6 +5,7 @@ import {
   BarChart3, Megaphone, Ear, Settings, Bell, ChevronDown, ChevronUp, ChevronRight,
   LogOut, Globe, KanbanSquare, FileText, ShieldAlert, Bot, Check,
   TrendingUp, Trophy, FileDown,
+  UserCircle, SlidersHorizontal, Building2, CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
@@ -39,7 +40,6 @@ const businessNav = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/client/dashboard" },
   { label: "Projects",  icon: FolderOpen,      path: "/client/projects"  },
   { label: "Team",      icon: Users,           path: "/client/team"      },
-  { label: "Settings",  icon: Settings,        path: "/client/settings"  },
 ];
 
 type NavItem = {
@@ -97,19 +97,34 @@ function initProject(bizId: string): Project | null {
 }
 
 /* ── User menu ───────────────────────────────────────────────────── */
-const LOGGED_IN_USER = { name: "Riya Shah", role: "Business", initials: "RS" };
+const LOGGED_IN_USER = { name: "Riya Shah", role: "Business Admin", initials: "RS" };
+const ADMIN_ROLES = ["Business Admin", "Client Admin", "Super Admin"];
 
 function UserMenu({ onLogout }: { onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const isAdmin = ADMIN_ROLES.includes(LOGGED_IN_USER.role);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    const keyHandler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", keyHandler);
+    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("keydown", keyHandler); };
   }, []);
+
+  const menuItem = (icon: React.ReactNode, label: string, _sub: string, href: string) => (
+    <button
+      onClick={() => { setOpen(false); navigate(href); }}
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#F5F5F5] transition-colors text-left text-muted-foreground hover:text-foreground"
+    >
+      {icon}
+      <p className="text-[13px] font-medium text-foreground leading-tight">{label}</p>
+    </button>
+  );
 
   return (
     <div className="relative" ref={ref}>
@@ -117,7 +132,7 @@ function UserMenu({ onLogout }: { onLogout: () => void }) {
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
       >
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white text-[11px] font-bold shrink-0">
+        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-[11px] font-bold shrink-0">
           {LOGGED_IN_USER.initials}
         </div>
         <div className="text-left leading-none">
@@ -130,23 +145,44 @@ function UserMenu({ onLogout }: { onLogout: () => void }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-48 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
+        <div className="absolute right-0 top-full mt-2 w-[260px] bg-white border border-border rounded-xl shadow-xl z-50 p-2 overflow-hidden">
+
+          {/* Identity block */}
+          <div className="flex items-center gap-3 px-3 py-3 mb-1 rounded-lg bg-[#F8F9FA]">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold shrink-0">
               {LOGGED_IN_USER.initials}
             </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground leading-tight">{LOGGED_IN_USER.name}</p>
-              <p className="text-[11px] text-muted-foreground">{LOGGED_IN_USER.role}</p>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-foreground leading-tight">{LOGGED_IN_USER.name}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{LOGGED_IN_USER.role}</p>
             </div>
           </div>
-          <button
-            onClick={() => { setOpen(false); onLogout(); }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+
+          {/* MY ACCOUNT */}
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#888888] px-3 pt-3 pb-1">My Account</p>
+          {menuItem(<UserCircle className="w-4 h-4" />, "My Profile", "", "/client/profile")}
+          {menuItem(<SlidersHorizontal className="w-4 h-4" />, "Preferences", "", "/client/preferences")}
+
+          {/* BUSINESS — admin only */}
+          {isAdmin && (
+            <>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#888888] px-3 pt-3 pb-1">Business</p>
+              {menuItem(<CreditCard className="w-4 h-4" />, "Business Settings", "", "/client/settings")}
+            </>
+          )}
+
+          {/* Divider + Logout */}
+          <div className="border-t border-[#EEEEEE] mt-2 pt-1">
+            <button
+              onClick={() => { setOpen(false); onLogout(); }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#F5F5F5] transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <LogOut className="w-4 h-4 text-destructive" />
+              </div>
+              <p className="text-[13px] font-medium text-destructive">Log out</p>
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -420,21 +456,6 @@ export default function ClientLayout() {
           })}
         </nav>
 
-        {/* User */}
-        <div className="px-3 py-3 border-t border-sidebar-border/50">
-          <button
-            onClick={() => navigate("/client/profile")}
-            className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent/60 transition-colors text-left"
-          >
-            <div className="w-8 h-8 rounded-full gradient-coral flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {business.name[0]}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white truncate">{business.name}</p>
-              <p className="text-[11px] text-sidebar-foreground/60">Business</p>
-            </div>
-          </button>
-        </div>
       </aside>
 
       {/* ── Main ── */}

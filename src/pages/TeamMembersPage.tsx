@@ -4,7 +4,7 @@ import AgencyLayout from "@/components/layout/AgencyLayout";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Search, X, Plus, Pencil, Trash2, RefreshCw, RotateCw, Users, UserCheck, UserPlus, Shield } from "lucide-react";
+import { Search, X, Plus, Pencil, Trash2, RotateCw, Users, UserCheck, UserPlus, Shield, Building2 } from "lucide-react";
 
 const permissionList = ['Engage', 'Listen', 'Boost', 'Analyze'];
 
@@ -67,12 +67,34 @@ const roleCards = [
   },
 ];
 
+type User = typeof initialUsers[0];
+
 const TeamMembersPage = () => {
   const [search, setSearch] = useState('');
   const [showAddUser, setShowAddUser] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [users] = useState(initialUsers);
+  const [users, setUsers] = useState(initialUsers);
+
+  // Edit modal
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState('');
+
+  const openEdit = (u: User) => {
+    setEditUser(u);
+    setEditName(u.name);
+    const matched = roleCards.flatMap(c => c.roles).find(r => r.name === u.role);
+    setEditRole(matched?.id ?? roleCards[0].roles[0].id);
+  };
+
+  const saveEdit = () => {
+    if (!editUser) return;
+    const roleName = roleCards.flatMap(c => c.roles).find(r => r.id === editRole)?.name ?? editUser.role;
+    setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, name: editName, role: roleName } : u));
+    toast.success('User updated successfully.');
+    setEditUser(null);
+  };
 
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.status === 'active').length;
@@ -203,10 +225,10 @@ const TeamMembersPage = () => {
                           </>
                         ) : (
                           <>
-                            <Link to={`/agency/team/${u.id}/manage`} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium whitespace-nowrap">
-                              <RefreshCw className="h-3.5 w-3.5" /> Manage
+                            <Link to={`/agency/team/${u.id}/manage`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors whitespace-nowrap">
+                              <Building2 className="h-3.5 w-3.5" /> Manage Clients
                             </Link>
-                            <button aria-label="Edit member" onClick={() => toast.info(`Edit ${u.name} — coming soon.`)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                            <button aria-label="Edit member" onClick={() => openEdit(u)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                             <button aria-label="Remove member" onClick={() => toast.success(`${u.name} removed.`)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Remove"><Trash2 className="h-3.5 w-3.5" /></button>
                           </>
                         )}
@@ -279,6 +301,67 @@ const TeamMembersPage = () => {
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setShowAddUser(false)} className="px-8">Cancel</Button>
               <Button className="px-8">Send Invitation</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit User Modal */}
+      {editUser && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setEditUser(null)}>
+          <div className="w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5">
+              <h2 className="text-base font-bold text-foreground">Edit User</h2>
+              <button onClick={() => setEditUser(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="h-px bg-border" />
+
+            <div className="px-6 py-5 space-y-5">
+              {/* Full Name */}
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">
+                  Full Name <span className="text-primary">*</span>
+                </label>
+                <input
+                  className="h-11 w-full px-4 border border-border rounded-xl bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                />
+              </div>
+
+              {/* Agency Role */}
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-3 block">Agency Role</label>
+                <div className="space-y-2">
+                  {roleCards.flatMap(c => c.roles).map(r => (
+                    <button
+                      key={r.id}
+                      onClick={() => setEditRole(r.id)}
+                      className={`w-full flex items-start gap-3 px-4 py-3.5 rounded-xl border text-left transition-all ${
+                        editRole === r.id
+                          ? 'border-primary/40 bg-primary/5'
+                          : 'border-border hover:border-muted-foreground/40'
+                      }`}
+                    >
+                      <div className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${editRole === r.id ? 'border-primary bg-primary' : 'border-muted-foreground/40'}`}>
+                        {editRole === r.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{r.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{r.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-6 py-4">
+              <Button variant="outline" onClick={() => setEditUser(null)} className="flex-1 h-11 rounded-xl">Cancel</Button>
+              <Button onClick={saveEdit} className="flex-1 h-11 rounded-xl">Save Changes</Button>
             </div>
           </div>
         </div>

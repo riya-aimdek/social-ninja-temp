@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Mail, Phone, CheckCircle2, Upload, Building2, Globe } from "lucide-react";
+import { Phone, CheckCircle2, Camera, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import AgencyLayout from "@/components/layout/AgencyLayout";
@@ -8,10 +8,10 @@ type Role = "agency" | "client";
 
 const roleConfig: Record<Role, {
   name: string; roleLabel: string; initials: string;
-  email: string; colorFrom: string; colorTo: string;
+  email: string; accentFrom: string; accentTo: string;
 }> = {
-  agency: { name: "Agency Admin",   roleLabel: "Agency Admin",   initials: "A", email: "admin@agency.com",   colorFrom: "from-sky-500",  colorTo: "to-blue-600"  },
-  client: { name: "Business Owner", roleLabel: "Business Admin", initials: "B", email: "owner@business.com", colorFrom: "from-rose-500", colorTo: "to-pink-600"  },
+  agency: { name: "Riya Shah",      roleLabel: "Agency Admin",   initials: "RS", email: "riya@agency.com",    accentFrom: "from-sky-500",  accentTo: "to-blue-600"  },
+  client: { name: "Riya Shah",      roleLabel: "Business Admin", initials: "RS", email: "riya@business.com",  accentFrom: "from-rose-500", accentTo: "to-pink-600"  },
 };
 
 const roleBadge: Record<Role, string> = {
@@ -19,10 +19,11 @@ const roleBadge: Record<Role, string> = {
   client: "bg-rose-50 text-rose-600 border-rose-200",
 };
 
-const industries = [
-  "Technology", "Retail & E-Commerce", "Food & Beverage", "Healthcare",
-  "Finance & Banking", "Education", "Real Estate", "Media & Entertainment",
-  "Travel & Hospitality", "Non-Profit", "Other",
+const passwordRules = [
+  { label: "At least 8 characters",  test: (p: string) => p.length >= 8 },
+  { label: "1 uppercase letter",     test: (p: string) => /[A-Z]/.test(p) },
+  { label: "1 number",               test: (p: string) => /\d/.test(p) },
+  { label: "1 special character",    test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
 ];
 
 const Field = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
@@ -47,24 +48,15 @@ const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
   />
 );
 
-const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-  <select
-    {...props}
-    className={cn(
-      "w-full h-10 px-3.5 rounded-lg border border-border bg-background text-sm text-foreground",
-      "outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all",
-      props.className,
-    )}
-  />
-);
-
-
 export default function ProfileSettingsPage({ role }: { role: Role }) {
   const cfg = roleConfig[role];
-  const logoRef = useRef<HTMLInputElement>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [personal, setPersonal] = useState({ fullName: cfg.name, email: cfg.email, phone: "" });
-  const [business, setBusiness] = useState({ name: "Business", industry: "", website: "" });
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd,     setNewPwd]     = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew,     setShowNew]     = useState(false);
 
   const handleSave = () => toast.success("Profile updated successfully");
 
@@ -84,10 +76,51 @@ export default function ProfileSettingsPage({ role }: { role: Role }) {
 
       <div className="px-6 py-6 space-y-8">
 
+        {/* Profile Photo */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className={cn("w-1 h-4 rounded-full bg-gradient-to-b", cfg.accentFrom, cfg.accentTo)} />
+            <p className="text-sm font-semibold text-foreground">Profile Photo</p>
+          </div>
+          <div className="flex items-center gap-5">
+            <div className="relative shrink-0">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Avatar" className="w-16 h-16 rounded-full object-cover ring-2 ring-border" />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold ring-2 ring-border">
+                  {cfg.initials}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => photoRef.current?.click()}
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center shadow-sm hover:bg-muted transition-colors"
+              >
+                <Camera className="w-3 h-3 text-muted-foreground" />
+              </button>
+              <input ref={photoRef} type="file" accept="image/*" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) setPhotoPreview(URL.createObjectURL(f)); }} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">{personal.fullName}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{cfg.roleLabel}</p>
+              <button
+                type="button"
+                onClick={() => photoRef.current?.click()}
+                className="mt-2 text-xs font-medium text-primary hover:underline"
+              >
+                Change photo
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-border" />
+
         {/* Personal Info */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <div className={cn("w-1 h-4 rounded-full bg-gradient-to-b", cfg.colorFrom, cfg.colorTo)} />
+            <div className={cn("w-1 h-4 rounded-full bg-gradient-to-b", cfg.accentFrom, cfg.accentTo)} />
             <p className="text-sm font-semibold text-foreground">Personal Information</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -113,58 +146,40 @@ export default function ProfileSettingsPage({ role }: { role: Role }) {
 
         <div className="h-px bg-border" />
 
-        {/* Business Info */}
+        {/* Change Password */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <div className={cn("w-1 h-4 rounded-full bg-gradient-to-b", cfg.colorFrom, cfg.colorTo)} />
-            <p className="text-sm font-semibold text-foreground">Business Information</p>
+            <div className={cn("w-1 h-4 rounded-full bg-gradient-to-b", cfg.accentFrom, cfg.accentTo)} />
+            <p className="text-sm font-semibold text-foreground">Change Password</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            {/* Logo */}
-            <div className="col-span-2">
-              <label className="text-sm font-medium text-foreground block mb-1.5">Business Logo</label>
-              <input ref={logoRef} type="file" accept="image/*" className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) setLogoPreview(URL.createObjectURL(f)); }} />
-              <button type="button" onClick={() => logoRef.current?.click()}
-                className="flex items-center gap-3.5 px-4 py-3 w-full rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left">
-                {logoPreview ? (
-                  <>
-                    <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Logo uploaded</p>
-                      <p className="text-xs text-muted-foreground">Click to replace</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <Building2 className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Upload your logo</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG or SVG · Max 2MB</p>
-                    </div>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <Field label="Business Name">
-              <Input value={business.name} onChange={e => setBusiness({ ...business, name: e.target.value })} placeholder="e.g. Acme Corp" />
-            </Field>
-            <Field label="Industry">
-              <Select value={business.industry} onChange={e => setBusiness({ ...business, industry: e.target.value })}>
-                <option value="">Select industry</option>
-                {industries.map(i => <option key={i} value={i}>{i}</option>)}
-              </Select>
-            </Field>
-            <Field label="Website" hint="Optional">
+            <Field label="Current Password">
               <div className="relative">
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input value={business.website} onChange={e => setBusiness({ ...business, website: e.target.value })} placeholder="https://yourwebsite.com" className="pl-9" />
+                <Input type={showCurrent ? "text" : "password"} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="Enter current password" className="pr-10" />
+                <button type="button" onClick={() => setShowCurrent(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </Field>
+            <Field label="New Password">
+              <div className="relative">
+                <Input type={showNew ? "text" : "password"} value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Enter new password" className="pr-10" />
+                <button type="button" onClick={() => setShowNew(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </Field>
           </div>
+          {newPwd && (
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1.5">
+              {passwordRules.map(r => (
+                <div key={r.label} className={cn("flex items-center gap-1.5 text-xs", r.test(newPwd) ? "text-emerald-600" : "text-muted-foreground")}>
+                  <CheckCircle2 className="w-3 h-3 shrink-0" />
+                  {r.label}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

@@ -111,23 +111,9 @@ export default function CreatePage() {
   const [customHashtag, setCustomHashtag] = useState("");
 
   /* ---- schedule ---- */
-  const [scheduleMode, setScheduleMode] = useState<"now" | "schedule" | "queue">("now");
+  const [scheduleMode, setScheduleMode] = useState<"now" | "schedule">("now");
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
-
-  // Mock queue slots (mirrors what's set in Settings → Queue Times)
-  const queueSlots = [
-    { day: "Monday",    time: "09:00" },
-    { day: "Monday",    time: "13:00" },
-    { day: "Monday",    time: "18:00" },
-    { day: "Tuesday",   time: "09:00" },
-    { day: "Tuesday",   time: "13:00" },
-    { day: "Wednesday", time: "09:00" },
-    { day: "Thursday",  time: "18:00" },
-    { day: "Friday",    time: "09:00" },
-    { day: "Friday",    time: "17:00" },
-  ];
-  const nextSlot = queueSlots[0];
 
   /* ---- content type ---- */
   const [contentType, setContentType] = useState<"post" | "story" | "reel">("post");
@@ -624,7 +610,6 @@ export default function CreatePage() {
               {([
                 { id: "now",      label: "Send Now",     icon: Send },
                 { id: "schedule", label: "Schedule",     icon: Clock },
-                { id: "queue",    label: "Add to Queue", icon: CalendarIcon },
               ] as const).map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -646,20 +631,7 @@ export default function CreatePage() {
                 <TimePickerPopup value={scheduleTime} onChange={setScheduleTime} />
               </div>
             )}
-            {scheduleMode === "queue" && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 px-3 py-2.5 bg-primary/5 border border-primary/20 rounded-lg">
-                  <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground">Next slot: {nextSlot.day} at {(() => { const [h, m] = nextSlot.time.split(":").map(Number); const ampm = h >= 12 ? "PM" : "AM"; const h12 = h % 12 || 12; return `${h12}:${String(m).padStart(2, "0")} ${ampm}`; })()}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Post will be added to your queue and published at the next available time.</p>
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  Manage queue times in <button className="text-primary underline underline-offset-2 hover:no-underline" onClick={() => toast.info("Go to Settings → Queue Times")}>Settings → Queue Times</button>
-                </p>
-              </div>
-            )}
+
           </div>
 
           {/* Also publish as Story */}
@@ -703,8 +675,6 @@ export default function CreatePage() {
             >
               {scheduleMode === "now"
               ? <><Send className="w-4 h-4" /> {contentType === "story" ? "Publish Story" : contentType === "reel" ? "Publish Reel" : "Publish Now"}</>
-              : scheduleMode === "queue"
-              ? <><CalendarIcon className="w-4 h-4" /> {contentType === "story" ? "Queue Story" : contentType === "reel" ? "Queue Reel" : "Queue Post"}</>
               : <><Clock className="w-4 h-4" /> {contentType === "story" ? "Schedule Story" : contentType === "reel" ? "Schedule Reel" : "Schedule Post"}</>
             }
             </button>

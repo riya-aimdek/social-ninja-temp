@@ -466,7 +466,7 @@ export default function CreateAiPage() {
   const [chosenTags, setChosenTags]     = useState<string[]>(["#NewLaunch", "#ComingSoon", "#ExcitingNews", "#ExclusiveExperience", "#LimitedEdition"]);
   const [customTag, setCustomTag]       = useState("");
   const [personalTags, setPersonalTags] = useState<string[]>([]);
-  const [scheduleMode, setScheduleMode] = useState<"now" | "schedule" | "queue">("now");
+  const [scheduleMode, setScheduleMode] = useState<"now" | "schedule">("now");
   const [publishAsStory, setPublishAsStory] = useState(false);
 
   // Derived
@@ -1212,11 +1212,11 @@ export default function CreateAiPage() {
                   <span className="text-sm font-semibold">Scheduling</span>
                 </div>
                 <div className="flex gap-2">
-                  {(["now", "schedule", "queue"] as const).map(mode => (
+                  {(["now", "schedule"] as const).map(mode => (
                     <button key={mode} onClick={() => setScheduleMode(mode)}
                       className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-all",
                         scheduleMode === mode ? "gradient-coral text-primary-foreground border-transparent shadow-coral" : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground")}>
-                      {mode === "now" ? "Send Now" : mode === "schedule" ? "Schedule" : "Add to Queue"}
+                      {mode === "now" ? "Send Now" : "Schedule"}
                     </button>
                   ))}
                 </div>

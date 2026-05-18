@@ -5,7 +5,7 @@ import StatusBadge from "@/components/StatusBadge";
 import ClientLogo from "@/components/ClientLogo";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Search, X, Plus, Building2, CheckCircle, XCircle, Users, FolderOpen, Pencil, Power, Trash2, RefreshCw, Globe, BarChart3 } from "lucide-react";
+import { Search, X, Plus, Building2, CheckCircle, XCircle, Users, FolderOpen, Pencil, Power, Trash2, RefreshCw, Globe, BarChart3, Upload } from "lucide-react";
 
 const initialClients = [
   { id: '1', name: 'Acme Corp', initials: 'A', color: 'bg-primary', owner: 'Sarah K.', members: 4, status: 'active' as const, created: 'Apr 13, 2026', projects: 3, posts: 142, socials: 5 },
@@ -27,6 +27,8 @@ const OrganizationsPage = () => {
   const [newClientDesc, setNewClientDesc] = useState('');
   const [editingClient, setEditingClient] = useState<typeof initialClients[0] | null>(null);
   const [editClientName, setEditClientName] = useState('');
+  const [editClientDesc, setEditClientDesc] = useState('');
+  const [editClientLogo, setEditClientLogo] = useState<string | null>(null);
 
   const createClient = () => {
     if (!newClientName.trim()) return;
@@ -57,14 +59,27 @@ const OrganizationsPage = () => {
     toast.success(`Client "${name}" deleted.`);
   };
 
+  const openEditModal = (c: typeof initialClients[0]) => {
+    setEditingClient(c);
+    setEditClientName(c.name);
+    setEditClientDesc('');
+    setEditClientLogo(null);
+  };
+
+  const closeEditModal = () => {
+    setEditingClient(null);
+    setEditClientName('');
+    setEditClientDesc('');
+    setEditClientLogo(null);
+  };
+
   const saveClientEdit = () => {
     if (!editingClient || !editClientName.trim()) return;
     setClients(prev => prev.map(c =>
       c.id === editingClient.id ? { ...c, name: editClientName.trim(), initials: editClientName.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) } : c
     ));
     toast.success("Client updated.");
-    setEditingClient(null);
-    setEditClientName('');
+    closeEditModal();
   };
 
   const totalClients = clients.length;
@@ -191,10 +206,10 @@ const OrganizationsPage = () => {
                     <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{c.created}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <Link to={`/agency/clients/${c.id}`} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium whitespace-nowrap">
-                          <RefreshCw className="h-3.5 w-3.5" /> Manage
+                        <Link to={`/agency/clients/${c.id}/team`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors whitespace-nowrap">
+                          <Users className="h-3.5 w-3.5" /> Manage Users
                         </Link>
-                        <button aria-label="Edit client" onClick={() => { setEditingClient(c); setEditClientName(c.name); }} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button aria-label="Edit client" onClick={() => openEditModal(c)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                         <button aria-label={c.status === 'suspended' ? 'Activate' : 'Suspend'} onClick={() => toggleClientStatus(c.id)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title={c.status === 'suspended' ? 'Activate' : 'Suspend'}><Power className="h-3.5 w-3.5" /></button>
                         <button aria-label="Delete client" onClick={() => deleteClient(c.id, c.name)} className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
@@ -241,19 +256,70 @@ const OrganizationsPage = () => {
 
       {/* Edit Client Modal */}
       {editingClient && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setEditingClient(null)}>
-          <div className="w-[480px] bg-card border border-border rounded-2xl p-8 shadow-xl animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-foreground">Edit Client</h2>
-              <button aria-label="Close" onClick={() => setEditingClient(null)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeEditModal}>
+          <div className="w-full max-w-[500px] bg-card rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-8 pt-8 pb-6">
+              <h2 className="text-xl font-bold text-foreground">Edit Client</h2>
+              <button aria-label="Close" onClick={closeEditModal} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Client Name <span className="text-primary">*</span></label>
-              <input className="h-10 w-full px-4 border border-border rounded-lg bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" value={editClientName} onChange={e => setEditClientName(e.target.value)} />
-            </div>
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
-              <Button variant="outline" onClick={() => setEditingClient(null)} className="px-8">Cancel</Button>
-              <Button onClick={saveClientEdit} disabled={!editClientName.trim()} className="px-8">Save Changes</Button>
+
+            <div className="px-8 pb-8 space-y-5">
+              {/* Client Name */}
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">
+                  Client Name <span className="text-destructive">*</span>
+                </label>
+                <input
+                  className="h-12 w-full px-4 border border-border rounded-xl bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                  value={editClientName}
+                  onChange={e => setEditClientName(e.target.value)}
+                  placeholder="Enter client name"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">Description</label>
+                <textarea
+                  rows={4}
+                  className="w-full px-4 py-3 border border-border rounded-xl bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none"
+                  value={editClientDesc}
+                  onChange={e => setEditClientDesc(e.target.value)}
+                  placeholder="Enter description"
+                />
+              </div>
+
+              {/* Logo */}
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">Logo</label>
+                <label className="flex flex-col items-center justify-center gap-2 w-full h-28 border-2 border-dashed border-border rounded-xl bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors">
+                  {editClientLogo ? (
+                    <img src={editClientLogo} alt="Logo preview" className="h-16 w-16 object-contain rounded-lg" />
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Click to upload logo</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) setEditClientLogo(URL.createObjectURL(file));
+                  }} />
+                </label>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" onClick={closeEditModal} className="flex-1 h-12 rounded-xl uppercase tracking-wide text-sm font-semibold">
+                  Cancel
+                </Button>
+                <Button onClick={saveClientEdit} disabled={!editClientName.trim()} className="flex-1 h-12 rounded-xl uppercase tracking-wide text-sm font-semibold gradient-coral text-primary-foreground border-0 hover:opacity-90">
+                  Save Changes
+                </Button>
+              </div>
             </div>
           </div>
         </div>

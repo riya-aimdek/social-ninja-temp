@@ -14,7 +14,6 @@ import AgencyRegistration from "./pages/AgencyRegistration";
 import AgencyOnboarding from "./pages/AgencyOnboarding";
 import AgencyDashboard from "./pages/AgencyDashboard";
 import OrganizationsPage from "./pages/OrganizationsPage";
-import OrganizationDetail from "./pages/OrganizationDetail";
 import TeamMembersPage from "./pages/TeamMembersPage";
 import AgencyClientTeamPage from "./pages/AgencyClientTeamPage";
 import AgencyUserManagePage from "./pages/AgencyUserManagePage";
@@ -43,6 +42,7 @@ import LocationsPage from "./pages/client/LocationsPage";
 import ClientSettingsPage from "./pages/client/SettingsPage";
 
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
+import UserPreferencesPage from "./pages/UserPreferencesPage";
 import AgencyClientProfilePage from "./pages/AgencyClientProfilePage";
 import PublicApprovalPage from "./pages/PublicApprovalPage";
 import OrgSwitcher from "./pages/OrgSwitcher";
@@ -77,7 +77,6 @@ const App = () => (
           <Route path="/agency/onboarding" element={<AgencyOnboarding />} />
           <Route path="/agency/dashboard" element={<AgencyDashboard />} />
           <Route path="/agency/clients" element={<OrganizationsPage />} />
-          <Route path="/agency/clients/:id" element={<OrganizationDetail />} />
           <Route path="/agency/clients/:id/team" element={<AgencyClientTeamPage />} />
           <Route path="/agency/team" element={<TeamMembersPage />} />
           <Route path="/agency/team/:userId/manage" element={<AgencyUserManagePage />} />
@@ -86,6 +85,7 @@ const App = () => (
           <Route path="/agency/billing" element={<BillingPage />} />
           <Route path="/agency/settings" element={<AgencySettings />} />
           <Route path="/agency/profile" element={<ProfileSettingsPage role="agency" />} />
+          <Route path="/agency/preferences" element={<UserPreferencesPage role="agency" />} />
 
           {/* Agency-managed client routes — same pages as business, within agency sidebar */}
           <Route element={<AgencyLayout defaultClientId="1" />}>
@@ -140,17 +140,14 @@ const App = () => (
             <Route path="/client/locations" element={<LocationsPage />} />
             <Route path="/client/settings" element={<ClientSettingsPage />} />
             <Route path="/client/settings/profile" element={<ClientSettingsPage defaultTab="profile" />} />
-            <Route path="/client/settings/billing" element={<ClientSettingsPage defaultTab="billing" />} />
-            <Route path="/client/settings/team" element={<ClientSettingsPage defaultTab="team" />} />
-            <Route path="/client/settings/approvals" element={<ClientSettingsPage defaultTab="approvals" />} />
             <Route path="/client/settings/notifications" element={<ClientSettingsPage defaultTab="notifications" />} />
             <Route path="/client/settings/hashtags" element={<ClientSettingsPage defaultTab="hashtags" />} />
             <Route path="/client/settings/saved-replies" element={<ClientSettingsPage defaultTab="saved-replies" />} />
             <Route path="/client/settings/tags" element={<ClientSettingsPage defaultTab="tags" />} />
             <Route path="/client/settings/security" element={<ClientSettingsPage defaultTab="security" />} />
             <Route path="/client/settings/general" element={<ClientSettingsPage defaultTab="general" />} />
-            <Route path="/client/settings/queue" element={<ClientSettingsPage defaultTab="queue" />} />
             <Route path="/client/profile" element={<ProfileSettingsPage role="client" />} />
+            <Route path="/client/preferences" element={<UserPreferencesPage role="client" />} />
             <Route path="/client/customization" element={<div className="text-muted-foreground">Customization settings coming soon.</div>} />
           </Route>
 

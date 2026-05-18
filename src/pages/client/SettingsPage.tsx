@@ -2,27 +2,21 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
 import {
-  User, CreditCard, Users, Bell, Hash, Shield, Save,
-  Upload, Plus, Trash2, MessageSquare, Tag, Check, AlertCircle,
-  Download, X, CheckCircle2, Clock, Zap, BellRing, Settings,
+  User, Bell, Shield, Save,
+  Upload, Plus, Trash2, Check, AlertCircle,
+  X, CheckCircle2, Settings,
   Link2, Eye, EyeOff, Camera, GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { teamMembers, connectedAccounts, totalPosts, socialAccounts } from "@/data/businessMockData";
+import { connectedAccounts, totalPosts, socialAccounts } from "@/data/businessMockData";
 import { WorkflowSettings } from "@/components/settings/WorkflowSettings";
 import { RolesPermissionsSettings } from "@/components/settings/RolesPermissionsSettings";
-import { TimePickerPopup } from "@/components/ui/TimePickerPopup";
-
 /* ─── Nav ─────────────────────────────────────────────────────── */
 const navItems = [
   { id: "profile",       label: "Profile Settings",      icon: User },
   { id: "notifications", label: "Notification Settings", icon: Bell },
   { id: "security",      label: "Security Settings",     icon: Shield },
   { id: "general",       label: "General Settings",      icon: Settings },
-  { id: "billing",       label: "Billing & Plans",       icon: CreditCard },
-  { id: "team",          label: "Team",                  icon: Users },
-  { id: "approvals",     label: "Approvals",             icon: CheckCircle2 },
-  { id: "queue",         label: "Queue Times",           icon: Clock },
   { id: "workflows",     label: "Workflows",             icon: GitBranch },
   { id: "roles",         label: "Roles & Permissions",   icon: Shield },
 ];
@@ -57,9 +51,6 @@ const messageTags = [
   { name: "Potential Lead",     color: "bg-green-50 text-green-700 border-green-200" },
   { name: "Positive Feedback",  color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 ];
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
-type Day = typeof DAYS[number];
 
 const passwordRules = [
   { label: "At least 8 characters",  test: (p: string) => p.length >= 8 },
@@ -152,34 +143,6 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
   const [requireMultiApprover, setRequireMultiApprover] = useState(false);
   const [allowSelfApprove, setAllowSelfApprove] = useState(true);
   const [weekendsCount, setWeekendsCount] = useState(false);
-
-  // queue times
-  const [queueSlots, setQueueSlots] = useState<Record<Day, string[]>>({
-    Monday:    ["09:00", "13:00", "18:00"],
-    Tuesday:   ["09:00", "13:00", "18:00"],
-    Wednesday: ["09:00", "13:00"],
-    Thursday:  ["09:00", "13:00", "18:00"],
-    Friday:    ["09:00", "17:00"],
-    Saturday:  ["11:00"],
-    Sunday:    [],
-  });
-  const [queueEnabled, setQueueEnabled] = useState<Record<Day, boolean>>({
-    Monday: true, Tuesday: true, Wednesday: true, Thursday: true,
-    Friday: true, Saturday: false, Sunday: false,
-  });
-
-  const addQueueSlot = (day: Day) =>
-    setQueueSlots((prev) => ({ ...prev, [day]: [...prev[day], "09:00"] }));
-
-  const removeQueueSlot = (day: Day, idx: number) =>
-    setQueueSlots((prev) => ({ ...prev, [day]: prev[day].filter((_, i) => i !== idx) }));
-
-  const updateQueueSlot = (day: Day, idx: number, val: string) =>
-    setQueueSlots((prev) => {
-      const slots = [...prev[day]];
-      slots[idx] = val;
-      return { ...prev, [day]: slots };
-    });
 
   const connectedCount = connectedAccounts.length;
   const totalPlatforms = socialAccounts.length;
@@ -433,252 +396,9 @@ export default function SettingsPage({ defaultTab = "profile" }: { defaultTab?: 
           </SectionCard>
         )}
 
-        {/* ── Billing ─────────────────────────────────────────── */}
-        {activeTab === "billing" && (
-          <>
-            <SectionCard>
-              <SectionTitle>Subscription & Billing</SectionTitle>
-              <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20 mb-5">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Pro Plan</p>
-                  <p className="text-xs text-muted-foreground">$49 / month · Renews Mar 28, 2026</p>
-                </div>
-                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-semibold">Active</span>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-muted-foreground">Accounts Connected</span>
-                    <span className="font-semibold text-foreground">{connectedCount} / {totalPlatforms}</span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(connectedCount / totalPlatforms) * 100}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-muted-foreground">Total Posts</span>
-                    <span className="font-semibold text-foreground">{totalPosts}</span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min((totalPosts / 500) * 100, 100)}%` }} />
-                  </div>
-                </div>
-              </div>
-            </SectionCard>
-
-            <SectionCard>
-              <SectionTitle>Invoices</SectionTitle>
-              <div className="space-y-1">
-                {["Mar 2026","Feb 2026","Jan 2026"].map((month) => (
-                  <div key={month} className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-muted/40 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{month}</p>
-                      <p className="text-xs text-muted-foreground">Pro Plan — $49.00</p>
-                    </div>
-                    <button onClick={() => toast.success(`Invoice for ${month} downloaded.`)} className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
-                      <Download className="w-3.5 h-3.5" /> Download
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 pt-4 border-t border-border flex justify-end">
-                <button onClick={() => toast.info("Plan upgrade — contact your agency.")} className="px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
-                  Upgrade Plan
-                </button>
-              </div>
-            </SectionCard>
-          </>
-        )}
-
-        {/* ── Team ────────────────────────────────────────────── */}
-        {activeTab === "team" && (
-          <SectionCard>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Team Members</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Manage team access and permissions.</p>
-              </div>
-              <button onClick={() => toast.success("Invitation sent.")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Invite
-              </button>
-            </div>
-            <div className="space-y-1.5">
-              {teamMembers.map((m) => (
-                <div key={m.email} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{m.avatar}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{m.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{m.email}</p>
-                  </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-foreground font-medium border border-border">{m.role}</span>
-                  <button aria-label="Remove member" onClick={() => toast.success(`${m.name} removed.`)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-destructive">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* ── Approvals ───────────────────────────────────────── */}
-        {activeTab === "approvals" && (
-          <>
-            <SectionCard>
-              <SectionTitle sub="Configure how posts move through approval. These rules apply to all posts requiring client sign-off.">
-                Approval Workflow Rules
-              </SectionTitle>
-
-              {/* Auto-publish */}
-              <div className="rounded-xl border border-border p-4 mb-4 cursor-pointer" onClick={() => setAutoPublish(v => !v)}>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Zap className="w-4 h-4 text-warning" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground">Auto-publish if not approved in time</p>
-                      <input type="checkbox" checked={autoPublish} onChange={e => { e.stopPropagation(); setAutoPublish(e.target.checked); }} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-primary" />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">If approval isn't received within the defined window, the system will act automatically.</p>
-                    {autoPublish && (
-                      <div className="mt-4 pt-4 border-t border-border space-y-3" onClick={e => e.stopPropagation()}>
-                        <div>
-                          <FieldLabel>Action on timeout</FieldLabel>
-                          <select value={autoPublishFallback} onChange={e => setAutoPublishFallback(e.target.value as typeof autoPublishFallback)}
-                            className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary">
-                            <option value="publish">Auto-approve & publish</option>
-                            <option value="skip">Skip & mark expired</option>
-                          </select>
-                        </div>
-                        <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/5 border border-warning/20">
-                          <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-                          <p className="text-xs text-foreground">Auto-published posts are tagged in the audit trail and a confirmation is sent to all approvers.</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Reminders */}
-              <div className="rounded-xl border border-border p-4 mb-4 cursor-pointer" onClick={() => setReminderEnabled(v => !v)}>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <BellRing className="w-4 h-4 text-info" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground">Send reminders for pending approvals</p>
-                      <input type="checkbox" checked={reminderEnabled} onChange={e => { e.stopPropagation(); setReminderEnabled(e.target.checked); }} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-primary shrink-0" />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">Nudge approvers automatically so posts don't sit idle in the queue.</p>
-                    {reminderEnabled && (
-                      <div className="mt-4 pt-4 border-t border-border space-y-3" onClick={e => e.stopPropagation()}>
-                        <div>
-                          <FieldLabel>First reminder after</FieldLabel>
-                          <div className="flex items-center gap-2">
-                            <input type="number" min={1} value={reminderFirst} onChange={e => setReminderFirst(Number(e.target.value))}
-                              className="w-20 h-9 px-3 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary" />
-                            <span className="text-xs text-muted-foreground">hours</span>
-                          </div>
-                        </div>
-                        <div>
-                          <FieldLabel>Notify approvers via</FieldLabel>
-                          <div className="flex gap-2">
-                            {([{ key: "email", label: "Email" },{ key: "inApp", label: "In-app" },{ key: "sms", label: "SMS" }] as const).map(c => (
-                              <label key={c.key} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background cursor-pointer hover:bg-muted text-xs">
-                                <input type="checkbox" checked={reminderChannels[c.key]} onChange={e => setReminderChannels({ ...reminderChannels, [c.key]: e.target.checked })} className="w-4 h-4 accent-primary" />
-                                {c.label}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                        <label className="flex items-start gap-3 cursor-pointer pt-3 border-t border-border">
-                          <input type="checkbox" checked={escalationEnabled} onChange={e => setEscalationEnabled(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary" />
-                          <div>
-                            <p className="text-sm font-medium text-foreground">Escalate to backup approver after 2 reminders</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">Route request to team lead if primary approver doesn't respond.</p>
-                          </div>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-            </SectionCard>
-
-            <div className="flex items-center justify-end gap-3">
-              <button onClick={() => { setAutoPublish(false); setAutoPublishHours(24); setAutoPublishFallback("publish"); setReminderEnabled(true); setReminderFirst(4); setReminderRepeat(12); setRequireMultiApprover(false); setAllowSelfApprove(true); toast.info("Approval rules reset to defaults."); }} className="px-4 py-2.5 rounded-full border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors">
-                Reset to defaults
-              </button>
-              <SaveBtn label="Save Approval Rules" />
-            </div>
-          </>
-        )}
-
-        {/* ── Queue Times ─────────────────────────────────────── */}
-        {activeTab === "queue" && (
-          <>
-            <SectionCard>
-              <SectionTitle sub="Set the times your posts will be automatically queued for publishing each day.">
-                Queue Times
-              </SectionTitle>
-              <div className="space-y-3">
-                {DAYS.map((day) => {
-                  const enabled = queueEnabled[day];
-                  const slots = queueSlots[day];
-                  return (
-                    <div key={day} className={cn("rounded-xl border border-border p-4 transition-colors", !enabled && "opacity-50")}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <Toggle checked={enabled} onChange={(v) => setQueueEnabled((prev) => ({ ...prev, [day]: v }))} />
-                          <span className="text-sm font-semibold text-foreground w-24">{day}</span>
-                          <span className="text-xs text-muted-foreground">{slots.length} slot{slots.length !== 1 ? "s" : ""}</span>
-                        </div>
-                        <button
-                          disabled={!enabled}
-                          onClick={() => addQueueSlot(day)}
-                          className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:text-primary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> Add slot
-                        </button>
-                      </div>
-                      {enabled && slots.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {slots.map((t, i) => (
-                            <div key={i} className="flex items-center gap-1">
-                              <TimePickerPopup
-                                value={t}
-                                onChange={(val) => updateQueueSlot(day, i, val)}
-                              />
-                              <button onClick={() => removeQueueSlot(day, i)} className="text-muted-foreground hover:text-error transition-colors">
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {enabled && slots.length === 0 && (
-                        <p className="text-xs text-muted-foreground italic">No slots — posts won't be queued on this day.</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </SectionCard>
-            <div className="flex justify-end mt-2">
-              <SaveBtn label="Save Queue Times" />
-            </div>
-          </>
-        )}
-
         {/* ── Workflows ───────────────────────────────────────── */}
         {activeTab === "workflows" && (
-          <SectionCard className="p-0 overflow-hidden">
-            <WorkflowSettings scope="client" standalone={!isAgencyManaged} />
-          </SectionCard>
+          <WorkflowSettings scope="client" standalone={!isAgencyManaged} />
         )}
 
         {/* ── Roles & Permissions ──────────────────────────────── */}

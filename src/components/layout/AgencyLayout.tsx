@@ -7,6 +7,7 @@ import {
   Sparkles, CalendarDays, MessageSquare, BarChart3, Megaphone, Ear,
   KanbanSquare, FileText, ShieldAlert, Bot,
   TrendingUp, Trophy, FileDown,
+  UserCircle, SlidersHorizontal, Building2, CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SocialNinjaLogo from "@/components/SocialNinjaLogo";
@@ -47,7 +48,6 @@ const agencyNav: NavItem[] = [
   { title: "Clients",        path: "/agency/clients",         icon: Globe           },
   { title: "Users",          path: "/agency/team",            icon: Users           },
   { title: "Social Accounts",path: "/agency/social-accounts", icon: LinkIcon        },
-  { title: "Settings",       path: "/agency/settings",        icon: Settings        },
 ];
 
 const clientNav: NavItem[] = [
@@ -109,19 +109,34 @@ function initProject(clientId: string | null): Project | null {
 interface AgencyLayoutProps { children?: ReactNode; title?: string; defaultClientId?: string; }
 
 /* ── User menu ───────────────────────────────────────────────────── */
-const AGENCY_USER = { name: "Riya Shah", role: "Agency", initials: "RS" };
+const AGENCY_USER = { name: "Riya Shah", role: "Agency Admin", initials: "RS" };
+const ADMIN_ROLES = ["Agency Admin", "Super Admin"];
 
 function UserMenu({ onLogout }: { onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const isAdmin = ADMIN_ROLES.includes(AGENCY_USER.role);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    const keyHandler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", keyHandler);
+    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("keydown", keyHandler); };
   }, []);
+
+  const menuItem = (icon: React.ReactNode, label: string, _sub: string, href: string) => (
+    <button
+      onClick={() => { setOpen(false); navigate(href); }}
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#F5F5F5] transition-colors text-left text-muted-foreground hover:text-foreground"
+    >
+      {icon}
+      <p className="text-[13px] font-medium text-foreground leading-tight">{label}</p>
+    </button>
+  );
 
   return (
     <div className="relative" ref={ref}>
@@ -129,7 +144,7 @@ function UserMenu({ onLogout }: { onLogout: () => void }) {
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
       >
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white text-[11px] font-bold shrink-0">
+        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-[11px] font-bold shrink-0">
           {AGENCY_USER.initials}
         </div>
         <div className="text-left leading-none">
@@ -142,23 +157,48 @@ function UserMenu({ onLogout }: { onLogout: () => void }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-48 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
+        <div className="absolute right-0 top-full mt-2 w-[260px] bg-white border border-border rounded-xl shadow-xl z-50 p-2 overflow-hidden">
+
+          {/* Identity block */}
+          <div className="flex items-center gap-3 px-3 py-3 mb-1 rounded-lg bg-[#F8F9FA]">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold shrink-0">
               {AGENCY_USER.initials}
             </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground leading-tight">{AGENCY_USER.name}</p>
-              <p className="text-[11px] text-muted-foreground">{AGENCY_USER.role}</p>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-foreground leading-tight">{AGENCY_USER.name}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{AGENCY_USER.role}</p>
             </div>
           </div>
-          <button
-            onClick={() => { setOpen(false); onLogout(); }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+
+          {/* MY ACCOUNT */}
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#888888] px-3 pt-3 pb-1">My Account</p>
+          {menuItem(<UserCircle className="w-4 h-4" />, "My Profile", "Edit personal info, photo & password", "/agency/profile")}
+          {menuItem(<SlidersHorizontal className="w-4 h-4" />, "Preferences", "Notification & display settings", "/agency/preferences")}
+
+          {/* AGENCY — admin only */}
+          {isAdmin && (
+            <>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#888888] px-3 pt-3 pb-1">Agency</p>
+              {menuItem(<CreditCard className="w-4 h-4" />, "Agency Settings", "Billing, team access & integrations", "/agency/settings?tab=general")}
+            </>
+          )}
+
+          {/* CLIENT */}
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#888888] px-3 pt-3 pb-1">Client</p>
+          {menuItem(<CreditCard className="w-4 h-4" />, "Client Settings", "Billing, team access & integrations", "/agency/client/settings")}
+
+          {/* Divider + Logout */}
+          <div className="border-t border-[#EEEEEE] mt-2 pt-1">
+            <button
+              onClick={() => { setOpen(false); onLogout(); }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#F5F5F5] transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <LogOut className="w-4 h-4 text-destructive" />
+              </div>
+              <p className="text-[13px] font-medium text-destructive">Log out</p>
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -450,32 +490,6 @@ const AgencyLayout = ({ children, title, defaultClientId }: AgencyLayoutProps) =
           })}
         </nav>
 
-        {/* Context info */}
-        <div className="px-3 py-3 border-t border-sidebar-border/50">
-          {isClientCtx ? (
-            <button
-              onClick={() => navigate(`/agency/clients/${client!.id}/profile`)}
-              className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent/60 transition-colors text-left"
-            >
-              <img src={client!.logo} alt={client!.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white truncate">{client!.name}</p>
-                <p className="text-[11px] text-sidebar-foreground/60">Client</p>
-              </div>
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate("/agency/profile")}
-              className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent/60 transition-colors text-left"
-            >
-              <img src={AGENCY.logo} alt={AGENCY.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white truncate">{AGENCY.name}</p>
-                <p className="text-[11px] text-sidebar-foreground/60">Agency Admin</p>
-              </div>
-            </button>
-          )}
-        </div>
       </aside>
 
       {/* ── Main ── */}
